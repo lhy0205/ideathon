@@ -514,7 +514,12 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
 }
+.ms-extra-item:hover { border-color: #c4603d; background: #fff5f2; }
+.ms-extra-item.active { border-color: #c4603d; background: #fff5f2; }
 .ms-extra-title { font-size: 13px; font-weight: 700; color: #3b1a0e; margin: 0; }
 .ms-extra-meta { font-size: 11px; color: #888; margin: 0; }
 .ms-extra-count { font-size: 12px; font-weight: 700; color: #c4603d; margin-top: 4px; }

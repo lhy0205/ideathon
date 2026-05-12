@@ -77,13 +77,11 @@ function CircleProgress({ pct }) {
 function MissionSection() {
   const [mood, setMood] = useState(1)
   const [missionText, setMissionText] = useState('')
+  const [selectedExtra, setSelectedExtra] = useState(null)
 
   return (
     <div className="db-content">
-      <div className="ms-header">
-        <h2 className="db-welcome">오늘의 미션</h2>
-        <button className="ms-edit-btn">편집</button>
-      </div>
+      <h2 className="db-welcome">오늘의 미션</h2>
 
       <div className="ms-layout">
         {/* Left column */}
@@ -111,7 +109,7 @@ function MissionSection() {
               <p className="ms-card-title">AI 추천 미션</p>
               <span className="ms-participant">· 127명 지금 참여중</span>
             </div>
-            <p className="ms-mission-title">오늘 써온 첫 번째 글 쓰기</p>
+            <p className="ms-mission-title">오늘 배운 것 한 줄 쓰기</p>
             <p className="ms-mission-desc">
               자신의 말로 생각을 정리하는 힘, 오늘 첫 발걸음을 내디뎌 보세요.
             </p>
@@ -133,7 +131,11 @@ function MissionSection() {
             <p className="ms-card-title">추가 미션 선택</p>
             <div className="ms-extra-grid">
               {EXTRA_MISSIONS.map((m, i) => (
-                <div key={i} className="ms-extra-item">
+                <div
+                  key={i}
+                  className={`ms-extra-item ${selectedExtra === i ? 'active' : ''}`}
+                  onClick={() => setSelectedExtra(selectedExtra === i ? null : i)}
+                >
                   <p className="ms-extra-title">{m.title}</p>
                   <p className="ms-extra-meta">{m.time} · {m.mood}</p>
                   <span className="ms-extra-count">+{m.count}명</span>
