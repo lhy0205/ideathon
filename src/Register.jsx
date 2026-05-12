@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './Register.css'
 
 function Register() {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('login')
   const [form, setForm] = useState({
     name: '',
@@ -25,6 +27,11 @@ function Register() {
   const handleLoginChange = (e) => {
     const { name, value } = e.target
     setLoginForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleLoginSubmit = (e) => {
+    e.preventDefault()
+    navigate('/dashboard')
   }
 
   return (
@@ -57,7 +64,7 @@ function Register() {
         </div>
 
         {activeTab === 'login' && (
-          <form className="auth-form" onSubmit={(e) => e.preventDefault()}>
+          <form className="auth-form" onSubmit={handleLoginSubmit}>
             <div className="form-group">
               <label className="form-label">아이디 (이메일)</label>
               <input
