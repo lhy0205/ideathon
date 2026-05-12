@@ -79,6 +79,8 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow: hidden;
+  min-width: 0;
 }
 .gr-heatmap-label {
   font-size: 11px;
@@ -95,8 +97,8 @@
   gap: 3px;
 }
 .gr-heatmap-cell {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   border-radius: 3px;
   flex-shrink: 0;
 }

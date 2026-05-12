@@ -1,8 +1,8 @@
 import './GrowthReport.css'
 
-// 성장 타임라인 히트맵 데이터 (7행 × 35열)
+// 성장 타임라인 히트맵 데이터 (7행 × 26열)
 const HEATMAP_ROWS = 7
-const HEATMAP_COLS = 35
+const HEATMAP_COLS = 26
 function generateHeatmap() {
   return Array.from({ length: HEATMAP_ROWS }, (_, r) =>
     Array.from({ length: HEATMAP_COLS }, (_, c) => {
@@ -147,7 +147,7 @@ export default function GrowthReport() {
         {/* 포트폴리오 내보내기 */}
         <div className="gr-card gr-bottom-card">
           <p className="gr-card-title">포트폴리오 내보내기</p>
-          <p className="gr-bottom-desc">포트폴리오 URL 생성 (파일 형식 선택 가능)</p>
+          <p className="gr-bottom-desc">포트폴리오 PDF 생성</p>
           <button className="gr-export-btn">내보내기</button>
         </div>
       </div>
