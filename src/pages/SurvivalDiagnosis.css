@@ -1,0 +1,205 @@
+.sv-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f5ece6;
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+}
+
+/* Header */
+.sv-header {
+  background: #f5ece6;
+  padding: 16px 24px;
+  font-size: 18px;
+  font-weight: 700;
+  border-bottom: 1px solid #e8ddd8;
+}
+.sv-brand { color: #1a1a1a; font-weight: 800; }
+.sv-tagline { color: #c4603d; font-weight: 700; }
+
+.sv-body { display: flex; flex: 1; }
+
+/* Sidebar */
+.sv-sidebar {
+  width: 180px;
+  min-width: 180px;
+  background: #fff;
+  border-right: 1px solid #e8ddd8;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+}
+.sv-pages-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #aaa;
+  letter-spacing: 1px;
+  padding: 0 16px 8px;
+  margin: 0;
+}
+.sv-nav { display: flex; flex-direction: column; flex: 1; }
+.sv-nav-item {
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.sv-nav-item:hover { background: #fdf5f1; color: #c4603d; }
+.sv-nav-item.active {
+  background: #fdf5f1;
+  color: #c4603d;
+  font-weight: 700;
+  border-left: 3px solid #c4603d;
+}
+.sv-logout {
+  margin: 12px 16px 0;
+  background: none;
+  border: 1px solid #e0d5cf;
+  border-radius: 8px;
+  padding: 8px 0;
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.sv-logout:hover { color: #c4603d; border-color: #c4603d; }
+
+/* Main */
+.sv-main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+.sv-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+  background: #fff;
+  border-bottom: 1px solid #e8ddd8;
+  font-size: 14px;
+}
+.sv-breadcrumb { font-weight: 600; color: #3b1a0e; }
+.sv-user { color: #888; font-size: 13px; }
+
+.sv-content {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.sv-title { font-size: 22px; font-weight: 700; color: #3b1a0e; margin: 0; }
+.sv-subtitle { font-size: 13px; color: #888; margin: 0; margin-top: -12px; }
+
+/* Two columns */
+.sv-columns {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.sv-left { display: flex; flex-direction: column; gap: 16px; }
+.sv-right { display: flex; flex-direction: column; gap: 16px; }
+
+/* Cards */
+.sv-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sv-card-title { font-size: 15px; font-weight: 700; color: #3b1a0e; margin: 0; }
+.sv-card-sub { font-size: 12px; color: #888; margin: 0; }
+
+/* Chart */
+.sv-chart-wrap { margin: 8px 0 4px; }
+
+/* Alert box */
+.sv-alert {
+  background: #fdf5f1;
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+.sv-alert-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #3b1a0e;
+  margin: 0;
+}
+.sv-alert-desc { font-size: 13px; color: #555; margin: 0; line-height: 1.6; }
+
+/* Personas */
+.sv-persona-list { display: flex; flex-direction: column; gap: 12px; }
+.sv-persona-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: #fdf9f7;
+  border-radius: 10px;
+}
+.sv-persona-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #555;
+  flex-shrink: 0;
+}
+.sv-persona-info { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.sv-persona-title { font-size: 13px; font-weight: 700; color: #3b1a0e; margin: 0; }
+.sv-persona-desc { font-size: 11px; color: #888; margin: 0; }
+.sv-similarity {
+  font-size: 11px;
+  font-weight: 700;
+  color: #c4603d;
+}
+.sv-pass-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #e8f5e9;
+  color: #388e3c;
+  padding: 4px 10px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+/* Mental card */
+.sv-mental-msg {
+  font-size: 15px;
+  font-weight: 700;
+  color: #c4603d;
+  margin: 0;
+}
+.sv-mental-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.sv-mental-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 18px;
+  background: none;
+  border: 1px solid #e0d5cf;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #3b1a0e;
+  cursor: pointer;
+  text-align: left;
+  font-weight: 500;
+  transition: border-color 0.2s, background 0.2s;
+}
+.sv-mental-btn:hover {
+  border-color: #c4603d;
+  background: #fdf5f1;
+}

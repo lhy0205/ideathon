@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { key: 'experience', label: '경험 입력', path: null },
   { key: 'mapping', label: '경험 매핑 결과', path: '/mapping' },
   { key: 'roadmap', label: '자격증 로드맵', path: null },
-  { key: 'survival', label: '생존 진단', path: null },
+  { key: 'survival', label: '생존 진단', path: '/survival' },
   { key: 'mission', label: '오늘의 미션', path: null },
   { key: 'community', label: '커뮤니티', path: null },
   { key: 'report', label: '성장 리포트', path: null },
