@@ -1,6 +1,41 @@
-.App {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #f5ece6;
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+}
+
+.page-wrapper {
   min-height: 100vh;
+  background-color: #f5ece6;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-header {
+  padding: 20px 32px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.header-brand {
+  color: #1a1a1a;
+  font-weight: 800;
+}
+
+.header-tagline {
+  color: #c4603d;
+  font-weight: 700;
+}
+
+.page-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px 40px;
 }
