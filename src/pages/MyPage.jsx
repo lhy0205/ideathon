@@ -46,6 +46,13 @@ export default function MyPage() {
 
   return (
     <div className="mp-root">
+      {/* Top header */}
+      <header className="mp-header">
+        <span className="mp-brand">Pause to Pass</span>
+        <span className="mp-tagline"> - 나의 오늘이 내일의 발판이 되지 못하는 불안</span>
+      </header>
+
+      <div className="mp-body">
       {/* Sidebar */}
       <aside className="mp-sidebar">
         <p className="mp-pages-label">PAGES</p>
@@ -175,6 +182,7 @@ export default function MyPage() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

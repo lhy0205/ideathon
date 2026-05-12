@@ -1,8 +1,25 @@
 .mp-root {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background: #f5ece6;
   font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+}
+
+/* Header */
+.mp-header {
+  background: #f5ece6;
+  padding: 16px 24px;
+  font-size: 18px;
+  font-weight: 700;
+  border-bottom: 1px solid #e8ddd8;
+}
+.mp-brand { color: #1a1a1a; font-weight: 800; }
+.mp-tagline { color: #c4603d; font-weight: 700; }
+
+.mp-body {
+  display: flex;
+  flex: 1;
 }
 
 /* ── Sidebar ── */
