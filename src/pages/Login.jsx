@@ -47,7 +47,7 @@ export default function Login() {
         <div className="login-body">
           {tab === 'login' && <LoginForm />}
           {tab === 'register' && <RegisterForm />}
-          {tab === 'reset' && <ResetPasswordForm />}
+          {tab === 'reset' && <ResetPasswordForm onGoLogin={() => setTab('login')} />}
         </div>
       </div>
     </div>
