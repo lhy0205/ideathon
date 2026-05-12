@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ExperienceInput from './ExperienceInput'
 import CertRoadmap from './CertRoadmap'
+import GrowthReport from './GrowthReport'
 import './Dashboard.css'
 
 const NAV_ITEMS = [
@@ -395,7 +396,7 @@ export default function Dashboard() {
           {activeNav === 'roadmap' && <div className="db-content"><CertRoadmap /></div>}
           {activeNav === 'mission' && <MissionSection />}
           {activeNav === 'community' && <CommunitySection />}
-          {activeNav === 'report' && <div className="db-content"><p style={{color:'#aaa',padding:'40px 0',textAlign:'center'}}>성장 리포트 (준비 중)</p></div>}
+          {activeNav === 'report' && <div className="db-content"><GrowthReport /></div>}
           {activeNav !== 'password' && activeNav !== 'experience' && activeNav !== 'roadmap' && activeNav !== 'mission' && activeNav !== 'community' && activeNav !== 'report' && <div className="db-content">
             <h2 className="db-welcome">안녕하세요, 김지현 님</h2>
 
