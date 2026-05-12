@@ -88,23 +88,20 @@
   font-weight: 600;
 }
 .gr-heatmap {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(26, 1fr);
   gap: 3px;
-}
-.gr-heatmap-row {
-  display: flex;
-  gap: 3px;
+  width: 100%;
 }
 .gr-heatmap-cell {
-  width: 13px;
-  height: 13px;
+  aspect-ratio: 1;
   border-radius: 3px;
-  flex-shrink: 0;
+  min-width: 0;
 }
 .gr-heatmap-legend {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   margin-top: 4px;
 }

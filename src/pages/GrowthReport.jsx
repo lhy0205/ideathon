@@ -97,16 +97,12 @@ export default function GrowthReport() {
           <div className="gr-heatmap-wrap">
             <span className="gr-heatmap-label">활동 히트맵</span>
             <div className="gr-heatmap">
-              {HEATMAP.map((row, r) => (
-                <div key={r} className="gr-heatmap-row">
-                  {row.map((val, c) => (
-                    <div
-                      key={c}
-                      className="gr-heatmap-cell"
-                      style={{ background: HEAT_COLORS[Math.min(val, 4)] }}
-                    />
-                  ))}
-                </div>
+              {HEATMAP.flat().map((val, i) => (
+                <div
+                  key={i}
+                  className="gr-heatmap-cell"
+                  style={{ background: HEAT_COLORS[Math.min(val, 4)] }}
+                />
               ))}
             </div>
             <div className="gr-heatmap-legend">
