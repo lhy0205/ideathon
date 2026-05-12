@@ -283,3 +283,153 @@
 .mp-setting-label { font-size: 13px; font-weight: 600; color: #3b1a0e; }
 .mp-setting-sub { font-size: 11px; color: #aaa; }
 .mp-setting-arrow { font-size: 18px; color: #ccc; flex-shrink: 0; }
+
+/* ── 프로필 수정 모달 ── */
+.mp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.mp-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 28px 28px;
+  width: 420px;
+  max-width: 92vw;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+}
+
+.mp-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mp-modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #3b1a0e;
+}
+.mp-modal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #aaa;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.15s;
+}
+.mp-modal-close:hover { color: #555; }
+
+.mp-modal-avatar-wrap {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  align-self: center;
+}
+.mp-modal-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #f0ede7;
+  color: #c4603d;
+  font-size: 18px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mp-modal-camera {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 26px;
+  height: 26px;
+  background: #c4603d;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  cursor: pointer;
+  border: 2px solid #fff;
+}
+
+.mp-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mp-modal-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 2px;
+}
+.mp-modal-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid #e0d5cf;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #3b1a0e;
+  background: #fdf9f7;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.mp-modal-input:focus { border-color: #c4603d; background: #fff; }
+
+.mp-modal-date-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mp-modal-date-input {
+  width: 80px;
+  text-align: center;
+}
+.mp-modal-date-sep {
+  font-size: 14px;
+  color: #555;
+}
+
+.mp-modal-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.mp-modal-cancel {
+  flex: 1;
+  padding: 12px;
+  border: 1.5px solid #e0d5cf;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.mp-modal-cancel:hover { border-color: #c4603d; color: #c4603d; }
+.mp-modal-save {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #c4603d;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.mp-modal-save:hover { background: #b0522f; }
