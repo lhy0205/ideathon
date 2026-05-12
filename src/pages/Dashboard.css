@@ -556,3 +556,93 @@
 }
 .ms-log-badge.done { background: #e8f5e9; color: #388e3c; }
 .ms-log-badge.ing { background: #fff3e0; color: #f57c00; }
+
+/* ─── 커뮤니티 ─── */
+.cm-subtitle { font-size: 13px; color: #888; margin: 4px 0 0; }
+
+.cm-feed-header { display: flex; align-items: center; justify-content: space-between; }
+
+.cm-live-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #c4603d;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.cm-posts { display: flex; flex-direction: column; gap: 16px; }
+
+.cm-post {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0ede7;
+}
+.cm-post:last-child { border-bottom: none; padding-bottom: 0; }
+
+.cm-post-head { display: flex; align-items: center; gap: 10px; }
+.cm-post-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cm-post-name { font-size: 13px; font-weight: 700; color: #3b1a0e; }
+
+.cm-persona-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: #fff3e0;
+  color: #f57c00;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.cm-post-content { font-size: 13px; color: #555; line-height: 1.6; margin: 0; }
+
+.cm-img-placeholder {
+  background: #f0ede7;
+  border-radius: 8px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.cm-post-footer { display: flex; align-items: center; gap: 12px; }
+
+.cm-like-btn {
+  font-size: 12px;
+  color: #888;
+  background: none;
+  border: 1px solid #e0d5cf;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.cm-like-btn:hover { color: #c4603d; border-color: #c4603d; }
+
+.cm-time { font-size: 11px; color: #aaa; }
+
+.cm-share-label { font-size: 12px; color: #888; margin: 0; }
+
+.cm-stats { display: flex; flex-direction: column; gap: 10px; }
+
+.cm-stat-row { display: flex; align-items: center; gap: 10px; }
+
+.cm-stat-label { font-size: 12px; color: #555; width: 80px; flex-shrink: 0; }
+
+.cm-stat-count { font-size: 12px; color: #888; flex-shrink: 0; width: 30px; text-align: right; }
+
+.cm-cert-label { font-size: 12px; color: #888; margin: 0 0 8px; }
+
+.cm-cert-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.cm-cert-tag {
+  font-size: 11px;
+  font-weight: 600;
+  background: #fdf5f1;
+  color: #c4603d;
+  padding: 4px 10px;
+  border-radius: 20px;
+}

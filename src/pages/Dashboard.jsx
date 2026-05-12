@@ -53,6 +53,26 @@ const MISSION_LOGS = [
   { title: '자격증 문제 5개', status: '진행 중', done: false },
 ]
 
+const FEED_POSTS = [
+  { avatar: '김A', name: '문과 출신 데이터 전향 중', persona: true, content: 'ADsP 오늘 모의고사 3회 풀었어요. 데이터 분석 기획 화면이 계속 헷갈리지만 조금씩 나아지고 있어요!', hasImage: true, likes: 12, time: '10분 전' },
+  { avatar: '이B', name: '비전공자 SQL 독학 중', persona: true, content: '오늘 배운 것: GROUP BY 절과 HAVING 절의 차이, 드디어 이해했다!', hasImage: false, likes: 15, time: '32분 전' },
+  { avatar: '방KC', name: '경영학 출신 분석 전향', persona: false, content: '채용공고 5개 정독 완료. 공통적으로 SQL과 Python 기초를 요구하는군. 다음 주부터 Python 시작!', hasImage: false, likes: 3, time: '12시간 전' },
+]
+
+const GROUP_STATS = [
+  { label: '데이터 분석', count: 34, pct: 90 },
+  { label: '자격증 공부', count: 27, pct: 70 },
+  { label: '채용공고 탐색', count: 21, pct: 55 },
+  { label: '자기소개서', count: 14, pct: 37 },
+]
+
+const CERT_TAGS = [
+  { name: 'ADsP', count: 35 },
+  { name: 'SQLD', count: 28 },
+  { name: '정처기', count: 27 },
+  { name: 'IRP', count: 11 },
+]
+
 function CircleProgress({ pct }) {
   const r = 40
   const circ = 2 * Math.PI * r
@@ -187,6 +207,95 @@ function MissionSection() {
   )
 }
 
+function CommunitySection() {
+  const [shareText, setShareText] = useState('')
+
+  return (
+    <div className="db-content">
+      <div>
+        <h2 className="db-welcome">커뮤니티</h2>
+        <p className="cm-subtitle">유사 페르소나 그룹의 실시간 인증 피드입니다</p>
+      </div>
+
+      <div className="ms-layout">
+        {/* Left - 실시간 피드 */}
+        <div className="ms-left">
+          <div className="ms-card">
+            <div className="cm-feed-header">
+              <p className="ms-card-title">실시간 피드</p>
+              <span className="cm-live-badge">+ 127명 참여중</span>
+            </div>
+            <div className="cm-posts">
+              {FEED_POSTS.map((post, i) => (
+                <div key={i} className="cm-post">
+                  <div className="cm-post-head">
+                    <div className="db-avatar">{post.avatar}</div>
+                    <div className="cm-post-info">
+                      <span className="cm-post-name">{post.name}</span>
+                      {post.persona && <span className="cm-persona-badge">우리 페르소나</span>}
+                    </div>
+                  </div>
+                  <p className="cm-post-content">{post.content}</p>
+                  {post.hasImage && <div className="cm-img-placeholder">인증 사진</div>}
+                  <div className="cm-post-footer">
+                    <button className="cm-like-btn">좋아요 {post.likes}</button>
+                    <span className="cm-time">{post.time}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className="db-more-btn">피드 더 보기</button>
+          </div>
+        </div>
+
+        {/* Right */}
+        <div className="ms-right">
+          {/* 나도 인증하기 */}
+          <div className="ms-card">
+            <p className="ms-card-title">나도 인증하기</p>
+            <p className="cm-share-label">오늘의 미션 완료 내용:</p>
+            <textarea
+              className="ms-textarea"
+              placeholder="오늘 어떤 미션을 완료했나요? 자유롭게 공유해보세요!"
+              value={shareText}
+              onChange={(e) => setShareText(e.target.value)}
+              rows={4}
+            />
+            <div className="ms-mission-actions">
+              <button className="ms-btn-outline">인증 사진</button>
+              <button className="ms-btn-primary">피드에 공유</button>
+            </div>
+          </div>
+
+          {/* 그룹 통계 */}
+          <div className="ms-card">
+            <p className="ms-card-title">그룹 통계</p>
+            <div className="cm-stats">
+              {GROUP_STATS.map((s, i) => (
+                <div key={i} className="cm-stat-row">
+                  <span className="cm-stat-label">{s.label}</span>
+                  <div className="db-cert-bar-wrap" style={{ flex: 1 }}>
+                    <div className="db-cert-bar" style={{ width: `${s.pct}%` }} />
+                  </div>
+                  <span className="cm-stat-count">{s.count}명</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <p className="cm-cert-label">가장 많이 공부하는 자격증:</p>
+              <div className="cm-cert-tags">
+                {CERT_TAGS.map((t, i) => (
+                  <span key={i} className="cm-cert-tag">{t.name} {t.count}명</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function PasswordSection() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
@@ -286,7 +395,7 @@ export default function Dashboard() {
           {activeNav === 'experience' && <div className="db-content"><ExperienceInput /></div>}
           {activeNav === 'roadmap' && <div className="db-content"><CertRoadmap /></div>}
           {activeNav === 'mission' && <MissionSection />}
-          {activeNav === 'community' && <div className="db-content"><p style={{color:'#aaa',padding:'40px 0',textAlign:'center'}}>커뮤니티 (준비 중)</p></div>}
+          {activeNav === 'community' && <CommunitySection />}
           {activeNav === 'report' && <div className="db-content"><GrowthReport /></div>}
           {activeNav !== 'password' && activeNav !== 'experience' && activeNav !== 'roadmap' && activeNav !== 'mission' && activeNav !== 'community' && activeNav !== 'report' && <div className="db-content">
             <h2 className="db-welcome">안녕하세요, 김지현 님</h2>
