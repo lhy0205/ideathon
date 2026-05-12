@@ -169,7 +169,7 @@ export default function MyPage() {
                   </div>
                 ))}
               </div>
-              <button className="mp-add-btn">+ 새 경험 추가</button>
+              <button className="mp-add-btn" onClick={() => navigate('/dashboard?tab=experience')}>+ 새 경험 추가</button>
             </div>
 
             {/* Account settings */}
