@@ -38,10 +38,22 @@ const SETTINGS = [
 export default function MyPage() {
   const navigate = useNavigate()
   const [activeNav, setActiveNav] = useState('mypage')
+  const [showModal, setShowModal] = useState(false)
+  const [form, setForm] = useState({
+    name: '김지현',
+    email: 'example@email.com',
+    school: '한국대학교 / 경영학과',
+    startYear: '2024',
+    startMonth: '08',
+  })
 
   const handleNav = (item) => {
     setActiveNav(item.key)
     if (item.path) navigate(item.path)
+  }
+
+  const handleFormChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
   }
 
   return (
@@ -101,7 +113,7 @@ export default function MyPage() {
                   <span className="mp-tag">공백기 5개월</span>
                 </div>
               </div>
-              <button className="mp-edit-btn">프로필 수정</button>
+              <button className="mp-edit-btn" onClick={() => setShowModal(true)}>프로필 수정</button>
             </div>
 
             {/* Badges card */}
@@ -184,6 +196,74 @@ export default function MyPage() {
         </div>
       </div>
       </div>
+
+      {/* 프로필 수정 모달 */}
+      {showModal && (
+        <div className="mp-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="mp-modal" onClick={e => e.stopPropagation()}>
+            <div className="mp-modal-header">
+              <span className="mp-modal-title">프로필 수정</span>
+              <button className="mp-modal-close" onClick={() => setShowModal(false)}>✕</button>
+            </div>
+
+            <div className="mp-modal-avatar-wrap">
+              <div className="mp-modal-avatar">김지</div>
+              <div className="mp-modal-camera">📷</div>
+            </div>
+
+            <div className="mp-modal-form">
+              <label className="mp-modal-label">이름</label>
+              <input
+                className="mp-modal-input"
+                name="name"
+                value={form.name}
+                onChange={handleFormChange}
+              />
+
+              <label className="mp-modal-label">이메일</label>
+              <input
+                className="mp-modal-input"
+                name="email"
+                value={form.email}
+                onChange={handleFormChange}
+              />
+
+              <label className="mp-modal-label">학교/전공</label>
+              <input
+                className="mp-modal-input"
+                name="school"
+                value={form.school}
+                onChange={handleFormChange}
+              />
+
+              <label className="mp-modal-label">공백기 시작일</label>
+              <div className="mp-modal-date-row">
+                <input
+                  className="mp-modal-input mp-modal-date-input"
+                  name="startYear"
+                  value={form.startYear}
+                  onChange={handleFormChange}
+                  placeholder="YYYY"
+                />
+                <span className="mp-modal-date-sep">년</span>
+                <input
+                  className="mp-modal-input mp-modal-date-input"
+                  name="startMonth"
+                  value={form.startMonth}
+                  onChange={handleFormChange}
+                  placeholder="MM"
+                />
+                <span className="mp-modal-date-sep">월</span>
+              </div>
+            </div>
+
+            <div className="mp-modal-btns">
+              <button className="mp-modal-cancel" onClick={() => setShowModal(false)}>취소</button>
+              <button className="mp-modal-save" onClick={() => setShowModal(false)}>✓ 저장</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
