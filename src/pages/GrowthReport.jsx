@@ -154,7 +154,7 @@ const RADAR_LABELS = ['데이터분석', '의사소통', '문제해결', '기획
 const RADAR_VALUES = [0.82, 0.65, 0.74, 0.78, 0.88]
 
 function RadarChart() {
-  const cx = 120, cy = 120, r = 80
+  const cx = 160, cy = 165, r = 100
   const n = RADAR_LABELS.length
   const angle = (i) => (Math.PI * 2 * i) / n - Math.PI / 2
 
@@ -169,7 +169,7 @@ function RadarChart() {
   const dataPath = dataPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z'
 
   return (
-    <svg width="240" height="240" viewBox="0 0 240 240">
+    <svg width="100%" height="auto" viewBox="0 0 320 310" style={{ display: 'block' }}>
       {/* 그리드 */}
       {gridLevels.map((level) => {
         const pts = Array.from({ length: n }, (_, i) => toXY(level, i))
@@ -193,10 +193,10 @@ function RadarChart() {
 
       {/* 라벨 */}
       {Array.from({ length: n }, (_, i) => {
-        const pt = toXY(1.28, i)
+        const pt = toXY(1.32, i)
         return (
           <text key={i} x={pt.x} y={pt.y} textAnchor="middle" dominantBaseline="middle"
-            fontSize="11" fill="#555" fontWeight="600">
+            fontSize="13" fill="#555" fontWeight="600">
             {RADAR_LABELS[i]}
           </text>
         )
