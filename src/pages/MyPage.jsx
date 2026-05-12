@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { key: 'mypage', label: '마이페이지', path: '/mypage' },
   { key: 'password', label: '비밀번호 변경', path: null },
   { key: 'experience', label: '경험 입력', path: null },
-  { key: 'mapping', label: '경험 매핑 결과', path: null },
+  { key: 'mapping', label: '경험 매핑 결과', path: '/mapping' },
   { key: 'roadmap', label: '자격증 로드맵', path: null },
   { key: 'survival', label: '생존 진단', path: null },
   { key: 'mission', label: '오늘의 미션', path: null },

@@ -3,6 +3,7 @@ import Home from './pages/Home'
 import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
 import MyPage from './pages/MyPage'
+import ExperienceMapping from './pages/ExperienceMapping'
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
         <Route path="/login" element={<Auth />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/mypage" element={<MyPage />} />
+        <Route path="/mapping" element={<ExperienceMapping />} />
       </Routes>
     </BrowserRouter>
   )
