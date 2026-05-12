@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ExperienceInput from './ExperienceInput'
 import CertRoadmap from './CertRoadmap'
@@ -273,6 +274,8 @@ export default function Dashboard() {
                 : activeNav === 'password' ? '비밀번호 변경'
                 : activeNav === 'roadmap' ? '자격증 로드맵'
                 : activeNav === 'mission' ? '오늘의 미션'
+                : activeNav === 'community' ? '커뮤니티'
+                : activeNav === 'report' ? '성장 리포트'
                 : '홈 대시보드'}
             </span>
             <span className="db-user">· 김지</span>
@@ -282,7 +285,9 @@ export default function Dashboard() {
           {activeNav === 'experience' && <div className="db-content"><ExperienceInput /></div>}
           {activeNav === 'roadmap' && <div className="db-content"><CertRoadmap /></div>}
           {activeNav === 'mission' && <MissionSection />}
-          {activeNav !== 'password' && activeNav !== 'experience' && activeNav !== 'roadmap' && activeNav !== 'mission' && <div className="db-content">
+          {activeNav === 'community' && <div className="db-content"><p style={{color:'#aaa',padding:'40px 0',textAlign:'center'}}>커뮤니티 (준비 중)</p></div>}
+          {activeNav === 'report' && <div className="db-content"><p style={{color:'#aaa',padding:'40px 0',textAlign:'center'}}>성장 리포트 (준비 중)</p></div>}
+          {activeNav !== 'password' && activeNav !== 'experience' && activeNav !== 'roadmap' && activeNav !== 'mission' && activeNav !== 'community' && activeNav !== 'report' && <div className="db-content">
             <h2 className="db-welcome">안녕하세요, 김지현 님</h2>
 
             {/* Stats */}
