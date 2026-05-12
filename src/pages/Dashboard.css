@@ -371,3 +371,183 @@
 .pw-link:hover {
   color: #C75B3A;
 }
+
+/* ─── 오늘의 미션 ─── */
+.ms-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ms-edit-btn {
+  font-size: 12px;
+  padding: 6px 14px;
+  background: none;
+  border: 1px solid #e0d5cf;
+  border-radius: 6px;
+  color: #888;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.ms-edit-btn:hover { color: #c4603d; border-color: #c4603d; }
+
+.ms-layout {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.ms-left, .ms-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ms-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ms-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #3b1a0e;
+  margin: 0;
+}
+
+/* 기분 선택 */
+.ms-moods {
+  display: flex;
+  gap: 12px;
+}
+
+.ms-mood-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  background: #fdf9f7;
+  border: 1.5px solid #f0ede7;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.ms-mood-btn.active { border-color: #c4603d; background: #fff5f2; }
+.ms-mood-icon { font-size: 24px; }
+.ms-mood-label { font-size: 11px; color: #888; font-weight: 600; }
+
+/* AI 추천 미션 */
+.ms-ai-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ms-participant { font-size: 12px; color: #888; }
+.ms-mission-title { font-size: 16px; font-weight: 700; color: #3b1a0e; margin: 0; }
+.ms-mission-desc { font-size: 13px; color: #888; margin: 0; line-height: 1.6; }
+
+.ms-textarea {
+  width: 100%;
+  padding: 12px;
+  font-size: 13px;
+  color: #555;
+  background: #fdf9f7;
+  border: 1px solid #f0ede7;
+  border-radius: 8px;
+  outline: none;
+  font-family: inherit;
+  resize: none;
+  box-sizing: border-box;
+  line-height: 1.6;
+}
+.ms-textarea:focus { border-color: #c4603d; }
+
+.ms-mission-actions { display: flex; gap: 10px; }
+
+.ms-btn-outline {
+  flex: 1;
+  padding: 10px;
+  background: none;
+  border: 1px solid #e0d5cf;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s, color 0.2s;
+}
+.ms-btn-outline:hover { border-color: #c4603d; color: #c4603d; }
+
+.ms-btn-primary {
+  flex: 2;
+  padding: 10px;
+  background: #c4603d;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+.ms-btn-primary:hover { background: #a84a2c; }
+
+/* 추가 미션 */
+.ms-extra-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ms-extra-item {
+  background: #fdf9f7;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ms-extra-title { font-size: 13px; font-weight: 700; color: #3b1a0e; margin: 0; }
+.ms-extra-meta { font-size: 11px; color: #888; margin: 0; }
+.ms-extra-count { font-size: 12px; font-weight: 700; color: #c4603d; margin-top: 4px; }
+
+/* 나의 미션 현황 */
+.ms-status-card { border: 1.5px solid #c4603d; }
+.ms-status-stats { display: flex; justify-content: space-around; }
+.ms-status-stat { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ms-status-num { font-size: 22px; font-weight: 800; color: #c4603d; }
+.ms-status-label { font-size: 11px; color: #888; }
+
+/* 인증 로그 */
+.ms-logs { display: flex; flex-direction: column; gap: 10px; }
+.ms-log-item { display: flex; align-items: center; gap: 10px; }
+.ms-log-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f0ede7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #888;
+  flex-shrink: 0;
+}
+.ms-log-title { flex: 1; font-size: 13px; font-weight: 600; color: #3b1a0e; margin: 0; }
+.ms-log-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+.ms-log-badge.done { background: #e8f5e9; color: #388e3c; }
+.ms-log-badge.ing { background: #fff3e0; color: #f57c00; }
