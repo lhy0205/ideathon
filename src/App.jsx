@@ -1,18 +1,14 @@
-import Register from './Register'
-import './App.css'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Home from './pages/Home'
+import Auth from './pages/Auth'
 
-function App() {
+export default function App() {
   return (
-    <div className="page-wrapper">
-      <header className="page-header">
-        <span className="header-brand">Pause to Pass</span>
-        <span className="header-tagline"> - 나의 오늘이 내일의 발판이 되지 못하는 불안</span>
-      </header>
-      <main className="page-main">
-        <Register />
-      </main>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Auth />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
-
-export default App
