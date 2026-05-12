@@ -194,8 +194,9 @@ function RadarChart() {
       {/* 라벨 */}
       {Array.from({ length: n }, (_, i) => {
         const pt = toXY(1.32, i)
+        const yOffset = i === 0 ? 14 : 0
         return (
-          <text key={i} x={pt.x} y={pt.y} textAnchor="middle" dominantBaseline="middle"
+          <text key={i} x={pt.x} y={pt.y + yOffset} textAnchor="middle" dominantBaseline="middle"
             fontSize="13" fill="#555" fontWeight="600">
             {RADAR_LABELS[i]}
           </text>
