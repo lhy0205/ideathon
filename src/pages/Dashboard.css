@@ -241,3 +241,133 @@
 .db-month-bar-wrap { flex: 1; height: 10px; background: #f0ede7; border-radius: 10px; overflow: hidden; }
 .db-month-bar { height: 100%; background: #c4603d; border-radius: 10px; }
 .db-month-pct { font-size: 14px; font-weight: 700; color: #c4603d; flex-shrink: 0; }
+
+/* ─── 비밀번호 변경 카드 ─── */
+.pw-card {
+  width: 440px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.07);
+  overflow: hidden;
+  margin: 60px auto;
+}
+
+.pw-card-header {
+  background: linear-gradient(135deg, #FDF0E9 0%, #FAE5D8 100%);
+  padding: 28px 32px 20px;
+  text-align: center;
+  border-bottom: 1px solid #E8D5CB;
+}
+
+.pw-brand {
+  font-size: 22px;
+  font-weight: 800;
+  color: #2D2017;
+  margin-bottom: 4px;
+}
+
+.pw-brand-sub {
+  font-size: 12px;
+  color: #8C6E5D;
+}
+
+.pw-tabs {
+  display: flex;
+  border-bottom: 1px solid #E8D5CB;
+}
+
+.pw-tab {
+  flex: 1;
+  padding: 12px 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  color: #8C6E5D;
+  border-bottom: 2px solid transparent;
+}
+
+.pw-tab.active {
+  color: #C75B3A;
+  border-bottom-color: #C75B3A;
+}
+
+.pw-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px 32px 32px;
+}
+
+.pw-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pw-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8C6E5D;
+}
+
+.pw-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #2D2017;
+  background: #fff;
+  border: 1px solid #E8D5CB;
+  border-radius: 8px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.pw-input:focus {
+  border-color: #C75B3A;
+  box-shadow: 0 0 0 3px rgba(199,91,58,0.1);
+}
+
+.pw-success {
+  background: #EEF7EE;
+  color: #2D7A2D;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #C2E4C2;
+  text-align: center;
+}
+
+.pw-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: #C75B3A;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.pw-btn:hover {
+  background: #A84A2C;
+}
+
+.pw-footer {
+  text-align: center;
+  font-size: 13px;
+  color: #8C6E5D;
+}
+
+.pw-link {
+  cursor: pointer;
+  color: #8C6E5D;
+}
+
+.pw-link:hover {
+  color: #C75B3A;
+}

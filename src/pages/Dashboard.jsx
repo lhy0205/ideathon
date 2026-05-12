@@ -54,6 +54,49 @@ function CircleProgress({ pct }) {
   )
 }
 
+function PasswordSection() {
+  const [email, setEmail] = useState('')
+  const [sent, setSent] = useState(false)
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (email) setSent(true)
+  }
+
+  return (
+    <div className="db-content">
+      <div className="pw-card">
+        <div className="pw-card-header">
+          <div className="pw-brand">Pause to Pass</div>
+          <div className="pw-brand-sub">공백기를 합격의 자산으로</div>
+        </div>
+        <div className="pw-tabs">
+          <span className="pw-tab active">비밀번호 변경</span>
+        </div>
+        <form className="pw-form" onSubmit={handleSubmit}>
+          <div className="pw-field">
+            <label className="pw-label">가입 이메일</label>
+            <input
+              type="email"
+              className="pw-input"
+              placeholder="example@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          {sent && (
+            <div className="pw-success">✓ 재설정 메일이 발송되었습니다.</div>
+          )}
+          <button type="submit" className="pw-btn">재설정 메일 보내기 ✉</button>
+          <div className="pw-footer">
+            <span className="pw-link" onClick={() => setSent(false)}>← 로그인으로 돌아가기</span>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const [activeNav, setActiveNav] = useState('home')
   const navigate = useNavigate()
@@ -97,7 +140,8 @@ export default function Dashboard() {
             <span className="db-user">· 김지</span>
           </div>
 
-          <div className="db-content">
+          {activeNav === 'password' && <PasswordSection />}
+          {activeNav !== 'password' && <div className="db-content">
             <h2 className="db-welcome">안녕하세요, 김지현 님</h2>
 
             {/* Stats */}
@@ -208,7 +252,7 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-          </div>
+          </div>}
         </main>
       </div>
     </div>
