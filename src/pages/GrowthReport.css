@@ -115,6 +115,222 @@
   border-radius: 2px;
 }
 
+/* 자격증 모달 */
+.gr-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.gr-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 560px;
+  max-width: 90vw;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+.gr-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.gr-modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+.gr-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #e0d4ce;
+  background: #fff;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gr-modal-close:hover { background: #fdf5f1; color: #c4603d; }
+.gr-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gr-cert-item {
+  background: #f9f9f9;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid #efefef;
+}
+.gr-cert-item.preparing {
+  background: #fff5f2;
+  border-color: #f5c4b0;
+}
+.gr-cert-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.gr-cert-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+.gr-cert-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.gr-cert-badge.pass {
+  background: #e6f4ec;
+  color: #2e7d52;
+}
+.gr-cert-badge.ready {
+  background: #fef9e5;
+  color: #a07800;
+}
+.gr-cert-info {
+  font-size: 12px;
+  color: #777;
+}
+.gr-cert-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.gr-cert-progress-label {
+  font-size: 12px;
+  color: #999;
+  white-space: nowrap;
+}
+.gr-cert-bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: #efefef;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.gr-cert-bar {
+  height: 100%;
+  border-radius: 4px;
+}
+.gr-cert-bar.done { background: #2e7d52; }
+.gr-cert-bar.ing  { background: #c4603d; }
+.gr-cert-progress-end {
+  font-size: 12px;
+  color: #999;
+  white-space: nowrap;
+}
+.gr-cert-add-btn {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e0d4ce;
+  border-radius: 8px;
+  background: #fff;
+  color: #555;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.gr-cert-add-btn:hover { background: #fdf5f1; color: #c4603d; }
+
+/* PDF 내보내기 모달 */
+.gr-pdf-icon-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 4px;
+}
+.gr-pdf-subtitle {
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+  margin: 0 0 4px;
+}
+.gr-pdf-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gr-pdf-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1.5px solid #efefef;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.gr-pdf-option.selected {
+  border-color: #c4603d;
+  background: #fff8f6;
+}
+.gr-pdf-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #c4603d;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.gr-pdf-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gr-pdf-option-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+.gr-pdf-option-desc {
+  font-size: 12px;
+  color: #999;
+}
+.gr-pdf-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.gr-pdf-cancel {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #e0d4ce;
+  border-radius: 8px;
+  background: #fff;
+  color: #555;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.gr-pdf-cancel:hover { background: #fdf5f1; }
+.gr-pdf-download {
+  flex: 2;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #c4603d;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.gr-pdf-download:hover { background: #a84f30; }
+
 /* 하단 3카드 */
 .gr-bottom-row {
   align-items: stretch;
