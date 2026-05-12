@@ -3,16 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import './MyPage.css'
 
 const NAV_ITEMS = [
-  { key: 'home', label: '홈 대시보드', icon: '⊞', path: '/dashboard' },
-  { key: 'mypage', label: '마이페이지', icon: '👤', path: '/mypage' },
-  { key: 'password', label: '비밀번호 변경', icon: '🔒', path: null },
-  { key: 'experience', label: '경험 입력', icon: '✏️', path: null },
-  { key: 'mapping', label: '경험 매핑 결과', icon: '🔗', path: null },
-  { key: 'roadmap', label: '자격증 로드맵', icon: '📋', path: null },
-  { key: 'survival', label: '생존 진단', icon: '🧬', path: null },
-  { key: 'mission', label: '오늘의 미션', icon: '⚡', path: null },
-  { key: 'community', label: '커뮤니티', icon: '👥', path: null },
-  { key: 'report', label: '성장 리포트', icon: '📄', path: null },
+  { key: 'home', label: '홈 대시보드', path: '/dashboard' },
+  { key: 'mypage', label: '마이페이지', path: '/mypage' },
+  { key: 'password', label: '비밀번호 변경', path: null },
+  { key: 'experience', label: '경험 입력', path: null },
+  { key: 'mapping', label: '경험 매핑 결과', path: null },
+  { key: 'roadmap', label: '자격증 로드맵', path: null },
+  { key: 'survival', label: '생존 진단', path: null },
+  { key: 'mission', label: '오늘의 미션', path: null },
+  { key: 'community', label: '커뮤니티', path: null },
+  { key: 'report', label: '성장 리포트', path: null },
 ]
 
 const BADGES = [
@@ -48,14 +48,6 @@ export default function MyPage() {
     <div className="mp-root">
       {/* Sidebar */}
       <aside className="mp-sidebar">
-        <div className="mp-logo">
-          <div className="mp-logo-icon">P</div>
-          <div>
-            <p className="mp-logo-title">Pause to Pass</p>
-            <p className="mp-logo-sub">공백기 합격의 자산으로</p>
-          </div>
-        </div>
-
         <p className="mp-pages-label">PAGES</p>
         <nav className="mp-nav">
           {NAV_ITEMS.map(item => (
@@ -64,24 +56,13 @@ export default function MyPage() {
               className={`mp-nav-item ${activeNav === item.key ? 'active' : ''}`}
               onClick={() => handleNav(item)}
             >
-              <span className="mp-nav-icon">{item.icon}</span>
               {item.label}
             </button>
           ))}
-          <hr className="mp-divider" />
-          <button className="mp-nav-item" onClick={() => navigate('/login')}>
-            <span className="mp-nav-icon">🚪</span>
-            로그아웃
-          </button>
         </nav>
-
-        <div className="mp-user-card">
-          <div className="mp-user-avatar">김지</div>
-          <div>
-            <p className="mp-user-name">김지현</p>
-            <p className="mp-user-sub">공백기 5개월째</p>
-          </div>
-        </div>
+        <button className="mp-logout" onClick={() => navigate('/login')}>
+          로그아웃
+        </button>
       </aside>
 
       {/* Main */}
