@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ExperienceInput from './ExperienceInput'
+import CertRoadmap from './CertRoadmap'
 import './Dashboard.css'
 
 const NAV_ITEMS = [
@@ -140,6 +141,7 @@ export default function Dashboard() {
             <span className="db-breadcrumb">
               {activeNav === 'experience' ? '경험 입력'
                 : activeNav === 'password' ? '비밀번호 변경'
+                : activeNav === 'roadmap' ? '자격증 로드맵'
                 : '홈 대시보드'}
             </span>
             <span className="db-user">· 김지</span>
@@ -147,7 +149,8 @@ export default function Dashboard() {
 
           {activeNav === 'password' && <PasswordSection />}
           {activeNav === 'experience' && <div className="db-content"><ExperienceInput /></div>}
-          {activeNav !== 'password' && activeNav !== 'experience' && <div className="db-content">
+          {activeNav === 'roadmap' && <div className="db-content"><CertRoadmap /></div>}
+          {activeNav !== 'password' && activeNav !== 'experience' && activeNav !== 'roadmap' && <div className="db-content">
             <h2 className="db-welcome">안녕하세요, 김지현 님</h2>
 
             {/* Stats */}
