@@ -73,7 +73,7 @@ function RadarChart() {
   )
 }
 
-export default function GrowthReport() {
+export default function GrowthReport({ onNavigate }) {
   return (
     <div className="gr-root">
       {/* 페이지 타이틀 */}
@@ -129,7 +129,7 @@ export default function GrowthReport() {
           <p className="gr-card-title">STAR 자기소개서</p>
           <p className="gr-bottom-desc">7개 NCS 경험을 기업별 직무기술서에 맞춰 자동 변환한 자기소개서 초안 모음</p>
           <p className="gr-bottom-accent">7개 초안 · 마지막 업데이트 2일 전</p>
-          <button className="gr-view-btn">보기 →</button>
+          <button className="gr-view-btn" onClick={() => onNavigate?.('mapping')}>보기 →</button>
         </div>
 
         {/* 자격증 증빙 */}

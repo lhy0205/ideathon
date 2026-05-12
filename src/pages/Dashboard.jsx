@@ -149,7 +149,7 @@ export default function Dashboard() {
 
           {activeNav === 'password' && <PasswordSection />}
           {activeNav === 'experience' && <div className="db-content"><ExperienceInput /></div>}
-          {activeNav === 'report' && <div className="db-content"><GrowthReport /></div>}
+          {activeNav === 'report' && <div className="db-content"><GrowthReport onNavigate={setActiveNav} /></div>}
           {activeNav !== 'password' && activeNav !== 'experience' && activeNav !== 'report' && <div className="db-content">
             <h2 className="db-welcome">안녕하세요, 김지현 님</h2>
 
