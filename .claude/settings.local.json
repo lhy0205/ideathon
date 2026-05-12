@@ -13,7 +13,12 @@
       "Read(//c/Users/leehy/Desktop/claude-buddy/**)",
       "Bash(bun install *)",
       "PowerShell(powershell -c \"irm bun.sh/install.ps1 | iex\")",
-      "mcp__claude-buddy__buddy_show"
+      "mcp__claude-buddy__buddy_show",
+      "Bash(git log *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }
