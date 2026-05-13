@@ -45,7 +45,7 @@ export default function Login() {
 
         {/* tab content */}
         <div className="login-body">
-          {tab === 'login' && <LoginForm />}
+          {tab === 'login' && <LoginForm onGoRegister={() => setTab('register')} />}
           {tab === 'register' && <RegisterForm />}
           {tab === 'reset' && <ResetPasswordForm onGoLogin={() => setTab('login')} />}
         </div>
@@ -54,35 +54,61 @@ export default function Login() {
   )
 }
 
-function LoginForm() {
+function LoginForm({ onGoRegister }) {
   const navigate = useNavigate()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const { api, saveTokens } = await import('../api')
+      const data = await api.login(email, password)
+      saveTokens(data.access_token, data.refresh_token)
+      navigate('/dashboard')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <form className="lf" onSubmit={e => e.preventDefault()}>
+    <form className="lf" onSubmit={handleSubmit}>
       <div className="lf-field">
         <label className="lf-label">아이디 (이메일)</label>
-        <input type="email" className="lf-input" placeholder="example@email.com" />
+        <input type="email" className="lf-input" placeholder="example@email.com"
+          value={email} onChange={e => setEmail(e.target.value)} required />
       </div>
       <div className="lf-field">
         <label className="lf-label">비밀번호</label>
-        <input type="password" className="lf-input" placeholder="비밀번호 입력" />
+        <input type="password" className="lf-input" placeholder="비밀번호 입력"
+          value={password} onChange={e => setPassword(e.target.value)} required />
         <span className="lf-find">비밀번호 찾기</span>
       </div>
-      <button type="submit" className="lf-btn">로그인</button>
+      {error && <div style={{ color: '#e53e3e', fontSize: '13px', textAlign: 'center' }}>{error}</div>}
+      <button type="submit" className="lf-btn" disabled={loading}>
+        {loading ? '로그인 중...' : '로그인'}
+      </button>
 
       <div className="lf-divider"><span>또는</span></div>
 
       <div className="lf-social">
-        <button type="button" className="social-btn kakao">카카오</button>
-        <button type="button" className="social-btn naver">네이버</button>
-        <button type="button" className="social-btn google">구글</button>
+        <button type="button" className="social-btn kakao"
+          onClick={() => window.location.href = 'http://127.0.0.1:8000/auth/kakao'}>카카오</button>
+        <button type="button" className="social-btn naver"
+          onClick={() => window.location.href = 'http://127.0.0.1:8000/auth/naver'}>네이버</button>
+        <button type="button" className="social-btn google"
+          onClick={() => window.location.href = 'http://127.0.0.1:8000/auth/google'}>구글</button>
       </div>
 
       <div className="lf-footer">
         계정이 없으신가요?{' '}
-        <span className="lf-link" onClick={() => navigate('/login', { state: { tab: 'register' } })}>
-          회원가입
-        </span>
+        <span className="lf-link" onClick={onGoRegister}>회원가입</span>
       </div>
     </form>
   )
