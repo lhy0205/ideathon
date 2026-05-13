@@ -46,6 +46,8 @@ export default function ExperienceInput() {
       })
       setResult(data)
       setStep(2)
+      localStorage.setItem('ncs_result', JSON.stringify(data))
+      localStorage.setItem('ncs_experience', JSON.stringify({ title: form.title, type: selectedType, content: form.content }))
     } catch (e) {
       setError('AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.')
       setStep(0)
