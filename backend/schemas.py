@@ -134,3 +134,24 @@ class NotificationResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class SeniorPersonaResponse(BaseModel):
+    id: int
+    user_id: str
+    user_name: str
+    avatar_label: Optional[str]
+    avatar_color: Optional[str]
+    department: Optional[str]
+    gap_period: Optional[str]
+    certifications: Optional[str]
+    employment_field: str
+    employment_company_type: Optional[str]
+    career_path_summary: Optional[str]
+    similarity_score: Optional[float]
+    is_accepted: bool
+    match_note: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

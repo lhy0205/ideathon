@@ -1,0 +1,58 @@
+CREATE TABLE IF NOT EXISTS senior_personas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id VARCHAR(100) NOT NULL UNIQUE,
+  user_name VARCHAR(100) NOT NULL,
+  avatar_label VARCHAR(20) NULL,
+  avatar_color VARCHAR(20) NULL,
+  department VARCHAR(100) NULL,
+  gap_period VARCHAR(50) NULL,
+  certifications TEXT NULL,
+  employment_field VARCHAR(150) NOT NULL,
+  employment_company_type VARCHAR(150) NULL,
+  career_path_summary VARCHAR(300) NULL,
+  similarity_score FLOAT NULL,
+  is_accepted BOOLEAN NOT NULL DEFAULT TRUE,
+  match_note TEXT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX ix_senior_personas_user_id (user_id),
+  INDEX ix_senior_personas_similarity_score (similarity_score)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+INSERT INTO senior_personas (
+  user_id,
+  user_name,
+  avatar_label,
+  avatar_color,
+  department,
+  gap_period,
+  certifications,
+  employment_field,
+  employment_company_type,
+  career_path_summary,
+  similarity_score,
+  is_accepted,
+  match_note
+) VALUES
+('senior_kim_a', '김A', '김A', '#f0ede7', '문과', '7개월', 'ADsP, SQLD', '데이터 분석', '중견기업', '문과 -> 데이터 분석 취업', 94, TRUE, 'KNN 기준 가장 유사한 합격자'),
+('senior_lee_b', '이B', '이B', '#e8f0f7', '비전공자', '6개월', '정보처리기사, SQLD', '백엔드 개발', 'SI기업', '비전공자 SQL 독학 -> SI기업', 89, TRUE, 'SQL 역량 중심 전환 사례'),
+('senior_park_c', '박C', '박C', '#f0f7ee', '경영학', '5개월', 'ADsP', '서비스 기획', '스타트업', '경영학 -> 스타트업 기획', 81, TRUE, '기획 직무 전환 사례'),
+('senior_choi_d', '최D', '최D', '#fff2dd', '통계학', '4개월', '빅데이터분석기사, SQLD', '데이터 엔지니어링', '대기업', '통계학 -> 데이터 엔지니어링', 86, TRUE, '통계 기반 데이터 직무 합격 사례'),
+('senior_jung_e', '정E', '정E', '#edf3ff', '컴퓨터공학', '3개월', '정보처리기사, AWS SAA', '클라우드 인프라', 'IT서비스', '컴퓨터공학 -> 클라우드 인프라', 78, TRUE, '자격증과 프로젝트를 함께 준비한 사례'),
+('senior_han_f', '한F', '한F', '#f7edf5', '디자인', '8개월', 'GTQ, 웹디자인기능사', 'UI/UX 디자인', '에이전시', '디자인 -> UI/UX 디자인 취업', 73, TRUE, '포트폴리오 개선 중심 합격 사례'),
+('senior_oh_g', '오G', '오G', '#eaf7f2', '전자공학', '9개월', '정보처리기사, 리눅스마스터', '임베디드 개발', '제조기업', '전자공학 -> 임베디드 개발', 70, TRUE, '전공 프로젝트를 직무 경험으로 전환한 사례'),
+('senior_yoon_h', '윤H', '윤H', '#f5f1e8', '인문학', '10개월', 'SQLD, 컴퓨터활용능력 1급', 'CRM 마케팅', '커머스', '인문학 -> CRM 마케팅', 76, TRUE, '데이터 활용 마케팅 직무 전환 사례'),
+('senior_shin_i', '신I', '신I', '#eef0f8', '수학', '6개월', 'ADsP, 빅데이터분석기사', 'AI 모델링', 'AI 스타트업', '수학 -> AI 모델링', 84, TRUE, '수학적 강점을 머신러닝 프로젝트로 연결한 사례'),
+('senior_kang_j', '강J', '강J', '#f3f6e8', '경제학', '12개월', 'SQLD, 투자자산운용사', '핀테크 데이터 분석', '핀테크', '경제학 -> 핀테크 데이터 분석', 68, TRUE, '도메인 지식을 데이터 분석 강점으로 만든 사례')
+ON DUPLICATE KEY UPDATE
+  user_name = VALUES(user_name),
+  avatar_label = VALUES(avatar_label),
+  avatar_color = VALUES(avatar_color),
+  department = VALUES(department),
+  gap_period = VALUES(gap_period),
+  certifications = VALUES(certifications),
+  employment_field = VALUES(employment_field),
+  employment_company_type = VALUES(employment_company_type),
+  career_path_summary = VALUES(career_path_summary),
+  similarity_score = VALUES(similarity_score),
+  is_accepted = VALUES(is_accepted),
+  match_note = VALUES(match_note);

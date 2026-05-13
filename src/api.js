@@ -68,6 +68,9 @@ export const api = {
   // AI 분석
   analyzeExperience: (data) => request('POST', '/ai/analyze', data, false),
 
+  // Senior personas
+  getSeniorPersonas: (limit = 3) => request('GET', `/senior-personas/?limit=${limit}`, null, false),
+
   // PDF
   downloadReport: async (data) => {
     const res = await fetch(`${BASE_URL}/pdf/generate`, {
