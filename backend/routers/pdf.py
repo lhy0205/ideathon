@@ -1,75 +1,209 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
-from database import get_db
-from dependencies import get_current_user
-import models
+from pydantic import BaseModel
+from typing import Optional, List
 from io import BytesIO
 from datetime import datetime
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import os
 
 router = APIRouter(prefix="/pdf", tags=["pdf"])
 
-@router.get("/growth-report")
-def generate_growth_report(db: Session = Depends(get_db),
-                            current_user: models.User = Depends(get_current_user)):
-    experiences = db.query(models.Experience).filter(
-        models.Experience.user_id == current_user.id
-    ).all()
-    missions = db.query(models.Mission).filter(
-        models.Mission.user_id == current_user.id,
-        models.Mission.completed == True
-    ).all()
+ORANGE = colors.HexColor("#C75B3A")
+ORANGE_LIGHT = colors.HexColor("#FDF3EE")
+ORANGE_MID = colors.HexColor("#E8956C")
+GRAY = colors.HexColor("#555555")
+LIGHT_BORDER = colors.HexColor("#E8D5CB")
 
-    html = _build_report_html(current_user, experiences, missions)
+def _register_font() -> str:
+    candidates = [
+        "C:\\Windows\\Fonts\\malgun.ttf",
+        "C:\\Windows\\Fonts\\NanumGothic.ttf",
+        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+        "/System/Library/Fonts/AppleGothic.ttf",
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            try:
+                pdfmetrics.registerFont(TTFont("KR", path))
+                return "KR"
+            except Exception:
+                continue
+    return "Helvetica"
 
-    try:
-        from weasyprint import HTML
-        pdf_bytes = HTML(string=html).write_pdf()
-    except Exception:
-        return {"error": "weasyprint 설치 필요: pip install weasyprint"}
+FONT = _register_font()
 
+def _style(name, **kwargs) -> ParagraphStyle:
+    base = dict(fontName=FONT, fontSize=10, leading=14, textColor=colors.HexColor("#2D2017"))
+    base.update(kwargs)
+    return ParagraphStyle(name, **base)
+
+H1 = _style("h1", fontSize=20, leading=26, textColor=ORANGE, spaceAfter=4)
+H2 = _style("h2", fontSize=13, leading=18, textColor=ORANGE, spaceBefore=10, spaceAfter=4)
+BODY = _style("body", fontSize=9, leading=14, spaceAfter=2)
+SMALL = _style("small", fontSize=8, leading=12, textColor=GRAY)
+LABEL = _style("label", fontSize=8, leading=12, textColor=ORANGE)
+CELL = _style("cell", fontSize=8, leading=12)
+
+# ── Request schema ─────────────────────────────────────────────────────────────
+
+class NCSItem(BaseModel):
+    ncs_code: str = ""
+    unit_name: str = ""
+    level: int = 3
+    score: int = 75
+
+class CertItem(BaseModel):
+    name: str
+    status: str
+    exam_date: Optional[str] = ""
+    pass_date: Optional[str] = ""
+
+class PDFRequest(BaseModel):
+    user_name: Optional[str] = "사용자"
+    summary: Optional[str] = ""
+    ncs_items: Optional[List[NCSItem]] = []
+    star_drafts: Optional[List[str]] = []
+    certs: Optional[List[CertItem]] = []
+
+# ── Table helpers ──────────────────────────────────────────────────────────────
+
+def _ncs_table(items: List[NCSItem]):
+    if not items:
+        return Paragraph("NCS 역량 분석 결과가 없습니다.", SMALL)
+
+    header = ["NCS 코드", "역량명", "숙련도", "점수"]
+    rows = [header]
+    for it in items:
+        stars = "★" * it.level + "☆" * (5 - it.level)
+        rows.append([it.ncs_code or "-", it.unit_name or "-", stars, f"{it.score}점"])
+
+    t = Table(rows, colWidths=[35*mm, 75*mm, 30*mm, 25*mm])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), ORANGE_LIGHT),
+        ("TEXTCOLOR",  (0, 0), (-1, 0), ORANGE),
+        ("FONTNAME",   (0, 0), (-1, -1), FONT),
+        ("FONTSIZE",   (0, 0), (-1, -1), 8),
+        ("ALIGN",      (0, 0), (-1, -1), "CENTER"),
+        ("ALIGN",      (1, 1), (1, -1), "LEFT"),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ORANGE_LIGHT]),
+        ("GRID",       (0, 0), (-1, -1), 0.5, LIGHT_BORDER),
+        ("TOPPADDING",    (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    return t
+
+def _cert_table(certs: List[CertItem]):
+    if not certs:
+        return Paragraph("자격증 정보가 없습니다.", SMALL)
+
+    header = ["자격증명", "상태", "시험일", "합격일"]
+    rows = [header]
+    for c in certs:
+        rows.append([c.name, c.status, c.exam_date or "-", c.pass_date or "-"])
+
+    t = Table(rows, colWidths=[65*mm, 20*mm, 30*mm, 30*mm])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), ORANGE_LIGHT),
+        ("TEXTCOLOR",  (0, 0), (-1, 0), ORANGE),
+        ("FONTNAME",   (0, 0), (-1, -1), FONT),
+        ("FONTSIZE",   (0, 0), (-1, -1), 8),
+        ("ALIGN",      (0, 0), (-1, -1), "CENTER"),
+        ("ALIGN",      (0, 1), (0, -1), "LEFT"),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ORANGE_LIGHT]),
+        ("GRID",       (0, 0), (-1, -1), 0.5, LIGHT_BORDER),
+        ("TOPPADDING",    (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    return t
+
+# ── PDF build ──────────────────────────────────────────────────────────────────
+
+def _build_pdf(req: PDFRequest) -> BytesIO:
+    buf = BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=20*mm, rightMargin=20*mm,
+        topMargin=20*mm, bottomMargin=20*mm,
+    )
+
+    story = []
+
+    # ── 헤더 ──────────────────────────────────────────────────────────────────
+    story.append(Paragraph("Pause to Pass · 포트폴리오 리포트", H1))
+    story.append(Paragraph(
+        f"{req.user_name}님 · 생성일: {datetime.now().strftime('%Y년 %m월 %d일')}",
+        SMALL,
+    ))
+    story.append(HRFlowable(width="100%", thickness=2, color=ORANGE, spaceAfter=8))
+
+    # ── 역량 요약 ─────────────────────────────────────────────────────────────
+    if req.summary:
+        story.append(Paragraph("역량 한줄 요약", H2))
+        summary_table = Table(
+            [[Paragraph(req.summary, _style("sum", fontSize=10, leading=15, textColor=ORANGE))]],
+            colWidths=[170*mm],
+        )
+        summary_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), ORANGE_LIGHT),
+            ("BOX",        (0, 0), (-1, -1), 1, ORANGE),
+            ("TOPPADDING",    (0, 0), (-1, -1), 8),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ("LEFTPADDING",   (0, 0), (-1, -1), 10),
+        ]))
+        story.append(summary_table)
+        story.append(Spacer(1, 6))
+
+    # ── NCS 역량 ──────────────────────────────────────────────────────────────
+    story.append(Paragraph("NCS 역량 분석 결과", H2))
+    story.append(HRFlowable(width="100%", thickness=1, color=ORANGE, spaceAfter=4))
+    story.append(_ncs_table(req.ncs_items or []))
+    story.append(Spacer(1, 8))
+
+    # ── STAR 자기소개서 ───────────────────────────────────────────────────────
+    if req.star_drafts:
+        story.append(Paragraph("STAR 자기소개서 초안", H2))
+        story.append(HRFlowable(width="100%", thickness=1, color=ORANGE, spaceAfter=4))
+        STAR_LABELS = ["[상황 S]", "[과제 T]", "[행동 A]", "[결과 R]"]
+        for i, draft in enumerate(req.star_drafts):
+            label = STAR_LABELS[i] if i < len(STAR_LABELS) else f"[{i+1}]"
+            story.append(Paragraph(label, LABEL))
+            story.append(Paragraph(draft, BODY))
+            story.append(Spacer(1, 4))
+        story.append(Spacer(1, 4))
+
+    # ── 자격증 이력 ───────────────────────────────────────────────────────────
+    if req.certs:
+        story.append(Paragraph("자격증 이력", H2))
+        story.append(HRFlowable(width="100%", thickness=1, color=ORANGE, spaceAfter=4))
+        story.append(_cert_table(req.certs))
+        story.append(Spacer(1, 8))
+
+    # ── 푸터 ──────────────────────────────────────────────────────────────────
+    story.append(HRFlowable(width="100%", thickness=1, color=LIGHT_BORDER, spaceBefore=12))
+    story.append(Paragraph(
+        "본 리포트는 Pause to Pass 서비스에서 자동 생성되었습니다.",
+        _style("footer", fontSize=7, textColor=GRAY),
+    ))
+
+    doc.build(story)
+    buf.seek(0)
+    return buf
+
+# ── Endpoint ───────────────────────────────────────────────────────────────────
+
+@router.post("/generate")
+def generate_pdf(req: PDFRequest):
+    buf = _build_pdf(req)
+    filename = f"portfolio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     return StreamingResponse(
-        BytesIO(pdf_bytes),
+        buf,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=growth_report_{current_user.id}.pdf"}
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
-
-def _build_report_html(user, experiences, missions):
-    exp_rows = "".join(
-        f"<tr><td>{e.title}</td><td>{e.category or '-'}</td><td>{e.ncs_skills or '-'}</td></tr>"
-        for e in experiences
-    )
-    mission_rows = "".join(
-        f"<tr><td>{m.title}</td><td>{m.completed_at.strftime('%Y-%m-%d') if m.completed_at else '-'}</td></tr>"
-        for m in missions
-    )
-    return f"""
-    <!DOCTYPE html>
-    <html lang="ko">
-    <head>
-      <meta charset="UTF-8"/>
-      <style>
-        body {{ font-family: 'Malgun Gothic', sans-serif; padding: 40px; color: #2D2017; }}
-        h1 {{ color: #C75B3A; }} h2 {{ color: #C75B3A; border-bottom: 2px solid #C75B3A; padding-bottom: 6px; }}
-        table {{ width: 100%; border-collapse: collapse; margin-bottom: 24px; }}
-        th {{ background: #FDF3EE; color: #C75B3A; padding: 10px; text-align: left; }}
-        td {{ padding: 10px; border-bottom: 1px solid #E8D5CB; }}
-        .header {{ display: flex; justify-content: space-between; margin-bottom: 32px; }}
-        .stat {{ background: #FDF3EE; border-radius: 8px; padding: 16px; text-align: center; display: inline-block; width: 30%; }}
-        .stat-num {{ font-size: 28px; font-weight: 800; color: #C75B3A; }}
-      </style>
-    </head>
-    <body>
-      <h1>Pause to Pass · 성장 리포트</h1>
-      <p>{user.name}님 · 생성일: {datetime.now().strftime('%Y년 %m월 %d일')}</p>
-      <div>
-        <span class="stat"><div class="stat-num">{len(experiences)}</div>경험 기록</span>
-        <span class="stat"><div class="stat-num">{len(missions)}</div>완료 미션</span>
-      </div>
-      <h2>경험 기록</h2>
-      <table><tr><th>제목</th><th>카테고리</th><th>NCS 역량</th></tr>{exp_rows}</table>
-      <h2>완료한 미션</h2>
-      <table><tr><th>미션</th><th>완료일</th></tr>{mission_rows}</table>
-    </body>
-    </html>
-    """

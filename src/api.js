@@ -69,9 +69,23 @@ export const api = {
   analyzeExperience: (data) => request('POST', '/ai/analyze', data, false),
 
   // PDF
-  downloadReport: () => `${BASE_URL}/pdf/growth-report?token=${getToken()}`,
-  downloadAnalysisReport: (experienceId) =>
-    `${BASE_URL}/pdf/analysis-report?experience_id=${experienceId}&token=${getToken()}`,
+  downloadReport: async (data) => {
+    const res = await fetch(`${BASE_URL}/pdf/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) throw new Error('PDF 생성에 실패했습니다')
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `portfolio_${new Date().toISOString().slice(0, 10)}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  },
 }
 
 export function saveTokens(access_token, refresh_token) {
