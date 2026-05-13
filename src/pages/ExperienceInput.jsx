@@ -26,7 +26,6 @@ export default function ExperienceInput() {
 
   const handleAnalyze = async () => {
     if (!form.content) { setError('경험 내용을 입력해주세요'); return }
-    if (form.content.trim().length < 30) { setError('경험 내용을 30자 이상 구체적으로 작성해주세요'); return }
     setError('')
     setLoading(true)
     setStep(1)
