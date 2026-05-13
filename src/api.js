@@ -69,6 +69,7 @@ export const api = {
   analyzeExperience: (data) => request('POST', '/ai/analyze', data, false),
   getAnalysisHistory: () => request('GET', '/ai/history', null, false),
   getAnalysisDetail: (idx) => request('GET', `/ai/history/${idx}`, null, false),
+  recommendCerts: (ncs_items) => request('POST', '/ai/recommend-certs', { ncs_items }, false),
 
   // PDF
   downloadReport: async (data) => {

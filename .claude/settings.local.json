@@ -20,7 +20,9 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git ls-tree *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "PowerShell(C:\\\\anaconda\\\\envs\\\\pausetopass\\\\python.exe -m pip install httpx -q)",
+      "Bash(git push *)"
     ]
   }
 }
