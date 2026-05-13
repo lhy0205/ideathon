@@ -114,7 +114,7 @@ class Notification(Base):
 
 
 class UserExperience(Base):
-    """AI 분석 이력 저장 테이블"""
+    """AI analysis history."""
     __tablename__ = "user_experiences"
     idx          = Column(Integer, primary_key=True, index=True)
     user_id      = Column(Integer, ForeignKey("users.id"), nullable=True)
@@ -151,3 +151,23 @@ class Certification(Base):
     related_job   = Column(String(300), nullable=True)
     exam_schedule = Column(String(300), nullable=True)
     score_schedule= Column(String(300), nullable=True)
+
+
+class SeniorPersona(Base):
+    __tablename__ = "senior_personas"
+
+    id                      = Column(Integer, primary_key=True, index=True)
+    user_id                 = Column(String(100), unique=True, nullable=False, index=True)
+    user_name               = Column(String(100), nullable=False)
+    avatar_label            = Column(String(20), nullable=True)
+    avatar_color            = Column(String(20), nullable=True)
+    department              = Column(String(100), nullable=True)
+    gap_period              = Column(String(50), nullable=True)
+    certifications          = Column(Text, nullable=True)
+    employment_field        = Column(String(150), nullable=False)
+    employment_company_type = Column(String(150), nullable=True)
+    career_path_summary     = Column(String(300), nullable=True)
+    similarity_score        = Column(Float, nullable=True)
+    is_accepted             = Column(Boolean, nullable=False, default=True)
+    match_note              = Column(Text, nullable=True)
+    created_at              = Column(DateTime, server_default=func.now())

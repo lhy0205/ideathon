@@ -72,6 +72,9 @@ export const api = {
   recommendCerts: (ncs_items, exp_type = '', exp_title = '') =>
     request('POST', '/ai/recommend-certs', { ncs_items, exp_type, exp_title }, false),
 
+  // Senior personas
+  getSeniorPersonas: (limit = 3) => request('GET', `/senior-personas/?limit=${limit}`, null, false),
+
   // PDF
   downloadReport: async (data) => {
     const res = await fetch(`${BASE_URL}/pdf/generate`, {
