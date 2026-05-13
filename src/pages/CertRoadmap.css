@@ -125,3 +125,108 @@
 }
 .cr-cert-status.pass  { background: #E8F5E9; color: #2E7D32; }
 .cr-cert-status.ready { background: #FFF8E1; color: #F57F17; }
+
+/* AI 추천 섹션 */
+.cr-ai-card {
+  background: linear-gradient(135deg, #FDF0EB 0%, #fff 100%);
+  border: 1.5px solid #E8C4B4;
+  border-radius: 14px;
+  padding: 20px 22px;
+}
+.cr-ai-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.cr-ai-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #C04E28;
+}
+.cr-ai-sub {
+  font-size: 12px;
+  color: #888;
+  margin-left: 4px;
+}
+.cr-ai-btn {
+  background: #C04E28;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s;
+}
+.cr-ai-btn:hover:not(:disabled) { background: #A33D1E; }
+.cr-ai-btn:disabled { background: #E0C0B4; cursor: default; }
+.cr-ai-empty-hint { font-size: 12px; color: #AAA; }
+.cr-ai-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  font-size: 13px;
+  color: #888;
+}
+.cr-ai-spinner {
+  width: 18px; height: 18px;
+  border: 2px solid #E8C4B4;
+  border-top-color: #C04E28;
+  border-radius: 50%;
+  animation: cr-spin .7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes cr-spin { to { transform: rotate(360deg); } }
+.cr-ai-error { font-size: 13px; color: #C04E28; margin: 4px 0 0; }
+.cr-ai-placeholder { font-size: 13px; color: #BBB; margin: 0; }
+
+.cr-ai-cert-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.cr-ai-cert-item {
+  background: #fff;
+  border: 1px solid #EDE0D8;
+  border-radius: 10px;
+  padding: 12px 16px;
+  min-width: 180px;
+  flex: 1;
+}
+.cr-ai-cert-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.cr-ai-cert-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1A1A1A;
+}
+.cr-ai-priority {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #EEE;
+  color: #666;
+}
+.cr-ai-priority.first {
+  background: #C04E28;
+  color: #fff;
+}
+.cr-ai-cert-org {
+  font-size: 11px;
+  color: #AAA;
+  margin: 0 0 4px;
+}
+.cr-ai-cert-reason {
+  font-size: 12px;
+  color: #555;
+  margin: 0;
+  line-height: 1.5;
+}

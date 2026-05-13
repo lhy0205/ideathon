@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './CertRoadmap.css'
 
 const PATHS = [
@@ -125,8 +125,38 @@ function GanttChart({ pathKey, certs }) {
   )
 }
 
+const PRIORITY_LABEL = ['', '★ 1순위', '2순위', '3순위', '4순위', '5순위']
+
 export default function CertRoadmap() {
   const [selected, setSelected] = useState('balanced')
+  const [ncsItems, setNcsItems] = useState(null)
+  const [aiCerts, setAiCerts] = useState(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
+
+  useEffect(() => {
+    const saved = localStorage.getItem('ncs_result')
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      setNcsItems(parsed.ncs_items || [])
+    }
+  }, [])
+
+  const handleRecommend = async () => {
+    if (!ncsItems?.length) return
+    setAiLoading(true)
+    setAiError('')
+    try {
+      const { api } = await import('../api')
+      const data = await api.recommendCerts(ncsItems)
+      setAiCerts(data.certs || [])
+    } catch {
+      setAiError('추천을 불러오지 못했습니다. 다시 시도해주세요.')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
   const currentPath = PATHS.find(p => p.key === selected)
 
   return (
@@ -134,6 +164,53 @@ export default function CertRoadmap() {
       <div className="cr-page-title">
         <h2>자격증 로드맵</h2>
         <p>현재 역량에서 목표 직무까지 최적 경로를 설계합니다</p>
+      </div>
+
+      {/* AI 추천 섹션 */}
+      <div className="cr-ai-card">
+        <div className="cr-ai-header">
+          <div>
+            <span className="cr-ai-title">AI 추천 자격증</span>
+            {ncsItems && <span className="cr-ai-sub"> · NCS 역량 {ncsItems.length}개 기반</span>}
+          </div>
+          {ncsItems ? (
+            <button className="cr-ai-btn" onClick={handleRecommend} disabled={aiLoading}>
+              {aiLoading ? '분석 중...' : aiCerts ? '다시 추천받기' : 'AI 추천받기'}
+            </button>
+          ) : (
+            <span className="cr-ai-empty-hint">경험 매핑을 먼저 진행해주세요</span>
+          )}
+        </div>
+
+        {aiLoading && (
+          <div className="cr-ai-loading">
+            <div className="cr-ai-spinner" />
+            <span>AI가 NCS 역량에 맞는 자격증을 찾고 있어요...</span>
+          </div>
+        )}
+
+        {aiError && <p className="cr-ai-error">{aiError}</p>}
+
+        {!aiLoading && aiCerts && (
+          <div className="cr-ai-cert-list">
+            {aiCerts.map((cert, i) => (
+              <div key={i} className="cr-ai-cert-item">
+                <div className="cr-ai-cert-top">
+                  <span className="cr-ai-cert-name">{cert.name}</span>
+                  <span className={`cr-ai-priority ${i === 0 ? 'first' : ''}`}>
+                    {PRIORITY_LABEL[cert.priority] || `${cert.priority}순위`}
+                  </span>
+                </div>
+                {cert.org && <p className="cr-ai-cert-org">{cert.org}</p>}
+                <p className="cr-ai-cert-reason">{cert.reason}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!aiLoading && !aiCerts && ncsItems && (
+          <p className="cr-ai-placeholder">버튼을 눌러 AI 자격증 추천을 받아보세요</p>
+        )}
       </div>
 
       <div className="cr-body">

@@ -19,6 +19,12 @@ class AnalysisResponse(BaseModel):
     star_drafts: list[str]
     summary: str
 
+class CertRecommendRequest(BaseModel):
+    ncs_items: list[dict]
+
+class CertRecommendResponse(BaseModel):
+    certs: list[dict]
+
 def _get_rag_context(query: str) -> str:
     try:
         from rag.retriever import retrieve_ncs
@@ -84,6 +90,36 @@ def parse_response(text: str) -> dict:
         "star_drafts": [text[:500]] if text else ["분석 결과를 가져오는 중 오류가 발생했습니다."],
         "summary": "AI 분석이 완료되었습니다.",
     }
+
+@router.post("/recommend-certs", response_model=CertRecommendResponse)
+async def recommend_certs(req: CertRecommendRequest):
+    ncs_summary = "\n".join([
+        f"- {item.get('unit_name', '')} (적합도: {item.get('score', 0)}%)"
+        for item in req.ncs_items
+    ])
+    prompt = f"""당신은 취업 준비생을 돕는 자격증 추천 전문가입니다.
+
+아래 NCS 역량 분석 결과를 바탕으로 취업에 유리한 자격증을 추천해주세요.
+
+[NCS 역량 분석 결과]
+{ncs_summary}
+
+다음 JSON 형식으로만 답하세요 (다른 말 없이):
+{{
+  "certs": [
+    {{"name": "자격증명", "org": "발급기관", "reason": "추천 이유 (1문장)", "priority": 1}},
+    ...최대 5개, priority는 1이 가장 중요
+  ]
+}}"""
+    try:
+        raw = await analyze(prompt)
+        match = re.search(r'\{[\s\S]*\}', raw)
+        if match:
+            parsed = json.loads(match.group())
+            return CertRecommendResponse(certs=parsed.get("certs", []))
+    except Exception:
+        pass
+    return CertRecommendResponse(certs=[])
 
 @router.post("/analyze", response_model=AnalysisResponse)
 async def analyze_experience(req: AnalysisRequest):
