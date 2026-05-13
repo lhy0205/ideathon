@@ -106,11 +106,12 @@ export default function ExperienceMapping() {
   }
 
   const ncsCards = ncsResult ? ncsResult.ncs_items : NCS_CARDS
+  const STAR_KEY_LABELS = ['상황 S', '과제 T', '행동 A', '결과 R']
+  const STAR_PREFIXES = ['[상황 S]', '[과제 T]', '[행동 A]', '[결과 R]']
   const starItems = ncsResult
     ? ncsResult.star_drafts.map((draft, i) => {
-        const labels = ['상황 S', '과제 T', '행동 A', '결과 R']
-        const key = Object.keys(STAR_LABELS).find(k => draft.startsWith(k))
-        return { label: labels[i] || `항목 ${i+1}`, text: key ? draft.slice(key.length).trim() : draft }
+        const prefix = STAR_PREFIXES.find(p => draft.startsWith(p))
+        return { label: STAR_KEY_LABELS[i] || `항목 ${i+1}`, text: prefix ? draft.slice(prefix.length).trim() : draft }
       })
     : STAR_TEXT
   const summary = ncsResult?.summary || ''
