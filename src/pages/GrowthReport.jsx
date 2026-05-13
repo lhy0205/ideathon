@@ -79,8 +79,24 @@ function PdfModal({ onClose }) {
         <div className="gr-pdf-actions">
           <button className="gr-pdf-cancel" onClick={onClose}>취소</button>
           <button className="gr-pdf-download" onClick={async () => {
-            const { api } = await import('../api')
-            window.open(api.downloadAnalysisReport(), '_blank')
+            try {
+              const { api } = await import('../api')
+              const certsData = CERTS.map(c => ({
+                name: c.name,
+                status: c.status === '합격' ? '취득 완료' : '준비중',
+                exam_date: c.examDate || c.targetExamDate || '',
+                pass_date: c.passDate || '',
+              }))
+              await api.downloadReport({
+                user_name: '사용자',
+                summary: '',
+                ncs_items: [],
+                star_drafts: [],
+                certs: certsData,
+              })
+            } catch (e) {
+              alert('PDF 생성에 실패했습니다: ' + e.message)
+            }
           }}>PDF 생성 및 다운로드</button>
         </div>
       </div>

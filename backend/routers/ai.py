@@ -36,7 +36,11 @@ def build_prompt(req: AnalysisRequest, rag_context: str = "") -> str:
 {rag_context}
 """
     return f"""당신은 국가직무능력표준(NCS) 전문가입니다.
-아래 경험을 분석하여 관련 NCS 역량과 STAR 자기소개서 초안을 작성해주세요.
+
+중요: 아래 경험 내용이 실제 사람의 경험을 서술한 의미 있는 문장이 아니라면 (예: 자음/모음 나열, 무의미한 반복 문자, 영어 단어 나열 등), 반드시 다음 JSON만 반환하세요:
+{{"invalid": true}}
+
+경험 내용이 실제 경험이라면 NCS 역량과 STAR 자기소개서 초안을 작성해주세요.
 {rag_section}
 [경험 정보]
 - 유형: {req.exp_type}
@@ -63,7 +67,12 @@ def parse_response(text: str) -> dict:
     try:
         match = re.search(r'\{[\s\S]*\}', text)
         if match:
-            return json.loads(match.group())
+            parsed = json.loads(match.group())
+            if parsed.get("invalid"):
+                raise ValueError("invalid_input")
+            return parsed
+    except ValueError:
+        raise
     except Exception:
         pass
     return {
@@ -83,5 +92,9 @@ async def analyze_experience(req: AnalysisRequest):
         raw = await analyze(prompt)
         result = parse_response(raw)
         return AnalysisResponse(**result)
+    except ValueError as e:
+        if "invalid_input" in str(e):
+            raise HTTPException(status_code=422, detail="실제 경험을 구체적으로 작성해주세요. 의미 없는 텍스트는 분석할 수 없습니다.")
+        raise HTTPException(status_code=500, detail=f"AI 분석 오류: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI 분석 오류: {str(e)}")
