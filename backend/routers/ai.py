@@ -21,6 +21,8 @@ class AnalysisResponse(BaseModel):
 
 class CertRecommendRequest(BaseModel):
     ncs_items: list[dict]
+    exp_type: Optional[str] = ""
+    exp_title: Optional[str] = ""
 
 class CertRecommendResponse(BaseModel):
     certs: list[dict]
@@ -97,10 +99,18 @@ async def recommend_certs(req: CertRecommendRequest):
         f"- {item.get('unit_name', '')} (적합도: {item.get('score', 0)}%)"
         for item in req.ncs_items
     ])
+    exp_section = ""
+    if req.exp_title or req.exp_type:
+        exp_section = f"""
+[경험 정보]
+- 경험 유형: {req.exp_type}
+- 경험 제목: {req.exp_title}
+"""
     prompt = f"""당신은 취업 준비생을 돕는 자격증 추천 전문가입니다.
 
-아래 NCS 역량 분석 결과를 바탕으로 취업에 유리한 자격증을 추천해주세요.
-
+아래 경험 정보와 NCS 역량 분석 결과를 보고, 이 사람의 경험에 실제로 관련 있고 취업에 유리한 국내 자격증을 추천해주세요.
+한국어능력시험(TOPIK) 같은 무관한 자격증은 절대 추천하지 마세요.
+{exp_section}
 [NCS 역량 분석 결과]
 {ncs_summary}
 

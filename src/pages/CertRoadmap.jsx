@@ -34,8 +34,6 @@ const PATHS = [
   },
 ]
 
-// col: 0-based month index (0=1월), span: width in months
-// type: 'study' | 'exam'
 const SCHEDULE = {
   balanced: [
     { cert: 'ADsP',  col: 0, span: 1.5, type: 'study' },
@@ -86,26 +84,35 @@ const CERT_INFO = [
 
 const MONTHS = ['1월', '2월', '3월', '4월', '5월', '6월']
 const TOTAL_COLS = 6
+const AI_PATH_KEY = 'ai_custom'
+const PRIORITY_LABEL = ['', '★ 1순위', '2순위', '3순위', '4순위', '5순위']
 
-function GanttChart({ pathKey, certs }) {
-  const bars = SCHEDULE[pathKey] || []
-  const certRows = certs.filter(c => c !== 'ERP' ? true : true)
+function buildAiSchedule(certNames) {
+  const bars = []
+  let col = 0
+  certNames.slice(0, 3).forEach(name => {
+    bars.push({ cert: name, col, span: 1.5, type: 'study' })
+    bars.push({ cert: name, col: col + 1.5, span: 0.5, type: 'exam' })
+    col += 2
+  })
+  return bars
+}
 
+function GanttChart({ bars, certs }) {
   return (
     <div className="gantt">
-      {/* 월 헤더 */}
       <div className="gantt-header">
         <div className="gantt-label-col" />
         {MONTHS.map(m => (
           <div key={m} className="gantt-month">{m}</div>
         ))}
       </div>
-      {/* 행 */}
       {certs.map(cert => {
         const certBars = bars.filter(b => b.cert === cert)
+        const shortName = cert.length > 5 ? cert.slice(0, 5) + '…' : cert
         return (
           <div key={cert} className="gantt-row">
-            <div className="gantt-label">{cert}</div>
+            <div className="gantt-label" title={cert}>{shortName}</div>
             <div className="gantt-track">
               {certBars.map((b, i) => (
                 <div
@@ -125,11 +132,10 @@ function GanttChart({ pathKey, certs }) {
   )
 }
 
-const PRIORITY_LABEL = ['', '★ 1순위', '2순위', '3순위', '4순위', '5순위']
-
 export default function CertRoadmap() {
   const [selected, setSelected] = useState('balanced')
   const [ncsItems, setNcsItems] = useState(null)
+  const [expInfo, setExpInfo] = useState(null)
   const [aiCerts, setAiCerts] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
@@ -140,7 +146,13 @@ export default function CertRoadmap() {
       const parsed = JSON.parse(saved)
       setNcsItems(parsed.ncs_items || [])
     }
+    const exp = localStorage.getItem('ncs_experience')
+    if (exp) setExpInfo(JSON.parse(exp))
   }, [])
+
+  useEffect(() => {
+    if (aiCerts?.length) setSelected(AI_PATH_KEY)
+  }, [aiCerts])
 
   const handleRecommend = async () => {
     if (!ncsItems?.length) return
@@ -148,7 +160,7 @@ export default function CertRoadmap() {
     setAiError('')
     try {
       const { api } = await import('../api')
-      const data = await api.recommendCerts(ncsItems)
+      const data = await api.recommendCerts(ncsItems, expInfo?.type || '', expInfo?.title || '')
       setAiCerts(data.certs || [])
     } catch {
       setAiError('추천을 불러오지 못했습니다. 다시 시도해주세요.')
@@ -157,7 +169,25 @@ export default function CertRoadmap() {
     }
   }
 
-  const currentPath = PATHS.find(p => p.key === selected)
+  const aiPath = aiCerts?.length
+    ? {
+        key: AI_PATH_KEY,
+        name: 'AI 맞춤 경로',
+        badge: '✨ 내 경험 기반',
+        badgeType: 'accent',
+        months: `${Math.min(aiCerts.length, 3) * 2}개월`,
+        passRate: '-',
+        steps: `${Math.min(aiCerts.length, 3)}단계`,
+        certs: aiCerts.slice(0, 3).map(c => c.name),
+      }
+    : null
+
+  const allPaths = aiPath ? [aiPath, ...PATHS] : PATHS
+  const currentPath = allPaths.find(p => p.key === selected) || allPaths[0]
+  const currentBars =
+    selected === AI_PATH_KEY && aiCerts?.length
+      ? buildAiSchedule(aiCerts.map(c => c.name))
+      : SCHEDULE[selected] || []
 
   return (
     <div className="cr-root">
@@ -192,20 +222,23 @@ export default function CertRoadmap() {
         {aiError && <p className="cr-ai-error">{aiError}</p>}
 
         {!aiLoading && aiCerts && (
-          <div className="cr-ai-cert-list">
-            {aiCerts.map((cert, i) => (
-              <div key={i} className="cr-ai-cert-item">
-                <div className="cr-ai-cert-top">
-                  <span className="cr-ai-cert-name">{cert.name}</span>
-                  <span className={`cr-ai-priority ${i === 0 ? 'first' : ''}`}>
-                    {PRIORITY_LABEL[cert.priority] || `${cert.priority}순위`}
-                  </span>
+          <>
+            <div className="cr-ai-cert-list">
+              {aiCerts.map((cert, i) => (
+                <div key={i} className="cr-ai-cert-item">
+                  <div className="cr-ai-cert-top">
+                    <span className="cr-ai-cert-name">{cert.name}</span>
+                    <span className={`cr-ai-priority ${i === 0 ? 'first' : ''}`}>
+                      {PRIORITY_LABEL[cert.priority] || `${cert.priority}순위`}
+                    </span>
+                  </div>
+                  {cert.org && <p className="cr-ai-cert-org">{cert.org}</p>}
+                  <p className="cr-ai-cert-reason">{cert.reason}</p>
                 </div>
-                {cert.org && <p className="cr-ai-cert-org">{cert.org}</p>}
-                <p className="cr-ai-cert-reason">{cert.reason}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            <p className="cr-ai-roadmap-hint">↓ 아래 경로 선택에 "AI 맞춤 경로"가 추가됐어요</p>
+          </>
         )}
 
         {!aiLoading && !aiCerts && ncsItems && (
@@ -219,7 +252,7 @@ export default function CertRoadmap() {
           <div className="cr-card">
             <h3 className="cr-card-title">경로 선택</h3>
             <div className="cr-path-list">
-              {PATHS.map(path => (
+              {allPaths.map(path => (
                 <div
                   key={path.key}
                   className={`cr-path-item ${selected === path.key ? 'active' : ''}`}
@@ -230,7 +263,8 @@ export default function CertRoadmap() {
                     <span className={`cr-badge ${path.badgeType}`}>{path.badge}</span>
                   </div>
                   <div className="cr-path-meta">
-                    {path.months} &nbsp;·&nbsp; 합격률 {path.passRate} &nbsp;·&nbsp; {path.steps}
+                    {path.months} &nbsp;·&nbsp;
+                    {path.passRate !== '-' ? `합격률 ${path.passRate} ·` : ''} &nbsp;{path.steps}
                   </div>
                   <div className="cr-path-flow">
                     {path.certs.join(' → ')}
@@ -243,28 +277,39 @@ export default function CertRoadmap() {
 
         {/* 오른쪽: 스케줄 + 자격증 정보 */}
         <div className="cr-right">
-          {/* 월별 스케줄 */}
           <div className="cr-card">
             <h3 className="cr-card-title">월별 스케줄 ({currentPath.name})</h3>
-            <GanttChart pathKey={selected} certs={currentPath.certs} />
+            <GanttChart bars={currentBars} certs={currentPath.certs} />
           </div>
 
-          {/* 자격증별 정보 */}
           <div className="cr-card">
             <h3 className="cr-card-title">자격증별 정보</h3>
             <div className="cr-cert-list">
-              {CERT_INFO.map(cert => (
-                <div key={cert.name} className="cr-cert-row">
-                  <div className="cr-cert-name">{cert.name}</div>
-                  <div className="cr-cert-info">
-                    <div className="cr-cert-full">{cert.fullName}</div>
-                    <div className="cr-cert-detail">{cert.detail}</div>
-                  </div>
-                  <div className={`cr-cert-status ${cert.status}`}>
-                    {cert.status === 'pass' ? '✅ 합격' : '🟡 준비중'}
-                  </div>
-                </div>
-              ))}
+              {selected === AI_PATH_KEY && aiCerts
+                ? aiCerts.slice(0, 3).map((cert, i) => (
+                    <div key={i} className="cr-cert-row">
+                      <div className="cr-cert-name">{cert.name.length > 4 ? cert.name.slice(0, 4) + '…' : cert.name}</div>
+                      <div className="cr-cert-info">
+                        <div className="cr-cert-full">{cert.org || '-'}</div>
+                        <div className="cr-cert-detail">{cert.reason}</div>
+                      </div>
+                      <div className={`cr-cert-status ${i === 0 ? 'ready' : 'ready'}`}>
+                        {PRIORITY_LABEL[cert.priority] || `${i + 1}순위`}
+                      </div>
+                    </div>
+                  ))
+                : CERT_INFO.map(cert => (
+                    <div key={cert.name} className="cr-cert-row">
+                      <div className="cr-cert-name">{cert.name}</div>
+                      <div className="cr-cert-info">
+                        <div className="cr-cert-full">{cert.fullName}</div>
+                        <div className="cr-cert-detail">{cert.detail}</div>
+                      </div>
+                      <div className={`cr-cert-status ${cert.status}`}>
+                        {cert.status === 'pass' ? '✅ 합격' : '🟡 준비중'}
+                      </div>
+                    </div>
+                  ))}
             </div>
           </div>
         </div>
