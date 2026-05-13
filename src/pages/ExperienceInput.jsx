@@ -23,6 +23,8 @@ export default function ExperienceInput() {
   const [step, setStep] = useState(0)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+  const [editing, setEditing] = useState(false)
+  const [editedDrafts, setEditedDrafts] = useState([])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -234,24 +236,41 @@ export default function ExperienceInput() {
           </div>
 
           <div className="exp-star-list">
-            {result.star_drafts.map((draft, i) => {
+            {(editing ? editedDrafts : result.star_drafts).map((draft, i) => {
               const labelKey = Object.keys(STAR_LABELS).find(k => draft.startsWith(k))
               const label = labelKey ? STAR_LABELS[labelKey] : `항목 ${i + 1}`
               const text  = labelKey ? draft.slice(labelKey.length).trim() : draft
               return (
                 <div key={i} className="exp-star-card">
                   <p className="exp-star-label">{label}</p>
-                  <p className="exp-star-text">{text}</p>
+                  {editing ? (
+                    <textarea
+                      className="exp-textarea"
+                      rows={4}
+                      value={editedDrafts[i] || ''}
+                      onChange={(e) => setEditedDrafts(prev => prev.map((d, j) => j === i ? e.target.value : d))}
+                      style={{ marginTop: '6px', width: '100%' }}
+                    />
+                  ) : (
+                    <p className="exp-star-text">{text}</p>
+                  )}
                 </div>
               )
             })}
           </div>
 
           <div className="exp-star-btns">
-            <button className="exp-submit-btn" style={{ flex: 1 }}>✏️ 전체 편집하기</button>
+            <button className="exp-submit-btn" style={{ flex: 1 }} onClick={() => {
+              if (!editing) setEditedDrafts([...result.star_drafts])
+              else setResult(prev => ({ ...prev, star_drafts: editedDrafts }))
+              setEditing(prev => !prev)
+            }}>
+              {editing ? '✅ 편집 완료' : '✏️ 전체 편집하기'}
+            </button>
             <button className="exp-copy-btn" style={{ flex: 1 }} onClick={() => {
-              const text = result.star_drafts.join('\n')
-              navigator.clipboard.writeText(text)
+              const drafts = editing ? editedDrafts : result.star_drafts
+              navigator.clipboard.writeText(drafts.join('\n'))
+                .then(() => alert('복사되었습니다!'))
             }}>
               📋 복사하기
             </button>
