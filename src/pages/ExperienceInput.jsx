@@ -133,7 +133,6 @@ export default function ExperienceInput() {
               </div>
             </div>
 
-<<<<<<< HEAD
             {error && <p className="exp-error">{error}</p>}
             <button className="exp-submit-btn" onClick={handleAnalyze}>
               AI NCS 분석 시작하기
@@ -195,34 +194,6 @@ export default function ExperienceInput() {
             <div className="exp-summary-box">
               <span className="exp-summary-label">역량 요약</span>
               <p>{result.summary}</p>
-=======
-              <h3 style={{ fontSize: '15px', fontWeight: '700', margin: '16px 0 12px' }}>
-                ④ 자기소개서 초안 (STAR)
-              </h3>
-              {result.star_drafts.map((s, i) => (
-                <p key={i} style={{ fontSize: '13px', lineHeight: '1.7', marginBottom: '6px' }}>{s}</p>
-              ))}
-
-              <button
-                style={{ marginTop: '16px', width: '100%', padding: '12px', background: '#C75B3A', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}
-                onClick={async () => {
-                  try {
-                    const { api } = await import('../api')
-                    await api.downloadReport({
-                      user_name: '사용자',
-                      summary: result.summary,
-                      ncs_items: result.ncs_items,
-                      star_drafts: result.star_drafts,
-                      certs: [],
-                    })
-                  } catch (e) {
-                    alert('PDF 생성 실패: ' + e.message)
-                  }
-                }}
-              >
-                PDF로 저장하기
-              </button>
->>>>>>> origin/main
             </div>
           )}
 
@@ -285,6 +256,22 @@ export default function ExperienceInput() {
               📋 복사하기
             </button>
           </div>
+          <button className="exp-submit-btn" onClick={async () => {
+            try {
+              const { api } = await import('../api')
+              await api.downloadReport({
+                user_name: '사용자',
+                summary: result.summary,
+                ncs_items: result.ncs_items,
+                star_drafts: result.star_drafts,
+                certs: [],
+              })
+            } catch (e) {
+              alert('PDF 생성 실패: ' + e.message)
+            }
+          }}>
+            📄 PDF로 저장하기
+          </button>
 
           <button className="exp-restart-btn" onClick={() => { setStep(0); setResult(null) }}>
             + 새 경험 추가하기
