@@ -144,27 +144,23 @@ async def analyze_experience(req: AnalysisRequest):
         try:
             from database import SessionLocal
             import models as m
-            from sqlalchemy import text
             db = SessionLocal()
-            # user_idx FK 우회: 첫 번째 유저 idx 사용, 없으면 NULL 허용 raw insert
             first_user = db.query(m.User).first()
-            user_idx = first_user.idx if first_user else None
-            if user_idx:
-                exp = m.UserExperience(
-                    user_idx=user_idx,
-                    exp_type=req.exp_type or "",
-                    title=req.title or "제목 없음",
-                    start_date=req.start_date or "",
-                    end_date=req.end_date or "",
-                    content=req.content,
-                    memo=req.memo or "",
-                    ncs_mapping=json.dumps(result, ensure_ascii=False),
-                )
-                db.add(exp)
-                db.commit()
+            exp = m.UserExperience(
+                user_id=first_user.id if first_user else None,
+                exp_type=req.exp_type or "",
+                title=req.title or "제목 없음",
+                start_date=req.start_date or "",
+                end_date=req.end_date or "",
+                content=req.content,
+                memo=req.memo or "",
+                ncs_mapping=json.dumps(result, ensure_ascii=False),
+            )
+            db.add(exp)
+            db.commit()
             db.close()
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[AI] DB 저장 실패: {e}")
 
         return AnalysisResponse(**result)
     except ValueError as e:
