@@ -26,6 +26,7 @@ export default function ExperienceInput() {
 
   const handleAnalyze = async () => {
     if (!form.content) { setError('경험 내용을 입력해주세요'); return }
+    if (!/[가-힣]/.test(form.content)) { setError('경험 내용을 한국어로 작성해주세요'); return }
     setError('')
     setLoading(true)
     setStep(1)
