@@ -8,6 +8,24 @@ from routers import auth, users, experiences, missions, community, notifications
 
 load_dotenv()
 
+# DB 마이그레이션 (create_all 이전: users PK idx→id 변경)
+def _pre_migrate():
+    from sqlalchemy import text
+    from database import SessionLocal
+    db = SessionLocal()
+    for sql in [
+        "ALTER TABLE users CHANGE idx id INT NOT NULL AUTO_INCREMENT",
+        "ALTER TABLE users CHANGE user_idx id INT NOT NULL AUTO_INCREMENT",
+    ]:
+        try:
+            db.execute(text(sql))
+            db.commit()
+        except Exception:
+            pass
+    db.close()
+
+_pre_migrate()
+
 # DB 테이블 자동 생성
 Base.metadata.create_all(bind=engine)
 
