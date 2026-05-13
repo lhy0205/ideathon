@@ -28,8 +28,8 @@ export default function ExperienceInput() {
   }
 
   useEffect(() => {
-    loadHistory()
-  }, [step === 0])
+    if (step === 0) loadHistory()
+  }, [step])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -51,6 +51,7 @@ export default function ExperienceInput() {
       })
       setResult(data)
       setStep(2)
+      loadHistory()
       localStorage.setItem('ncs_result', JSON.stringify(data))
       localStorage.setItem('ncs_experience', JSON.stringify({ title: form.title, type: selectedType, content: form.content }))
     } catch (e) {
