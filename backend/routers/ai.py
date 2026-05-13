@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 import json, re
 from rag.exaone_client import analyze
 
@@ -11,11 +11,21 @@ class AnalysisRequest(BaseModel):
     title: Optional[str] = ""
     content: str
     memo: Optional[str] = ""
+    start_date: Optional[str] = ""
+    end_date: Optional[str] = ""
 
 class AnalysisResponse(BaseModel):
     ncs_items: list[dict]
     star_drafts: list[str]
     summary: str
+
+class CertRecommendRequest(BaseModel):
+    ncs_items: list[dict]
+    exp_type: Optional[str] = ""
+    exp_title: Optional[str] = ""
+
+class CertRecommendResponse(BaseModel):
+    certs: list[dict]
 
 def _get_rag_context(query: str) -> str:
     try:
@@ -36,7 +46,11 @@ def build_prompt(req: AnalysisRequest, rag_context: str = "") -> str:
 {rag_context}
 """
     return f"""당신은 국가직무능력표준(NCS) 전문가입니다.
-아래 경험을 분석하여 관련 NCS 역량과 STAR 자기소개서 초안을 작성해주세요.
+
+중요: 아래 경험 내용이 실제 사람의 경험을 서술한 의미 있는 문장이 아니라면 (예: 자음/모음 나열, 무의미한 반복 문자, 영어 단어 나열 등), 반드시 다음 JSON만 반환하세요:
+{{"invalid": true}}
+
+경험 내용이 실제 경험이라면 NCS 역량과 STAR 자기소개서 초안을 작성해주세요.
 {rag_section}
 [경험 정보]
 - 유형: {req.exp_type}
@@ -63,7 +77,12 @@ def parse_response(text: str) -> dict:
     try:
         match = re.search(r'\{[\s\S]*\}', text)
         if match:
-            return json.loads(match.group())
+            parsed = json.loads(match.group())
+            if parsed.get("invalid"):
+                raise ValueError("invalid_input")
+            return parsed
+    except ValueError:
+        raise
     except Exception:
         pass
     return {
@@ -74,6 +93,44 @@ def parse_response(text: str) -> dict:
         "summary": "AI 분석이 완료되었습니다.",
     }
 
+@router.post("/recommend-certs", response_model=CertRecommendResponse)
+async def recommend_certs(req: CertRecommendRequest):
+    ncs_summary = "\n".join([
+        f"- {item.get('unit_name', '')} (적합도: {item.get('score', 0)}%)"
+        for item in req.ncs_items
+    ])
+    exp_section = ""
+    if req.exp_title or req.exp_type:
+        exp_section = f"""
+[경험 정보]
+- 경험 유형: {req.exp_type}
+- 경험 제목: {req.exp_title}
+"""
+    prompt = f"""당신은 취업 준비생을 돕는 자격증 추천 전문가입니다.
+
+아래 경험 정보와 NCS 역량 분석 결과를 보고, 이 사람의 경험에 실제로 관련 있고 취업에 유리한 국내 자격증을 추천해주세요.
+한국어능력시험(TOPIK) 같은 무관한 자격증은 절대 추천하지 마세요.
+{exp_section}
+[NCS 역량 분석 결과]
+{ncs_summary}
+
+다음 JSON 형식으로만 답하세요 (다른 말 없이):
+{{
+  "certs": [
+    {{"name": "자격증명", "org": "발급기관", "reason": "추천 이유 (1문장)", "priority": 1}},
+    ...최대 5개, priority는 1이 가장 중요
+  ]
+}}"""
+    try:
+        raw = await analyze(prompt)
+        match = re.search(r'\{[\s\S]*\}', raw)
+        if match:
+            parsed = json.loads(match.group())
+            return CertRecommendResponse(certs=parsed.get("certs", []))
+    except Exception:
+        pass
+    return CertRecommendResponse(certs=[])
+
 @router.post("/analyze", response_model=AnalysisResponse)
 async def analyze_experience(req: AnalysisRequest):
     try:
@@ -82,6 +139,85 @@ async def analyze_experience(req: AnalysisRequest):
         prompt = build_prompt(req, rag_context)
         raw = await analyze(prompt)
         result = parse_response(raw)
+
+        # DB 저장 (실패해도 분석 결과는 반환)
+        try:
+            from database import SessionLocal
+            import models as m
+            db = SessionLocal()
+            first_user = db.query(m.User).first()
+            exp = m.UserExperience(
+                user_id=first_user.id if first_user else None,
+                exp_type=req.exp_type or "",
+                title=req.title or "제목 없음",
+                start_date=req.start_date or "",
+                end_date=req.end_date or "",
+                content=req.content,
+                memo=req.memo or "",
+                ncs_mapping=json.dumps(result, ensure_ascii=False),
+            )
+            db.add(exp)
+            db.commit()
+            db.close()
+        except Exception as e:
+            print(f"[AI] DB 저장 실패: {e}")
+
         return AnalysisResponse(**result)
+    except ValueError as e:
+        if "invalid_input" in str(e):
+            raise HTTPException(status_code=422, detail="실제 경험을 구체적으로 작성해주세요. 의미 없는 텍스트는 분석할 수 없습니다.")
+        raise HTTPException(status_code=500, detail=f"AI 분석 오류: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI 분석 오류: {str(e)}")
+
+
+class ExperienceHistoryItem(BaseModel):
+    idx: int
+    title: str
+    exp_type: Optional[str]
+    ncs_count: int
+    created_at: str
+
+@router.get("/history", response_model=List[ExperienceHistoryItem])
+def get_history():
+    try:
+        from database import SessionLocal
+        import models as m
+        db = SessionLocal()
+        exps = db.query(m.UserExperience).order_by(m.UserExperience.created_at.desc()).limit(10).all()
+        result = []
+        for e in exps:
+            ncs_count = 0
+            if e.ncs_mapping:
+                try:
+                    ncs_count = len(json.loads(e.ncs_mapping).get("ncs_items", []))
+                except Exception:
+                    pass
+            result.append(ExperienceHistoryItem(
+                idx=e.idx,
+                title=e.title,
+                exp_type=e.exp_type,
+                ncs_count=ncs_count,
+                created_at=e.created_at.strftime("%Y-%m-%d") if e.created_at else "",
+            ))
+        db.close()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/history/{idx}", response_model=AnalysisResponse)
+def get_history_detail(idx: int):
+    try:
+        from database import SessionLocal
+        import models as m
+        db = SessionLocal()
+        exp = db.query(m.UserExperience).filter(m.UserExperience.idx == idx).first()
+        db.close()
+        if not exp or not exp.ncs_mapping:
+            raise HTTPException(status_code=404, detail="분석 결과가 없습니다")
+        return AnalysisResponse(**json.loads(exp.ncs_mapping))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

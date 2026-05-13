@@ -131,3 +131,232 @@
 .exp-prev-item:last-child { border-bottom: none; padding-bottom: 0; }
 .exp-prev-title { font-size: 14px; font-weight: 700; margin: 0 0 3px; }
 .exp-prev-meta  { font-size: 12px; color: #AAA; margin: 0; }
+
+/* 에러 */
+.exp-error { font-size: 13px; color: #e53e3e; margin: 0; }
+
+/* 단계 done */
+.exp-step.done { color: #C04E28; opacity: 0.5; }
+
+/* ── STEP 1: 로딩 ── */
+.exp-loading-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 16px;
+}
+.exp-spinner {
+  width: 56px;
+  height: 56px;
+  border: 5px solid #f0ddd5;
+  border-top-color: #C04E28;
+  border-radius: 50%;
+  animation: exp-spin 0.9s linear infinite;
+}
+@keyframes exp-spin {
+  to { transform: rotate(360deg); }
+}
+.exp-loading-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #3b1a0e;
+  margin: 0;
+}
+.exp-loading-sub {
+  font-size: 14px;
+  color: #888;
+  margin: 0;
+}
+.exp-loading-dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.exp-loading-dots span {
+  width: 10px;
+  height: 10px;
+  background: #C04E28;
+  border-radius: 50%;
+  animation: exp-bounce 1.2s infinite ease-in-out;
+}
+.exp-loading-dots span:nth-child(2) { animation-delay: .2s; }
+.exp-loading-dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes exp-bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40%           { transform: scale(1.1); opacity: 1; }
+}
+
+/* ── STEP 2/3 공통 결과 래퍼 ── */
+.exp-result-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.exp-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.exp-result-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #3b1a0e;
+  margin: 0 0 4px;
+}
+.exp-result-sub {
+  font-size: 13px;
+  color: #888;
+  margin: 0;
+}
+.exp-next-btn {
+  background: #C04E28;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .2s;
+}
+.exp-next-btn:hover { opacity: .85; }
+.exp-back-btn {
+  background: none;
+  border: 1.5px solid #e0d5cf;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .2s, color .2s;
+}
+.exp-back-btn:hover { border-color: #C04E28; color: #C04E28; }
+
+/* 역량 요약 박스 */
+.exp-summary-box {
+  background: #3b1a0e;
+  color: #fff;
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.exp-summary-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #f0c09a;
+  letter-spacing: .5px;
+}
+.exp-summary-box p {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* NCS 카드 목록 */
+.exp-ncs-list { display: flex; flex-direction: column; gap: 12px; }
+.exp-ncs-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  border: 1px solid #EDEAE4;
+  border-left: 4px solid #C04E28;
+}
+.exp-ncs-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.exp-ncs-name { font-size: 15px; font-weight: 700; color: #3b1a0e; }
+.exp-ncs-badge {
+  font-size: 11px;
+  background: #C04E28;
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+.exp-ncs-code { font-size: 11px; color: #bbb; margin: 0 0 8px; }
+.exp-bar-wrap {
+  background: #e8ddd8;
+  border-radius: 4px;
+  height: 8px;
+  width: 100%;
+}
+.exp-bar-fill {
+  background: #C04E28;
+  border-radius: 4px;
+  height: 8px;
+  transition: width .6s ease;
+}
+.exp-bar-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+/* STAR 카드 */
+.exp-star-list { display: flex; flex-direction: column; gap: 12px; }
+.exp-star-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  border: 1px solid #EDEAE4;
+}
+.exp-star-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #C04E28;
+  margin: 0 0 6px;
+  letter-spacing: .3px;
+}
+.exp-star-text {
+  font-size: 14px;
+  color: #3b1a0e;
+  line-height: 1.7;
+  margin: 0;
+}
+.exp-star-btns {
+  display: flex;
+  gap: 10px;
+}
+.exp-copy-btn {
+  flex: 1;
+  background: #fff;
+  color: #C04E28;
+  border: 1.5px solid #C04E28;
+  border-radius: 10px;
+  padding: 16px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.exp-copy-btn:hover { background: #fdf5f1; }
+
+/* 새 경험 추가 버튼 */
+.exp-restart-btn {
+  width: 100%;
+  background: none;
+  border: 1.5px dashed #e0d5cf;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #aaa;
+  cursor: pointer;
+  transition: border-color .2s, color .2s;
+}
+.exp-restart-btn:hover { border-color: #C04E28; color: #C04E28; }

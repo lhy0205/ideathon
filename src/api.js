@@ -67,6 +67,10 @@ export const api = {
 
   // AI 분석
   analyzeExperience: (data) => request('POST', '/ai/analyze', data, false),
+  getAnalysisHistory: () => request('GET', '/ai/history', null, false),
+  getAnalysisDetail: (idx) => request('GET', `/ai/history/${idx}`, null, false),
+  recommendCerts: (ncs_items, exp_type = '', exp_title = '') =>
+    request('POST', '/ai/recommend-certs', { ncs_items, exp_type, exp_title }, false),
 
   // Senior personas
   getSeniorPersonas: (limit = 3) => request('GET', `/senior-personas/?limit=${limit}`, null, false),
