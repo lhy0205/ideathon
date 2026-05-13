@@ -15,6 +15,8 @@ function Register() {
   })
   const [loginForm, setLoginForm] = useState({ email: '', password: '' })
   const [passwordError, setPasswordError] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -31,6 +33,15 @@ function Register() {
 
   const handleLoginSubmit = (e) => {
     e.preventDefault()
+    navigate('/dashboard')
+  }
+
+  const handleRegisterSubmit = (e) => {
+    e.preventDefault()
+    if (form.password !== form.passwordConfirm) {
+      setError('비밀번호가 일치하지 않습니다')
+      return
+    }
     navigate('/dashboard')
   }
 
@@ -62,6 +73,10 @@ function Register() {
             비밀번호 변경
           </button>
         </div>
+
+        {error && (
+          <div style={{ color: '#e53e3e', fontSize: '13px', textAlign: 'center', marginBottom: '8px' }}>{error}</div>
+        )}
 
         {activeTab === 'login' && (
           <form className="auth-form" onSubmit={handleLoginSubmit}>
@@ -97,8 +112,8 @@ function Register() {
               </button>
             </div>
 
-            <button type="submit" className="submit-btn">
-              로그인
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading ? '로그인 중...' : '로그인'}
             </button>
 
             <div className="divider">
@@ -125,7 +140,7 @@ function Register() {
         )}
 
         {activeTab === 'register' && (
-          <form className="auth-form" onSubmit={(e) => e.preventDefault()}>
+          <form className="auth-form" onSubmit={handleRegisterSubmit}>
             <div className="form-group">
               <label className="form-label">이름</label>
               <input
@@ -211,8 +226,8 @@ function Register() {
               </div>
             </div>
 
-            <button type="submit" className="submit-btn">
-              가입하고 시작하기+
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading ? '가입 중...' : '가입하고 시작하기+'}
             </button>
 
             <p className="auth-footer">
@@ -229,34 +244,67 @@ function Register() {
         )}
 
         {activeTab === 'reset' && (
-          <form className="auth-form" onSubmit={(e) => e.preventDefault()}>
-            <p className="auth-footer" style={{ color: '#3b1a0e', marginBottom: '8px' }}>
-              가입한 이메일 주소를 입력하면 비밀번호 재설정 링크를 보내드립니다.
-            </p>
-            <div className="form-group">
-              <label className="form-label">이메일</label>
-              <input
-                className="form-input"
-                type="email"
-                placeholder="example@email.com"
-              />
-            </div>
-            <button type="submit" className="submit-btn">
-              재설정 링크 보내기
-            </button>
-            <p className="auth-footer">
-              <button
-                type="button"
-                className="link-btn"
-                onClick={() => setActiveTab('login')}
-              >
-                로그인으로 돌아가기
-              </button>
-            </p>
-          </form>
+          <ResetForm setActiveTab={setActiveTab} />
         )}
       </div>
     </div>
+  )
+}
+
+function ResetForm({ setActiveTab }) {
+  const [resetEmail, setResetEmail] = useState('')
+  const [sent, setSent] = useState(false)
+  const [resetError, setResetError] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+
+  const handleResetSubmit = async (e) => {
+    e.preventDefault()
+    setResetError('')
+    setResetLoading(true)
+    try {
+      const { api } = await import('./api')
+      await api.requestPasswordReset(resetEmail)
+      setSent(true)
+    } catch (err) {
+      setResetError(err.message)
+    } finally {
+      setResetLoading(false)
+    }
+  }
+
+  return (
+    <form className="auth-form" onSubmit={handleResetSubmit}>
+      <p className="auth-footer" style={{ color: '#3b1a0e', marginBottom: '8px' }}>
+        가입한 이메일 주소를 입력하면 비밀번호 재설정 링크를 보내드립니다.
+      </p>
+      <div className="form-group">
+        <label className="form-label">이메일</label>
+        <input
+          className="form-input"
+          type="email"
+          placeholder="example@email.com"
+          value={resetEmail}
+          onChange={(e) => setResetEmail(e.target.value)}
+          required
+        />
+      </div>
+      {sent && (
+        <div style={{ color: '#2D7A2D', fontSize: '13px', textAlign: 'center', marginBottom: '8px' }}>
+          ✓ 재설정 메일이 발송되었습니다.
+        </div>
+      )}
+      {resetError && (
+        <div style={{ color: '#e53e3e', fontSize: '13px', textAlign: 'center', marginBottom: '8px' }}>{resetError}</div>
+      )}
+      <button type="submit" className="submit-btn" disabled={resetLoading}>
+        {resetLoading ? '발송 중...' : '재설정 링크 보내기'}
+      </button>
+      <p className="auth-footer">
+        <button type="button" className="link-btn" onClick={() => setActiveTab('login')}>
+          로그인으로 돌아가기
+        </button>
+      </p>
+    </form>
   )
 }
 

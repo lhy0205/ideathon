@@ -1,4 +1,4 @@
-const BASE_URL = 'http://127.0.0.1:8000'
+const BASE_URL = ''
 
 function getToken() {
   return localStorage.getItem('access_token')
@@ -16,7 +16,11 @@ async function request(method, path, body = null, auth = true) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: '오류가 발생했습니다' }))
-    throw new Error(err.detail || '오류가 발생했습니다')
+    const detail = err.detail
+    if (Array.isArray(detail)) {
+      throw new Error(detail.map(d => d.msg + ' (' + d.loc?.join('.') + ')').join(', '))
+    }
+    throw new Error(typeof detail === 'string' ? detail : '오류가 발생했습니다')
   }
   return res.json()
 }
