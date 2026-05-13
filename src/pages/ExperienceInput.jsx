@@ -10,20 +10,6 @@ const PREV_EXPERIENCES = [
   { title: '대학 동아리 기획팀장', ncs: 4, time: '1주 전' },
 ]
 
-const MOCK_RESULT = {
-  ncs_items: [
-    { ncs_code: 'NCS 02010101', unit_name: '판매관리', level: 3, score: 88 },
-    { ncs_code: 'NCS 02010201', unit_name: '고객상담', level: 2, score: 76 },
-    { ncs_code: 'NCS 06010101', unit_name: '물류관리', level: 2, score: 62 },
-  ],
-  star_drafts: [
-    '[상황 S] 야간에 혼자 매장을 운영하는 환경에서 재고 오류가 발생했습니다.',
-    '[과제 T] 다음 날 발주 전까지 정확한 실재고를 파악하고 손실 원인을 규명해야 했습니다.',
-    '[행동 A] 전산 기록과 실물 재고를 항목별로 대조하고, 유통기한 관리 체계를 새로 설계했습니다.',
-    '[결과 R] 재고 오차율을 기존 대비 40% 줄이고, 이 방식을 팀 전체 표준으로 채택했습니다.',
-  ],
-  summary: '고객 응대 및 재고 관리 역량이 우수하며, 문제 해결 능력이 뛰어납니다.',
-}
 
 export default function ExperienceInput() {
   const [selectedType, setSelectedType] = useState('아르바이트')
@@ -53,9 +39,9 @@ export default function ExperienceInput() {
       })
       setResult(data)
       setStep(2)
-    } catch {
-      setResult(MOCK_RESULT)
-      setStep(2)
+    } catch (e) {
+      setError('AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.')
+      setStep(0)
     } finally {
       setLoading(false)
     }
