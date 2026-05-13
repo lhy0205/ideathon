@@ -12,21 +12,32 @@ class AnalysisRequest(BaseModel):
     content: str
     memo: Optional[str] = ""
 
-class NCSItem(BaseModel):
-    ncs_code: str
-    unit_name: str
-    level: int
-    score: int
-
 class AnalysisResponse(BaseModel):
     ncs_items: list[dict]
     star_drafts: list[str]
     summary: str
 
-def build_prompt(req: AnalysisRequest) -> str:
+def _get_rag_context(query: str) -> str:
+    try:
+        from rag.retriever import retrieve_ncs
+        items = retrieve_ncs(query, n_results=5)
+        if not items:
+            return ""
+        lines = [f"- [{it['ncs_code']}] {it['unit_name']}: {it['document']}" for it in items]
+        return "\n".join(lines)
+    except Exception:
+        return ""
+
+def build_prompt(req: AnalysisRequest, rag_context: str = "") -> str:
+    rag_section = ""
+    if rag_context:
+        rag_section = f"""
+[관련 NCS 역량 참고 (RAG 검색 결과)]
+{rag_context}
+"""
     return f"""당신은 국가직무능력표준(NCS) 전문가입니다.
 아래 경험을 분석하여 관련 NCS 역량과 STAR 자기소개서 초안을 작성해주세요.
-
+{rag_section}
 [경험 정보]
 - 유형: {req.exp_type}
 - 제목: {req.title}
@@ -60,13 +71,15 @@ def parse_response(text: str) -> dict:
             {"ncs_code": "NCS 분석완료", "unit_name": "분석 결과", "level": 3, "score": 75}
         ],
         "star_drafts": [text[:500]] if text else ["분석 결과를 가져오는 중 오류가 발생했습니다."],
-        "summary": "AI 분석이 완료되었습니다."
+        "summary": "AI 분석이 완료되었습니다.",
     }
 
 @router.post("/analyze", response_model=AnalysisResponse)
 async def analyze_experience(req: AnalysisRequest):
     try:
-        prompt = build_prompt(req)
+        query = f"{req.title} {req.content} {req.memo}"
+        rag_context = _get_rag_context(query)
+        prompt = build_prompt(req, rag_context)
         raw = await analyze(prompt)
         result = parse_response(raw)
         return AnalysisResponse(**result)
