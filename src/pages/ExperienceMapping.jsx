@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './ExperienceMapping.css'
 
@@ -40,10 +40,10 @@ const STAR_TEXT = [
 const RADAR_LABELS = ['판매관리', '고객', '물류', '현금관리', '재고']
 const RADAR_VALUES = [0.88, 0.76, 0.62, 0.58, 0.70]
 
-function RadarChart() {
+function RadarChart({ labels = RADAR_LABELS, values = RADAR_VALUES }) {
   const cx = 130, cy = 130, r = 90
-  const n = RADAR_LABELS.length
-  const angles = RADAR_LABELS.map((_, i) => (Math.PI * 2 * i) / n - Math.PI / 2)
+  const n = labels.length
+  const angles = labels.map((_, i) => (Math.PI * 2 * i) / n - Math.PI / 2)
 
   const gridLevels = [0.25, 0.5, 0.75, 1]
 
@@ -52,7 +52,7 @@ function RadarChart() {
     y: cy + r * val * Math.sin(angle),
   })
 
-  const dataPoints = angles.map((a, i) => toXY(a, RADAR_VALUES[i]))
+  const dataPoints = angles.map((a, i) => toXY(a, values[i] ?? 0.5))
   const dataPath = dataPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z'
 
   return (
@@ -78,7 +78,7 @@ function RadarChart() {
         return (
           <text key={i} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle"
             fontSize="11" fill="#555" fontFamily="inherit">
-            {RADAR_LABELS[i]}
+            {labels[i]}
           </text>
         )
       })}
@@ -90,14 +90,39 @@ export default function ExperienceMapping() {
   const navigate = useNavigate()
   const [activeNav, setActiveNav] = useState('mapping')
   const [copied, setCopied] = useState(false)
+  const [ncsResult, setNcsResult] = useState(null)
+  const [expInfo, setExpInfo] = useState(null)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('ncs_result')
+    const exp = localStorage.getItem('ncs_experience')
+    if (saved) setNcsResult(JSON.parse(saved))
+    if (exp) setExpInfo(JSON.parse(exp))
+  }, [])
 
   const handleNav = (item) => {
     setActiveNav(item.key)
     if (item.path) navigate(item.path)
   }
 
+  const ncsCards = ncsResult ? ncsResult.ncs_items : NCS_CARDS
+  const STAR_KEY_LABELS = ['상황 S', '과제 T', '행동 A', '결과 R']
+  const STAR_PREFIXES = ['[상황 S]', '[과제 T]', '[행동 A]', '[결과 R]']
+  const starItems = ncsResult
+    ? ncsResult.star_drafts.map((draft, i) => {
+        const prefix = STAR_PREFIXES.find(p => draft.startsWith(p))
+        return { label: STAR_KEY_LABELS[i] || `항목 ${i+1}`, text: prefix ? draft.slice(prefix.length).trim() : draft }
+      })
+    : STAR_TEXT
+  const summary = ncsResult?.summary || ''
+  const expTitle = expInfo?.title || '편의점 아르바이트 2년'
+  const expContent = expInfo?.content || '야간 혼자 편의점 운영, 재고 체크, 발주, 고객 트러블 대응, 현금 정산'
+
+  const radarLabels = ncsCards.slice(0, 5).map(c => c.unit_name || c.title)
+  const radarValues = ncsCards.slice(0, 5).map(c => (c.score ?? c.pct ?? 70) / 100)
+
   const handleCopy = () => {
-    const text = STAR_TEXT.map(s => `[${s.label}] ${s.text}`).join('\n')
+    const text = starItems.map(s => `[${s.label}] ${s.text}`).join('\n')
     navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -158,8 +183,8 @@ export default function ExperienceMapping() {
                 {/* Input experience */}
                 <div className="em-exp-card">
                   <p className="em-exp-label">입력 경험</p>
-                  <p className="em-exp-title">편의점 아르바이트 2년</p>
-                  <p className="em-exp-desc">야간 혼자 편의점 운영, 재고 체크, 발주, 고객 트러블 대응, 현금 정산</p>
+                  <p className="em-exp-title">{expTitle}</p>
+                  <p className="em-exp-desc">{expContent.slice(0, 80)}{expContent.length > 80 ? '...' : ''}</p>
                 </div>
 
                 {/* NCS cards */}
@@ -167,22 +192,21 @@ export default function ExperienceMapping() {
                   <p className="em-ncs-header">
                     <span className="em-ncs-icon">⚙️</span> NCS 역량 카드
                   </p>
-                  <p className="em-ncs-sub">1,000+ 능력단위 중 6개 매핑됨</p>
+                  <p className="em-ncs-sub">1,000+ 능력단위 중 {ncsCards.length}개 매핑됨</p>
                   <div className="em-ncs-list">
-                    {NCS_CARDS.map((c, i) => (
+                    {ncsCards.map((c, i) => (
                       <div key={i} className="em-ncs-card">
                         <div className="em-ncs-top">
-                          <span className="em-ncs-title">{c.title}</span>
+                          <span className="em-ncs-title">{c.unit_name || c.title}</span>
                           <span className={`em-level lv${c.level}`}>숙련도 Lv.{c.level}</span>
                         </div>
                         <div className="em-bar-row">
                           <div className="em-bar-wrap">
-                            <div className="em-bar" style={{ width: `${c.pct}%` }} />
+                            <div className="em-bar" style={{ width: `${c.score ?? c.pct}%` }} />
                           </div>
-                          <span className="em-pct">{c.pct}%</span>
+                          <span className="em-pct">{c.score ?? c.pct}%</span>
                         </div>
-                        <span className="em-code">{c.code}</span>
-                        {c.desc && <p className="em-desc">{c.desc}</p>}
+                        <span className="em-code">{c.ncs_code || c.code}</span>
                       </div>
                     ))}
                   </div>
@@ -197,8 +221,9 @@ export default function ExperienceMapping() {
                     <p className="em-card-title">📋 자기소개서 초안</p>
                     <p className="em-card-sub">STAR 구조 기반 · 클릭하여 편집 가능</p>
                   </div>
+                  {summary && <p style={{ fontSize: '13px', color: '#C75B3A', marginBottom: '10px', fontWeight: '600' }}>{summary}</p>}
                   <div className="em-star-list">
-                    {STAR_TEXT.map((s, i) => (
+                    {starItems.map((s, i) => (
                       <p key={i} className="em-star-item">
                         <span className="em-star-label">【{s.label}】</span> {s.text}
                       </p>
@@ -216,7 +241,7 @@ export default function ExperienceMapping() {
                 <div className="em-card">
                   <p className="em-card-title">⭐ 전체 역량 레이더</p>
                   <div className="em-radar-wrap">
-                    <RadarChart />
+                    <RadarChart labels={radarLabels} values={radarValues} />
                   </div>
                   <button className="em-btn-full">⚙️ 자격증 로드맵 설계하기</button>
                 </div>
