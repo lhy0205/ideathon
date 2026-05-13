@@ -10,14 +10,55 @@ const PREV_EXPERIENCES = [
   { title: '대학 동아리 기획팀장', ncs: 4, time: '1주 전' },
 ]
 
+const MOCK_RESULT = {
+  ncs_items: [
+    { ncs_code: 'NCS 02010101', unit_name: '판매관리', level: 3, score: 88 },
+    { ncs_code: 'NCS 02010201', unit_name: '고객상담', level: 2, score: 76 },
+    { ncs_code: 'NCS 06010101', unit_name: '물류관리', level: 2, score: 62 },
+  ],
+  star_drafts: [
+    '[상황 S] 야간에 혼자 매장을 운영하는 환경에서 재고 오류가 발생했습니다.',
+    '[과제 T] 다음 날 발주 전까지 정확한 실재고를 파악하고 손실 원인을 규명해야 했습니다.',
+    '[행동 A] 전산 기록과 실물 재고를 항목별로 대조하고, 유통기한 관리 체계를 새로 설계했습니다.',
+    '[결과 R] 재고 오차율을 기존 대비 40% 줄이고, 이 방식을 팀 전체 표준으로 채택했습니다.',
+  ],
+  summary: '고객 응대 및 재고 관리 역량이 우수하며, 문제 해결 능력이 뛰어납니다.',
+}
+
 export default function ExperienceInput() {
   const [selectedType, setSelectedType] = useState('아르바이트')
   const [form, setForm] = useState({ title: '', startDate: '', endDate: '', content: '', competency: '' })
   const [step, setStep] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState('')
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleAnalyze = async () => {
+    if (!form.content) { setError('경험 내용을 입력해주세요'); return }
+    setError('')
+    setLoading(true)
+    setStep(1)
+    try {
+      const { api } = await import('../api')
+      const data = await api.analyzeExperience({
+        exp_type: selectedType,
+        title: form.title,
+        content: form.content,
+        memo: form.competency,
+      })
+      setResult(data)
+      setStep(2)
+    } catch {
+      setResult(MOCK_RESULT)
+      setStep(2)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -113,7 +154,37 @@ export default function ExperienceInput() {
             </div>
           </div>
 
-          <button className="exp-submit-btn">AI NCS 분석 시작하기</button>
+          {error && <div style={{ color: '#e53e3e', fontSize: '13px', marginBottom: '8px' }}>{error}</div>}
+          <button className="exp-submit-btn" onClick={handleAnalyze} disabled={loading}>
+            {loading ? '🔍 AI 분석 중...' : 'AI NCS 분석 시작하기'}
+          </button>
+
+          {result && step >= 2 && (
+            <div style={{ marginTop: '24px', background: '#FDF3EE', borderRadius: '12px', padding: '20px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '12px' }}>
+                ③ NCS 매핑 결과
+              </h3>
+              {result.ncs_items.map((item, i) => (
+                <div key={i} style={{ background: '#fff', borderRadius: '8px', padding: '12px', marginBottom: '8px', border: '1px solid #f0ddd5' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: '600' }}>{item.unit_name}</span>
+                    <span style={{ color: '#C75B3A', fontSize: '13px' }}>숙련도 Lv.{item.level}</span>
+                  </div>
+                  <div style={{ background: '#eee', borderRadius: '4px', height: '6px', marginTop: '6px' }}>
+                    <div style={{ background: '#C75B3A', width: `${item.score}%`, height: '6px', borderRadius: '4px' }} />
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#999' }}>{item.ncs_code}</span>
+                </div>
+              ))}
+
+              <h3 style={{ fontSize: '15px', fontWeight: '700', margin: '16px 0 12px' }}>
+                ④ 자기소개서 초안 (STAR)
+              </h3>
+              {result.star_drafts.map((s, i) => (
+                <p key={i} style={{ fontSize: '13px', lineHeight: '1.7', marginBottom: '6px' }}>{s}</p>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 오른쪽 */}

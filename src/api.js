@@ -65,8 +65,13 @@ export const api = {
   markRead: (id) => request('PUT', `/notifications/${id}/read`),
   markAllRead: () => request('PUT', '/notifications/read-all'),
 
+  // AI 분석
+  analyzeExperience: (data) => request('POST', '/ai/analyze', data, false),
+
   // PDF
   downloadReport: () => `${BASE_URL}/pdf/growth-report?token=${getToken()}`,
+  downloadAnalysisReport: (experienceId) =>
+    `${BASE_URL}/pdf/analysis-report?experience_id=${experienceId}&token=${getToken()}`,
 }
 
 export function saveTokens(access_token, refresh_token) {

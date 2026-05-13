@@ -78,7 +78,10 @@ function PdfModal({ onClose }) {
         </div>
         <div className="gr-pdf-actions">
           <button className="gr-pdf-cancel" onClick={onClose}>취소</button>
-          <button className="gr-pdf-download">PDF 생성 및 다운로드</button>
+          <button className="gr-pdf-download" onClick={async () => {
+            const { api } = await import('../api')
+            window.open(api.downloadAnalysisReport(), '_blank')
+          }}>PDF 생성 및 다운로드</button>
         </div>
       </div>
     </div>

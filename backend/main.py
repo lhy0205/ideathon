@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from database import engine, Base
 import models, os
 from dotenv import load_dotenv
-from routers import auth, users, experiences, missions, community, notifications, pdf
+from routers import auth, users, experiences, missions, community, notifications, pdf, ai
 
 load_dotenv()
 
@@ -42,6 +42,7 @@ app.include_router(missions.router)
 app.include_router(community.router)
 app.include_router(notifications.router)
 app.include_router(pdf.router)
+app.include_router(ai.router)
 
 @app.get("/")
 def root():
