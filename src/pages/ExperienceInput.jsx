@@ -235,7 +235,7 @@ export default function ExperienceInput() {
             ))}
           </div>
 
-          <button className="exp-restart-btn" onClick={() => { setStep(0); setResult(null) }}>
+          <button className="exp-restart-btn" onClick={() => { setStep(0); setResult(null); setForm({ title: '', startDate: '', endDate: '', content: '', competency: '' }); setSelectedType('아르바이트') }}>
             + 새 경험 추가하기
           </button>
         </div>
@@ -309,7 +309,7 @@ export default function ExperienceInput() {
             📄 PDF로 저장하기
           </button>
 
-          <button className="exp-restart-btn" onClick={() => { setStep(0); setResult(null) }}>
+          <button className="exp-restart-btn" onClick={() => { setStep(0); setResult(null); setForm({ title: '', startDate: '', endDate: '', content: '', competency: '' }); setSelectedType('아르바이트') }}>
             + 새 경험 추가하기
           </button>
         </div>
