@@ -12,6 +12,7 @@ export default defineConfig({
       '/community': { target: 'http://127.0.0.1:8000', changeOrigin: true },
       '/notifications': { target: 'http://127.0.0.1:8000', changeOrigin: true },
       '/pdf': { target: 'http://127.0.0.1:8000', changeOrigin: true },
+      '/ai': { target: 'http://127.0.0.1:8000', changeOrigin: true },
       '/uploads': { target: 'http://127.0.0.1:8000', changeOrigin: true },
     },
   },
