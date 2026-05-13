@@ -1,14 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './ExperienceInput.css'
 
 const TYPES = ['아르바이트', '인턴', '동아리/학생회', '프리랜서', '봉사활동', '개인 프로젝트', '독학/공부', '기타']
 const STEPS = ['① 경험 작성', '② AI 분석중', '③ NCS 매핑 결과', '④ 자기소개서 초안']
-
-const PREV_EXPERIENCES = [
-  { title: '편의점 아르바이트 2년', ncs: 6, time: '3일 전' },
-  { title: '대학 동아리 기획팀장', ncs: 4, time: '1주 전' },
-]
-
 
 const STAR_LABELS = {
   '[상황 S]': '상황 (Situation)',
@@ -25,6 +19,13 @@ export default function ExperienceInput() {
   const [error, setError] = useState('')
   const [editing, setEditing] = useState(false)
   const [editedDrafts, setEditedDrafts] = useState([])
+  const [history, setHistory] = useState([])
+
+  useEffect(() => {
+    import('../api').then(({ api }) => {
+      api.getAnalysisHistory().then(setHistory).catch(() => {})
+    })
+  }, [result])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -155,12 +156,22 @@ export default function ExperienceInput() {
             <div className="exp-card">
               <h3 className="exp-card-title">이전 입력 경험</h3>
               <div className="exp-prev-list">
-                {PREV_EXPERIENCES.map((e, i) => (
-                  <div key={i} className="exp-prev-item">
-                    <p className="exp-prev-title">{e.title}</p>
-                    <p className="exp-prev-meta">NCS {e.ncs}개 추출 · {e.time}</p>
-                  </div>
-                ))}
+                {history.length === 0
+                  ? <p style={{ fontSize: '13px', color: '#aaa' }}>아직 분석한 경험이 없습니다</p>
+                  : history.map((e) => (
+                    <div key={e.idx} className="exp-prev-item" style={{ cursor: 'pointer' }}
+                      onClick={async () => {
+                        const { api } = await import('../api')
+                        const detail = await api.getAnalysisDetail(e.idx)
+                        setResult(detail)
+                        setStep(2)
+                      }}
+                    >
+                      <p className="exp-prev-title">{e.title}</p>
+                      <p className="exp-prev-meta">NCS {e.ncs_count}개 추출 · {e.created_at}</p>
+                    </div>
+                  ))
+                }
               </div>
             </div>
           </div>

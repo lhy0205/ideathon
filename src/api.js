@@ -67,6 +67,8 @@ export const api = {
 
   // AI 분석
   analyzeExperience: (data) => request('POST', '/ai/analyze', data, false),
+  getAnalysisHistory: () => request('GET', '/ai/history', null, false),
+  getAnalysisDetail: (idx) => request('GET', `/ai/history/${idx}`, null, false),
 
   // PDF
   downloadReport: async (data) => {

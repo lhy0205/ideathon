@@ -29,6 +29,7 @@ class UserExperience(Base):
     end_date     = Column(String(20),  nullable=True)   # 종료시기
     content      = Column(Text,        nullable=True)   # 경험내용
     memo         = Column(Text,        nullable=True)   # 경험메모
+    ncs_mapping  = Column(Text,        nullable=True)   # AI 분석 결과 JSON
     created_at   = Column(DateTime, server_default=func.now())
 
     user = relationship("User", back_populates="experiences")

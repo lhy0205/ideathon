@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 import json, re
 from rag.exaone_client import analyze
 
@@ -11,6 +11,8 @@ class AnalysisRequest(BaseModel):
     title: Optional[str] = ""
     content: str
     memo: Optional[str] = ""
+    start_date: Optional[str] = ""
+    end_date: Optional[str] = ""
 
 class AnalysisResponse(BaseModel):
     ncs_items: list[dict]
@@ -91,6 +93,28 @@ async def analyze_experience(req: AnalysisRequest):
         prompt = build_prompt(req, rag_context)
         raw = await analyze(prompt)
         result = parse_response(raw)
+
+        # DB 저장 (실패해도 분석 결과는 반환)
+        try:
+            from database import SessionLocal
+            import models as m
+            db = SessionLocal()
+            exp = m.UserExperience(
+                user_idx=1,
+                exp_type=req.exp_type or "",
+                title=req.title or "제목 없음",
+                start_date=req.start_date or "",
+                end_date=req.end_date or "",
+                content=req.content,
+                memo=req.memo or "",
+                ncs_mapping=json.dumps(result, ensure_ascii=False),
+            )
+            db.add(exp)
+            db.commit()
+            db.close()
+        except Exception:
+            pass
+
         return AnalysisResponse(**result)
     except ValueError as e:
         if "invalid_input" in str(e):
@@ -98,3 +122,55 @@ async def analyze_experience(req: AnalysisRequest):
         raise HTTPException(status_code=500, detail=f"AI 분석 오류: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI 분석 오류: {str(e)}")
+
+
+class ExperienceHistoryItem(BaseModel):
+    idx: int
+    title: str
+    exp_type: Optional[str]
+    ncs_count: int
+    created_at: str
+
+@router.get("/history", response_model=List[ExperienceHistoryItem])
+def get_history():
+    try:
+        from database import SessionLocal
+        import models as m
+        db = SessionLocal()
+        exps = db.query(m.UserExperience).order_by(m.UserExperience.created_at.desc()).limit(10).all()
+        result = []
+        for e in exps:
+            ncs_count = 0
+            if e.ncs_mapping:
+                try:
+                    ncs_count = len(json.loads(e.ncs_mapping).get("ncs_items", []))
+                except Exception:
+                    pass
+            result.append(ExperienceHistoryItem(
+                idx=e.idx,
+                title=e.title,
+                exp_type=e.exp_type,
+                ncs_count=ncs_count,
+                created_at=e.created_at.strftime("%Y-%m-%d") if e.created_at else "",
+            ))
+        db.close()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/history/{idx}", response_model=AnalysisResponse)
+def get_history_detail(idx: int):
+    try:
+        from database import SessionLocal
+        import models as m
+        db = SessionLocal()
+        exp = db.query(m.UserExperience).filter(m.UserExperience.idx == idx).first()
+        db.close()
+        if not exp or not exp.ncs_mapping:
+            raise HTTPException(status_code=404, detail="분석 결과가 없습니다")
+        return AnalysisResponse(**json.loads(exp.ncs_mapping))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
