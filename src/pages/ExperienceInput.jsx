@@ -183,6 +183,26 @@ export default function ExperienceInput() {
               {result.star_drafts.map((s, i) => (
                 <p key={i} style={{ fontSize: '13px', lineHeight: '1.7', marginBottom: '6px' }}>{s}</p>
               ))}
+
+              <button
+                style={{ marginTop: '16px', width: '100%', padding: '12px', background: '#C75B3A', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}
+                onClick={async () => {
+                  try {
+                    const { api } = await import('../api')
+                    await api.downloadReport({
+                      user_name: '사용자',
+                      summary: result.summary,
+                      ncs_items: result.ncs_items,
+                      star_drafts: result.star_drafts,
+                      certs: [],
+                    })
+                  } catch (e) {
+                    alert('PDF 생성 실패: ' + e.message)
+                  }
+                }}
+              >
+                PDF로 저장하기
+              </button>
             </div>
           )}
         </div>
