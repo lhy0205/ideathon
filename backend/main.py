@@ -11,6 +11,20 @@ load_dotenv()
 # DB 테이블 자동 생성
 Base.metadata.create_all(bind=engine)
 
+# 신규 컬럼 마이그레이션 (없으면 추가)
+def _migrate():
+    from sqlalchemy import text
+    from database import SessionLocal
+    try:
+        db = SessionLocal()
+        db.execute(text("ALTER TABLE user_experiences ADD COLUMN ncs_mapping TEXT"))
+        db.commit()
+        db.close()
+    except Exception:
+        pass
+
+_migrate()
+
 app = FastAPI(title="Pause to Pass API", version="1.0.0")
 
 # CORS 설정 (React 프론트와 연결)
