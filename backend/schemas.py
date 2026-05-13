@@ -112,6 +112,18 @@ class PostResponse(BaseModel):
     class Config:
         from_attributes = True
 
+# ── AI Analysis ──
+class NCSItem(BaseModel):
+    ncs_code: str
+    unit_name: str
+    level: int
+    score: int
+
+class AnalysisResponse(BaseModel):
+    ncs_items: List[dict]
+    star_drafts: List[str]
+    summary: str
+
 # ── Notification ──
 class NotificationResponse(BaseModel):
     id: int
