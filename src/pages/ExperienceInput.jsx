@@ -21,11 +21,15 @@ export default function ExperienceInput() {
   const [editedDrafts, setEditedDrafts] = useState([])
   const [history, setHistory] = useState([])
 
-  useEffect(() => {
+  const loadHistory = () => {
     import('../api').then(({ api }) => {
       api.getAnalysisHistory().then(setHistory).catch(() => {})
     })
-  }, [result])
+  }
+
+  useEffect(() => {
+    loadHistory()
+  }, [step === 0])
 
   const handleChange = (e) => {
     const { name, value } = e.target
