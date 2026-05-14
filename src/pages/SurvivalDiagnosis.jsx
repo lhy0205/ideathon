@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import './SurvivalDiagnosis.css'
 
 const NAV_ITEMS = [
@@ -125,32 +125,6 @@ function SurvivalCurve() {
 export default function SurvivalDiagnosis() {
   const navigate = useNavigate()
   const [activeNav, setActiveNav] = useState('survival')
-  const [personas, setPersonas] = useState(DEFAULT_PERSONAS)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const loadPersonas = async () => {
-      try {
-        const { api } = await import('../api')
-        const data = await api.getSeniorPersonas(3)
-        if (data && data.length > 0) {
-          setPersonas(data.map((p, i) => ({
-            ...p,
-            avatar: p.name || ['김A', '이B', '박C'][i] || '선배',
-            title: p.career_path || '경력 경로',
-            desc: `공백기 ${p.gap_period}개월 · ${p.acquired_certs || '자격증 미입력'}`,
-            similarity: p.similarity_score || 0,
-            color: ['#f0ede7', '#e8f0f7', '#f0f7ee'][i] || '#f0ede7',
-          })))
-        }
-      } catch (e) {
-        console.log('선배 데이터 로드 실패, 기본값 사용:', e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadPersonas()
-  }, [])
 
   const handleNav = (item) => {
     setActiveNav(item.key)
@@ -222,7 +196,7 @@ export default function SurvivalDiagnosis() {
                   <p className="sv-card-title">👥 선배 페르소나 매칭</p>
                   <p className="sv-card-sub">KNN으로 나와 가장 유사한 합격자 3인 매칭</p>
                   <div className="sv-persona-list">
-                    {personas.map((p, i) => (
+                    {DEFAULT_PERSONAS.map((p, i) => (
                       <div key={i} className="sv-persona-item">
                         <div className="sv-persona-avatar" style={{ background: p.color }}>
                           {p.avatar}
