@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './MyPage.css'
 
@@ -39,13 +39,27 @@ export default function MyPage() {
   const navigate = useNavigate()
   const [activeNav, setActiveNav] = useState('mypage')
   const [showModal, setShowModal] = useState(false)
+  const [user, setUser] = useState(null)
   const [form, setForm] = useState({
-    name: '김지현',
-    email: 'example@email.com',
-    school: '한국대학교 / 경영학과',
-    startYear: '2024',
-    startMonth: '08',
+    name: '',
+    email: '',
+    job_interest: '',
+    gap_start_date: '',
   })
+
+  useEffect(() => {
+    import('../api').then(({ api }) => {
+      api.getMe().then(data => {
+        setUser(data)
+        setForm({
+          name: data.name || '',
+          email: data.email || '',
+          job_interest: data.job_interest || '',
+          gap_start_date: data.gap_start_date || '',
+        })
+      }).catch(() => navigate('/login'))
+    })
+  }, [])
 
   const handleNav = (item) => {
     setActiveNav(item.key)
@@ -91,7 +105,7 @@ export default function MyPage() {
           <span className="mp-breadcrumb">마이페이지</span>
           <div className="mp-topbar-right">
             <span className="mp-bell">🔔</span>
-            <span className="mp-topuser">김지</span>
+            <span className="mp-topuser">{user?.name?.slice(0, 2) || ''}</span>
           </div>
         </div>
 
@@ -104,13 +118,13 @@ export default function MyPage() {
           <div className="mp-row">
             {/* Profile card */}
             <div className="mp-card mp-profile-card">
-              <div className="mp-profile-avatar">김지</div>
+              <div className="mp-profile-avatar">{user?.name?.slice(0, 2) || ''}</div>
               <div className="mp-profile-info">
-                <p className="mp-profile-name">김지현</p>
-                <p className="mp-profile-email">example@email.com</p>
+                <p className="mp-profile-name">{user?.name || ''}</p>
+                <p className="mp-profile-email">{user?.email || ''}</p>
                 <div className="mp-profile-tags">
-                  <span className="mp-tag">데이터 분석 지망</span>
-                  <span className="mp-tag">공백기 5개월</span>
+                  {user?.job_interest && <span className="mp-tag">{user.job_interest} 지망</span>}
+                  {user?.gap_start_date && <span className="mp-tag">공백기 시작 {user.gap_start_date}</span>}
                 </div>
               </div>
               <button className="mp-edit-btn" onClick={() => setShowModal(true)}>프로필 수정</button>
@@ -207,8 +221,7 @@ export default function MyPage() {
             </div>
 
             <div className="mp-modal-avatar-wrap">
-              <div className="mp-modal-avatar">김지</div>
-              <div className="mp-modal-camera">📷</div>
+              <div className="mp-modal-avatar">{user?.name?.slice(0, 2) || ''}</div>
             </div>
 
             <div className="mp-modal-form">
@@ -225,41 +238,36 @@ export default function MyPage() {
                 className="mp-modal-input"
                 name="email"
                 value={form.email}
-                onChange={handleFormChange}
+                disabled
               />
 
-              <label className="mp-modal-label">학교/전공</label>
+              <label className="mp-modal-label">관심 직무</label>
               <input
                 className="mp-modal-input"
-                name="school"
-                value={form.school}
+                name="job_interest"
+                value={form.job_interest}
                 onChange={handleFormChange}
+                placeholder="예) 데이터 분석, 백엔드 개발"
               />
 
               <label className="mp-modal-label">공백기 시작일</label>
-              <div className="mp-modal-date-row">
-                <input
-                  className="mp-modal-input mp-modal-date-input"
-                  name="startYear"
-                  value={form.startYear}
-                  onChange={handleFormChange}
-                  placeholder="YYYY"
-                />
-                <span className="mp-modal-date-sep">년</span>
-                <input
-                  className="mp-modal-input mp-modal-date-input"
-                  name="startMonth"
-                  value={form.startMonth}
-                  onChange={handleFormChange}
-                  placeholder="MM"
-                />
-                <span className="mp-modal-date-sep">월</span>
-              </div>
+              <input
+                className="mp-modal-input"
+                name="gap_start_date"
+                value={form.gap_start_date}
+                onChange={handleFormChange}
+                placeholder="예) 2024-08"
+              />
             </div>
 
             <div className="mp-modal-btns">
               <button className="mp-modal-cancel" onClick={() => setShowModal(false)}>취소</button>
-              <button className="mp-modal-save" onClick={() => setShowModal(false)}>✓ 저장</button>
+              <button className="mp-modal-save" onClick={async () => {
+                const { api } = await import('../api')
+                const updated = await api.updateMe({ name: form.name, job_interest: form.job_interest, gap_start_date: form.gap_start_date })
+                setUser(updated)
+                setShowModal(false)
+              }}>✓ 저장</button>
             </div>
           </div>
         </div>
