@@ -1,7 +1,7 @@
 import httpx
 import os
 
-OLLAMA_HOST = os.getenv("AI_HOST", "https://28c9-203-255-221-68.ngrok-free.app")
+OLLAMA_HOST = os.getenv("AI_HOST", "https://3e1b-203-255-221-68.ngrok-free.app")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "exaone3.5:7.8b")
 
 async def analyze(prompt: str) -> str:
