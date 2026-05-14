@@ -1,5 +1,5 @@
-import { useNavigate, useEffect } from 'react-router-dom'
-import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import './SurvivalDiagnosis.css'
 
 const NAV_ITEMS = [
@@ -222,7 +222,7 @@ export default function SurvivalDiagnosis() {
                   <p className="sv-card-title">👥 선배 페르소나 매칭</p>
                   <p className="sv-card-sub">KNN으로 나와 가장 유사한 합격자 3인 매칭</p>
                   <div className="sv-persona-list">
-                    {PERSONAS.map((p, i) => (
+                    {personas.map((p, i) => (
                       <div key={i} className="sv-persona-item">
                         <div className="sv-persona-avatar" style={{ background: p.color }}>
                           {p.avatar}
@@ -230,7 +230,7 @@ export default function SurvivalDiagnosis() {
                         <div className="sv-persona-info">
                           <p className="sv-persona-title">{p.title}</p>
                           <p className="sv-persona-desc">{p.desc}</p>
-                          <span className="sv-similarity">유사도 {p.similarity}%</span>
+                          <span className="sv-similarity">유사도 {p.similarity || p.similarity_score}%</span>
                         </div>
                         <span className="sv-pass-badge">합격</span>
                       </div>
