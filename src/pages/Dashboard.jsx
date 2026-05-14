@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ExperienceInput from './ExperienceInput'
 import CertRoadmap from './CertRoadmap'
@@ -440,6 +440,13 @@ export default function Dashboard() {
   const [searchParams] = useSearchParams()
   const activeNav = searchParams.get('tab') || 'home'
   const navigate = useNavigate()
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    import('../api').then(({ api }) => {
+      api.getMe().then(setUser).catch(() => navigate('/login'))
+    })
+  }, [])
 
   return (
     <div className="db-root">
@@ -485,7 +492,7 @@ export default function Dashboard() {
                 : activeNav === 'report' ? '성장 리포트'
                 : '홈 대시보드'}
             </span>
-            <span className="db-user">· 김지</span>
+            <span className="db-user">· {user?.name?.slice(0, 2) || ''}</span>
           </div>
 
           {activeNav === 'password' && <PasswordSection />}
@@ -495,7 +502,7 @@ export default function Dashboard() {
           {activeNav === 'community' && <CommunitySection />}
           {activeNav === 'report' && <div className="db-content"><GrowthReport /></div>}
           {activeNav !== 'password' && activeNav !== 'experience' && activeNav !== 'roadmap' && activeNav !== 'mission' && activeNav !== 'community' && activeNav !== 'report' && <div className="db-content">
-            <h2 className="db-welcome">안녕하세요, 김지현 님</h2>
+            <h2 className="db-welcome">안녕하세요, {user?.name || ''} 님</h2>
 
             {/* Stats */}
             <div className="db-stats">
