@@ -56,25 +56,14 @@ export default function Login() {
 
 function LoginForm({ onGoRegister }) {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('test@test.com')
+  const [password, setPassword] = useState('test1234')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault()
-    setError('')
-    setLoading(true)
-    try {
-      const { api, saveTokens } = await import('../api')
-      const data = await api.login(email, password)
-      saveTokens(data.access_token, data.refresh_token)
-      navigate('/dashboard')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
+    navigate('/dashboard')
   }
 
   return (

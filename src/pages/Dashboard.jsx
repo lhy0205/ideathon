@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ExperienceInput from './ExperienceInput'
 import CertRoadmap from './CertRoadmap'
@@ -109,6 +109,32 @@ function MissionSection() {
   const [missionError, setMissionError] = useState('')
   const fileInputRef = useState(null)
 
+  // 미션 목록 불러오기
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { api } = await import('../api')
+        const data = await api.getMissions()
+        if (data && data.length > 0) {
+          const loaded = data.map(m => ({
+            id: m.id,
+            title: m.title,
+            status: m.completed ? '완료' : '진행 중',
+            done: m.completed,
+          }))
+          setLogs(loaded)
+          const done = data.filter(m => m.completed).length
+          setTotalDone(done)
+          setMonthDone(done)
+          if (data[0]?.streak) setStreak(data[0].streak)
+        }
+      } catch {
+        // 로그인 안 된 경우 기본값 유지
+      }
+    }
+    load()
+  }, [])
+
   const handlePhotoChange = (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -117,13 +143,16 @@ function MissionSection() {
     reader.readAsDataURL(file)
   }
 
-  const handleMissionComplete = () => {
+  const handleMissionComplete = async () => {
     if (!missionText.trim()) {
       setMissionError('미션 내용을 작성해주세요.')
       return
     }
     setMissionError('')
-    const newLog = { title: missionText.trim(), status: '완료', done: true }
+    const text = missionText.trim()
+
+    // 즉시 UI 반영
+    const newLog = { title: text, status: '완료', done: true }
     setLogs(prev => [newLog, ...prev])
     setStreak(s => s + 1)
     setTotalDone(t => t + 1)
@@ -132,6 +161,19 @@ function MissionSection() {
     setPhotoPreview(null)
     setCompleted(true)
     setTimeout(() => setCompleted(false), 3000)
+
+    // 백엔드 저장
+    try {
+      const { api } = await import('../api')
+      const created = await api.createMission({
+        title: '오늘 배운 것 한 줄 쓰기',
+        content: text,
+        mission_type: 'daily_learning',
+      })
+      await api.completeMission(created.id)
+    } catch {
+      // 저장 실패해도 UI는 유지
+    }
   }
 
   const handleExtraSelect = (i) => {
@@ -141,15 +183,29 @@ function MissionSection() {
     const alreadyIn = logs.some(l => l.title === m.title)
     if (!alreadyIn) {
       setLogs(prev => [...prev, { title: m.title, status: '진행 중', done: false }])
+      // 백엔드 저장
+      import('../api').then(({ api }) =>
+        api.createMission({ title: m.title, content: m.title, mission_type: 'extra' })
+      ).catch(() => {})
     }
   }
 
-  const handleExtraDone = (title) => {
+  const handleExtraDone = async (title) => {
     setLogs(prev => prev.map(l =>
       l.title === title ? { ...l, status: '완료', done: true } : l
     ))
     setTotalDone(t => t + 1)
     setMonthDone(m => m + 1)
+
+    // 백엔드에서 해당 미션 id 찾아서 완료 처리
+    try {
+      const { api } = await import('../api')
+      const missions = await api.getMissions()
+      const target = missions.find(m => m.title === title && !m.completed)
+      if (target) await api.completeMission(target.id)
+    } catch {
+      // 저장 실패해도 UI는 유지
+    }
   }
 
   const visibleLogs = showAllLogs ? logs : logs.slice(0, 3)
@@ -440,6 +496,13 @@ export default function Dashboard() {
   const [searchParams] = useSearchParams()
   const activeNav = searchParams.get('tab') || 'home'
   const navigate = useNavigate()
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    import('../api').then(({ api }) => {
+      api.getMe().then(setUser).catch(() => {})
+    })
+  }, [])
 
   return (
     <div className="db-root">
@@ -485,7 +548,7 @@ export default function Dashboard() {
                 : activeNav === 'report' ? '성장 리포트'
                 : '홈 대시보드'}
             </span>
-            <span className="db-user">· 김지</span>
+            <span className="db-user">· {user?.name?.slice(0, 2) || ''}</span>
           </div>
 
           {activeNav === 'password' && <PasswordSection />}
@@ -495,7 +558,7 @@ export default function Dashboard() {
           {activeNav === 'community' && <CommunitySection />}
           {activeNav === 'report' && <div className="db-content"><GrowthReport /></div>}
           {activeNav !== 'password' && activeNav !== 'experience' && activeNav !== 'roadmap' && activeNav !== 'mission' && activeNav !== 'community' && activeNav !== 'report' && <div className="db-content">
-            <h2 className="db-welcome">안녕하세요, 김지현 님</h2>
+            <h2 className="db-welcome">안녕하세요, {user?.name || ''} 님</h2>
 
             {/* Stats */}
             <div className="db-stats">
