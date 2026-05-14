@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const BACKEND = 'https://impurity-richly-bonding.ngrok-free.dev'
+const BACKEND = 'http://localhost:8000'
 
 export default defineConfig({
   plugins: [react()],
