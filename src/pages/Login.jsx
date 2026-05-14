@@ -56,8 +56,8 @@ export default function Login() {
 
 function LoginForm({ onGoRegister }) {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('test@test.com')
+  const [password, setPassword] = useState('test1234')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
