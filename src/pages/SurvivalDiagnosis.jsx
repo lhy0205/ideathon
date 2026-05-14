@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useEffect } from 'react-router-dom'
 import { useState } from 'react'
 import './SurvivalDiagnosis.css'
 
@@ -15,26 +15,26 @@ const NAV_ITEMS = [
   { key: 'report',     label: '성장 리포트',    path: '/dashboard?tab=report' },
 ]
 
-const PERSONAS = [
+const DEFAULT_PERSONAS = [
   {
     avatar: '김A',
     title: '문과 → 데이터 분석 취업',
     desc: '공백기 7개월 · ADsP + SQLD 취득',
-    similarity: 94,
+    similarity_score: 94,
     color: '#f0ede7',
   },
   {
     avatar: '이B',
     title: '비전공자 SQL 독학 → SI기업',
     desc: '공백기 6개월 · 정처기 + SQLD',
-    similarity: 89,
+    similarity_score: 89,
     color: '#e8f0f7',
   },
   {
     avatar: '박C',
     title: '경영학 → 스타트업 기획',
     desc: '공백기 5개월 · ADsP 취득',
-    similarity: 81,
+    similarity_score: 81,
     color: '#f0f7ee',
   },
 ]
@@ -125,6 +125,32 @@ function SurvivalCurve() {
 export default function SurvivalDiagnosis() {
   const navigate = useNavigate()
   const [activeNav, setActiveNav] = useState('survival')
+  const [personas, setPersonas] = useState(DEFAULT_PERSONAS)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadPersonas = async () => {
+      try {
+        const { api } = await import('../api')
+        const data = await api.getSeniorPersonas(3)
+        if (data && data.length > 0) {
+          setPersonas(data.map((p, i) => ({
+            ...p,
+            avatar: p.name || ['김A', '이B', '박C'][i] || '선배',
+            title: p.career_path || '경력 경로',
+            desc: `공백기 ${p.gap_period}개월 · ${p.acquired_certs || '자격증 미입력'}`,
+            similarity: p.similarity_score || 0,
+            color: ['#f0ede7', '#e8f0f7', '#f0f7ee'][i] || '#f0ede7',
+          })))
+        }
+      } catch (e) {
+        console.log('선배 데이터 로드 실패, 기본값 사용:', e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadPersonas()
+  }, [])
 
   const handleNav = (item) => {
     setActiveNav(item.key)
