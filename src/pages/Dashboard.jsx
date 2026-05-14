@@ -444,7 +444,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     import('../api').then(({ api }) => {
-      api.getMe().then(setUser).catch(() => navigate('/login'))
+      api.getMe().then(setUser).catch(() => {})
     })
   }, [])
 

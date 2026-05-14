@@ -57,7 +57,7 @@ export default function MyPage() {
           job_interest: data.job_interest || '',
           gap_start_date: data.gap_start_date || '',
         })
-      }).catch(() => navigate('/login'))
+      }).catch(() => {})
     })
   }, [])
 
