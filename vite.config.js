@@ -17,6 +17,7 @@ export default defineConfig({
       '/ai': { target: BACKEND, changeOrigin: true },
       '/uploads': { target: BACKEND, changeOrigin: true },
       '/senior-personas': { target: BACKEND, changeOrigin: true },
+      '/survival': { target: BACKEND, changeOrigin: true },
     },
   },
 })
