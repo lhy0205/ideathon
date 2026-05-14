@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import './SurvivalDiagnosis.css'
+import { api } from '../api'
 
 const NAV_ITEMS = [
   { key: 'home',       label: '홈 대시보드',   path: '/dashboard' },
@@ -39,20 +40,44 @@ const DEFAULT_PERSONAS = [
   },
 ]
 
+// 더미 데이터: 나중에 Cox 모델 API로 교체
+const getDummySurvivalData = () => ({
+  user: {
+    name: '김지',
+    gap_period: 5,
+    department: '경영학',
+    certifications: ['ADsP'],
+  },
+  curves: {
+    similar_group: [
+      [0, 95], [2, 85], [3, 76], [4, 68], [5, 60], [7, 42], [9, 24], [11, 12], [12, 8],
+    ],
+    overall_average: [
+      [0, 82], [2, 75], [3, 70], [4, 65], [5, 60], [7, 50], [9, 38], [11, 28], [12, 22],
+    ],
+  },
+  percentile: 38,
+})
+
+// 나중에 Cox 백엔드와 연동할 때는 이렇게 사용:
+// const getSurvivalData = async (userProfile) => {
+//   try {
+//     return await api.getSurvivalData(userProfile)
+//   } catch (e) {
+//     console.error('생존 곡선 조회 실패:', e)
+//     return getDummySurvivalData()
+//   }
+// }
+
 /* ── SVG 생존 곡선 ── */
-function SurvivalCurve() {
+function SurvivalCurve({ survivalData }) {
   const W = 520, H = 260
   const px = (mo) => 60 + (mo / 12) * 420
   const py = (pct) => 240 - (pct / 100) * 200
 
-  // 나와 유사한 그룹 (solid orange)
-  const solidPts = [
-    [0, 95], [2, 85], [3, 76], [4, 68], [5, 60], [7, 42], [9, 24], [11, 12], [12, 8],
-  ]
-  // 전체 평균 (dashed gray)
-  const dashPts = [
-    [0, 82], [2, 75], [3, 70], [4, 65], [5, 60], [7, 50], [9, 38], [11, 28], [12, 22],
-  ]
+  const solidPts = survivalData.curves.similar_group
+  const dashPts = survivalData.curves.overall_average
+  const userGapPeriod = survivalData.user.gap_period
 
   const toPath = (pts) =>
     pts
@@ -63,8 +88,8 @@ function SurvivalCurve() {
     toPath(solidPts) +
     ` L${px(12)},${py(0)} L${px(0)},${py(0)} Z`
 
-  const markerX = px(5)
-  const markerY = py(60)
+  const markerX = px(userGapPeriod)
+  const markerY = py(solidPts.find(([m]) => m === userGapPeriod)?.[1] || 60)
 
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
@@ -97,7 +122,7 @@ function SurvivalCurve() {
         rx="6" fill="#3b1a0e" />
       <text x={markerX + 51} y={markerY - 1} textAnchor="middle"
         fontSize="12" fontWeight="700" fill="#fff" fontFamily="inherit">
-        나 (5개월)
+        나 ({userGapPeriod}개월)
       </text>
 
       {/* Y-axis labels */}
@@ -108,8 +133,8 @@ function SurvivalCurve() {
 
       {/* X-axis labels */}
       <text x={px(3)} y={py(0) + 18} textAnchor="middle" fontSize="11" fill="#888">3개월</text>
-      <text x={px(5)} y={py(0) + 18} textAnchor="middle" fontSize="12"
-        fontWeight="700" fill="#c4603d">5개월</text>
+      <text x={px(userGapPeriod)} y={py(0) + 18} textAnchor="middle" fontSize="12"
+        fontWeight="700" fill="#c4603d">{userGapPeriod}개월</text>
       <text x={px(9)} y={py(0) + 18} textAnchor="middle" fontSize="11" fill="#888">9개월</text>
 
       {/* Legend */}
@@ -125,6 +150,7 @@ function SurvivalCurve() {
 export default function SurvivalDiagnosis() {
   const navigate = useNavigate()
   const [activeNav, setActiveNav] = useState('survival')
+  const survivalData = getDummySurvivalData()
 
   const handleNav = (item) => {
     setActiveNav(item.key)
@@ -163,7 +189,7 @@ export default function SurvivalDiagnosis() {
         <main className="sv-main">
           <div className="sv-topbar">
             <span className="sv-breadcrumb">생존 진단</span>
-            <span className="sv-user">· 김지</span>
+            <span className="sv-user">· {survivalData.user.name}</span>
           </div>
 
           <div className="sv-content">
@@ -177,12 +203,14 @@ export default function SurvivalDiagnosis() {
                   <p className="sv-card-title">≈ 공백기 생존 곡선</p>
                   <p className="sv-card-sub">Cox 비례 위험 모델 기반 · 동일 조건 청년 2,847명 데이터</p>
                   <div className="sv-chart-wrap">
-                    <SurvivalCurve />
+                    <SurvivalCurve survivalData={survivalData} />
                   </div>
                   <div className="sv-alert">
-                    <p className="sv-alert-title">현재 5개월 공백기 → 상위 38% 수준</p>
+                    <p className="sv-alert-title">
+                      현재 {survivalData.user.gap_period}개월 공백기 → 상위 {survivalData.percentile}% 수준
+                    </p>
                     <p className="sv-alert-desc">
-                      지금이 집중 행동의 골든타임입니다. 6~8개월 이후 취업률 급감 구간에 진입하기 전
+                      지금이 집중 행동의 골든타임입니다. {survivalData.user.gap_period + 1}~{survivalData.user.gap_period + 3}개월 이후 취업률 급감 구간에 진입하기 전
                       자격증 취득을 완료하는 것이 중요합니다.
                     </p>
                   </div>
