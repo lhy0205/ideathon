@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from database import engine, Base
+from database import engine, Base, init_db
 import models, os
 from dotenv import load_dotenv
 from routers import auth, users, experiences, missions, community, notifications, pdf, ai, senior_personas
@@ -26,8 +26,9 @@ def _pre_migrate():
 
 _pre_migrate()
 
-# DB 테이블 자동 생성
+# DB 테이블 자동 생성 및 초기 데이터 추가
 Base.metadata.create_all(bind=engine)
+init_db()
 
 # DB 마이그레이션
 def _migrate():
