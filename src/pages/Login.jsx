@@ -61,20 +61,9 @@ function LoginForm({ onGoRegister }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault()
-    setError('')
-    setLoading(true)
-    try {
-      const { api, saveTokens } = await import('../api')
-      const data = await api.login(email, password)
-      saveTokens(data.access_token, data.refresh_token)
-    } catch {
-      // 로그인 실패해도 대시보드로 이동
-    } finally {
-      setLoading(false)
-      navigate('/dashboard')
-    }
+    navigate('/dashboard')
   }
 
   return (
