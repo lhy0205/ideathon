@@ -15,11 +15,28 @@ const NAV_ITEMS = [
   { key: 'report',     label: '성장 리포트',    path: '/dashboard?tab=report' },
 ]
 
-// 더미 fallback (API 실패 시)
 const FALLBACK_PERSONAS = [
-  { avatar_label: '김A', career_path_summary: '문과 → 데이터 분석 취업', gap_period: '7개월', certifications: 'ADsP + SQLD', similarity_score: 94, avatar_color: '#f0ede7' },
-  { avatar_label: '이B', career_path_summary: '비전공자 SQL 독학 → SI기업', gap_period: '6개월', certifications: '정처기 + SQLD', similarity_score: 89, avatar_color: '#e8f0f7' },
-  { avatar_label: '박C', career_path_summary: '경영학 → 스타트업 기획', gap_period: '5개월', certifications: 'ADsP', similarity_score: 81, avatar_color: '#f0f7ee' },
+  {
+    avatar: '김A',
+    title: '문과 → 데이터 분석 취업',
+    desc: '공백기 7개월 · ADsP + SQLD 취득',
+    similarity_score: 94,
+    color: '#f0ede7',
+  },
+  {
+    avatar: '이B',
+    title: '비전공자 SQL 독학 → SI기업',
+    desc: '공백기 6개월 · 정처기 + SQLD',
+    similarity_score: 89,
+    color: '#e8f0f7',
+  },
+  {
+    avatar: '박C',
+    title: '경영학 → 스타트업 기획',
+    desc: '공백기 5개월 · ADsP 취득',
+    similarity_score: 81,
+    color: '#f0f7ee',
+  },
 ]
 
 /* ── SVG 생존 곡선 (Cox PH 동적 데이터) ── */
@@ -141,13 +158,11 @@ export default function SurvivalDiagnosis() {
     const fetchAll = async () => {
       const { api } = await import('../api')
 
-      // 생존 곡선 (Cox PH)
       api.getSurvivalCurve(profile)
         .then(data => setCurveData(data))
         .catch(() => setCurveData(FALLBACK_CURVE))
         .finally(() => setCurveLoading(false))
 
-      // 선배 페르소나 (KNN)
       api.matchPersonas(profile, 3)
         .then(data => { if (data && data.length > 0) setPersonas(data) })
         .catch(() => setPersonas(FALLBACK_PERSONAS))
@@ -234,23 +249,19 @@ export default function SurvivalDiagnosis() {
                   <p className="sv-card-title">👥 선배 페르소나 매칭</p>
                   <p className="sv-card-sub">KNN으로 나와 가장 유사한 합격자 3인 매칭</p>
                   <div className="sv-persona-list">
-                    {personaLoading ? (
-                      <p style={{ color: '#888', fontSize: '13px', textAlign: 'center', padding: '12px 0' }}>매칭 중...</p>
-                    ) : (
-                      personas.map((p, i) => (
-                        <div key={i} className="sv-persona-item">
-                          <div className="sv-persona-avatar" style={{ background: p.avatar_color || '#f0ede7' }}>
-                            {p.avatar_label}
-                          </div>
-                          <div className="sv-persona-info">
-                            <p className="sv-persona-title">{p.career_path_summary}</p>
-                            <p className="sv-persona-desc">{p.gap_period} · {p.certifications}</p>
-                            <span className="sv-similarity">유사도 {p.similarity_score}%</span>
-                          </div>
-                          <span className="sv-pass-badge">합격</span>
+                    {DEFAULT_PERSONAS.map((p, i) => (
+                      <div key={i} className="sv-persona-item">
+                        <div className="sv-persona-avatar" style={{ background: p.color }}>
+                          {p.avatar}
                         </div>
-                      ))
-                    )}
+                        <div className="sv-persona-info">
+                          <p className="sv-persona-title">{p.title}</p>
+                          <p className="sv-persona-desc">{p.desc}</p>
+                          <span className="sv-similarity">유사도 {p.similarity || p.similarity_score}%</span>
+                        </div>
+                        <span className="sv-pass-badge">합격</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
