@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import './SurvivalDiagnosis.css'
+import { api } from '../api'
 
 const NAV_ITEMS = [
   { key: 'home',       label: '홈 대시보드',   path: '/dashboard' },
@@ -15,41 +16,68 @@ const NAV_ITEMS = [
   { key: 'report',     label: '성장 리포트',    path: '/dashboard?tab=report' },
 ]
 
-// 더미 fallback (API 실패 시)
-const FALLBACK_PERSONAS = [
-  { avatar_label: '김A', career_path_summary: '문과 → 데이터 분석 취업', gap_period: '7개월', certifications: 'ADsP + SQLD', similarity_score: 94, avatar_color: '#f0ede7' },
-  { avatar_label: '이B', career_path_summary: '비전공자 SQL 독학 → SI기업', gap_period: '6개월', certifications: '정처기 + SQLD', similarity_score: 89, avatar_color: '#e8f0f7' },
-  { avatar_label: '박C', career_path_summary: '경영학 → 스타트업 기획', gap_period: '5개월', certifications: 'ADsP', similarity_score: 81, avatar_color: '#f0f7ee' },
+const DEFAULT_PERSONAS = [
+  {
+    avatar: '김A',
+    title: '문과 → 데이터 분석 취업',
+    desc: '공백기 7개월 · ADsP + SQLD 취득',
+    similarity_score: 94,
+    color: '#f0ede7',
+  },
+  {
+    avatar: '이B',
+    title: '비전공자 SQL 독학 → SI기업',
+    desc: '공백기 6개월 · 정처기 + SQLD',
+    similarity_score: 89,
+    color: '#e8f0f7',
+  },
+  {
+    avatar: '박C',
+    title: '경영학 → 스타트업 기획',
+    desc: '공백기 5개월 · ADsP 취득',
+    similarity_score: 81,
+    color: '#f0f7ee',
+  },
 ]
 
-/* ── SVG 생존 곡선 (Cox PH 동적 데이터) ── */
-const FALLBACK_CURVE = {
-  points: [
-    { month: 0, avg: 82, user: 95 }, { month: 1, avg: 78.5, user: 89.1 },
-    { month: 2, avg: 75, user: 83.6 }, { month: 3, avg: 70, user: 76.5 },
-    { month: 4, avg: 65, user: 69.2 }, { month: 5, avg: 60, user: 62.3 },
-    { month: 6, avg: 55, user: 55.4 }, { month: 7, avg: 50, user: 48.9 },
-    { month: 8, avg: 44, user: 41.8 }, { month: 9, avg: 38, user: 35.2 },
-    { month: 10, avg: 33, user: 29.4 }, { month: 11, avg: 28, user: 24.1 },
-    { month: 12, avg: 22, user: 18.5 },
-  ],
-  current_month: 5,
-  current_prob: 62.3,
+// 더미 데이터: 나중에 Cox 모델 API로 교체
+const getDummySurvivalData = () => ({
+  user: {
+    name: '김지',
+    gap_period: 5,
+    department: '경영학',
+    certifications: ['ADsP'],
+  },
+  curves: {
+    similar_group: [
+      [0, 95], [2, 85], [3, 76], [4, 68], [5, 60], [7, 42], [9, 24], [11, 12], [12, 8],
+    ],
+    overall_average: [
+      [0, 82], [2, 75], [3, 70], [4, 65], [5, 60], [7, 50], [9, 38], [11, 28], [12, 22],
+    ],
+  },
   percentile: 38,
-  status: '집중 행동이 필요합니다',
-  advice: '6~8개월 이후 취업률 급감 구간 진입 전 자격증 취득을 완료하세요.',
-}
+})
 
-function SurvivalCurve({ curveData }) {
-  const data = curveData || FALLBACK_CURVE
-  const { points, current_month, current_prob } = data
+// 나중에 Cox 백엔드와 연동할 때는 이렇게 사용:
+// const getSurvivalData = async (userProfile) => {
+//   try {
+//     return await api.getSurvivalData(userProfile)
+//   } catch (e) {
+//     console.error('생존 곡선 조회 실패:', e)
+//     return getDummySurvivalData()
+//   }
+// }
 
+/* ── SVG 생존 곡선 ── */
+function SurvivalCurve({ survivalData }) {
   const W = 520, H = 260
   const px = (mo) => 60 + (mo / 12) * 420
   const py = (pct) => 240 - (pct / 100) * 200
 
-  const solidPts = points.map(p => [p.month, p.user])
-  const dashPts  = points.map(p => [p.month, p.avg])
+  const solidPts = survivalData.curves.similar_group
+  const dashPts = survivalData.curves.overall_average
+  const userGapPeriod = survivalData.user.gap_period
 
   const toPath = (pts) =>
     pts
@@ -60,9 +88,8 @@ function SurvivalCurve({ curveData }) {
     toPath(solidPts) +
     ` L${px(12)},${py(0)} L${px(0)},${py(0)} Z`
 
-  const markerX = px(current_month)
-  const markerY = py(current_prob)
-  const gridLines = [Math.round(current_prob / 30) * 30 || 60, 30].filter((v, i, a) => a.indexOf(v) === i)
+  const markerX = px(userGapPeriod)
+  const markerY = py(solidPts.find(([m]) => m === userGapPeriod)?.[1] || 60)
 
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
@@ -75,15 +102,15 @@ function SurvivalCurve({ curveData }) {
       {/* Filled area */}
       <path d={fillPath} fill="rgba(196,96,61,0.08)" />
 
-      {/* Solid line (나와 유사한 그룹) */}
+      {/* Solid line */}
       <path d={toPath(solidPts)} fill="none" stroke="#c4603d" strokeWidth="2.5"
         strokeLinejoin="round" strokeLinecap="round" />
 
-      {/* Dashed line (전체 평균) */}
+      {/* Dashed line */}
       <path d={toPath(dashPts)} fill="none" stroke="#aaa" strokeWidth="1.8"
         strokeDasharray="6 4" strokeLinejoin="round" />
 
-      {/* Vertical dashed line at current month */}
+      {/* Vertical dashed line at 5개월 */}
       <line x1={markerX} y1={markerY} x2={markerX} y2={py(0)}
         stroke="#c4603d" strokeWidth="1.5" strokeDasharray="5 3" />
 
@@ -91,11 +118,11 @@ function SurvivalCurve({ curveData }) {
       <circle cx={markerX} cy={markerY} r="6" fill="#c4603d" stroke="#fff" strokeWidth="2" />
 
       {/* Tooltip */}
-      <rect x={markerX + 10} y={markerY - 18} width="90" height="26"
+      <rect x={markerX + 10} y={markerY - 18} width="82" height="26"
         rx="6" fill="#3b1a0e" />
-      <text x={markerX + 55} y={markerY - 1} textAnchor="middle"
+      <text x={markerX + 51} y={markerY - 1} textAnchor="middle"
         fontSize="12" fontWeight="700" fill="#fff" fontFamily="inherit">
-        나 ({current_month}개월)
+        나 ({userGapPeriod}개월)
       </text>
 
       {/* Y-axis labels */}
@@ -106,11 +133,9 @@ function SurvivalCurve({ curveData }) {
 
       {/* X-axis labels */}
       <text x={px(3)} y={py(0) + 18} textAnchor="middle" fontSize="11" fill="#888">3개월</text>
-      <text x={px(current_month)} y={py(0) + 18} textAnchor="middle" fontSize="12"
-        fontWeight="700" fill="#c4603d">{current_month}개월</text>
-      {current_month !== 9 && (
-        <text x={px(9)} y={py(0) + 18} textAnchor="middle" fontSize="11" fill="#888">9개월</text>
-      )}
+      <text x={px(userGapPeriod)} y={py(0) + 18} textAnchor="middle" fontSize="12"
+        fontWeight="700" fill="#c4603d">{userGapPeriod}개월</text>
+      <text x={px(9)} y={py(0) + 18} textAnchor="middle" fontSize="11" fill="#888">9개월</text>
 
       {/* Legend */}
       <line x1={W - 160} y1={28} x2={W - 135} y2={28} stroke="#c4603d" strokeWidth="2.5" />
@@ -125,37 +150,7 @@ function SurvivalCurve({ curveData }) {
 export default function SurvivalDiagnosis() {
   const navigate = useNavigate()
   const [activeNav, setActiveNav] = useState('survival')
-  const [personas, setPersonas] = useState(FALLBACK_PERSONAS)
-  const [personaLoading, setPersonaLoading] = useState(true)
-  const [curveData, setCurveData] = useState(null)
-  const [curveLoading, setCurveLoading] = useState(true)
-
-  useEffect(() => {
-    const profile = {
-      gap_period:     localStorage.getItem('gap_period')     || '5개월',
-      department:     localStorage.getItem('department')     || '경영학과',
-      certifications: localStorage.getItem('certifications') || '',
-      job_interest:   localStorage.getItem('job_interest')   || '데이터 분석',
-    }
-
-    const fetchAll = async () => {
-      const { api } = await import('../api')
-
-      // 생존 곡선 (Cox PH)
-      api.getSurvivalCurve(profile)
-        .then(data => setCurveData(data))
-        .catch(() => setCurveData(FALLBACK_CURVE))
-        .finally(() => setCurveLoading(false))
-
-      // 선배 페르소나 (KNN)
-      api.matchPersonas(profile, 3)
-        .then(data => { if (data && data.length > 0) setPersonas(data) })
-        .catch(() => setPersonas(FALLBACK_PERSONAS))
-        .finally(() => setPersonaLoading(false))
-    }
-
-    fetchAll()
-  }, [])
+  const survivalData = getDummySurvivalData()
 
   const handleNav = (item) => {
     setActiveNav(item.key)
@@ -194,7 +189,7 @@ export default function SurvivalDiagnosis() {
         <main className="sv-main">
           <div className="sv-topbar">
             <span className="sv-breadcrumb">생존 진단</span>
-            <span className="sv-user">· 김지</span>
+            <span className="sv-user">· {survivalData.user.name}</span>
           </div>
 
           <div className="sv-content">
@@ -208,22 +203,17 @@ export default function SurvivalDiagnosis() {
                   <p className="sv-card-title">≈ 공백기 생존 곡선</p>
                   <p className="sv-card-sub">Cox 비례 위험 모델 기반 · 동일 조건 청년 2,847명 데이터</p>
                   <div className="sv-chart-wrap">
-                    {curveLoading
-                      ? <p style={{ color: '#888', fontSize: '13px', textAlign: 'center', padding: '60px 0' }}>곡선 계산 중...</p>
-                      : <SurvivalCurve curveData={curveData} />
-                    }
+                    <SurvivalCurve survivalData={survivalData} />
                   </div>
-                  {(() => {
-                    const d = curveData || FALLBACK_CURVE
-                    return (
-                      <div className="sv-alert">
-                        <p className="sv-alert-title">
-                          현재 {d.current_month}개월 공백기 → 상위 {d.percentile}% 수준
-                        </p>
-                        <p className="sv-alert-desc">{d.advice}</p>
-                      </div>
-                    )
-                  })()}
+                  <div className="sv-alert">
+                    <p className="sv-alert-title">
+                      현재 {survivalData.user.gap_period}개월 공백기 → 상위 {survivalData.percentile}% 수준
+                    </p>
+                    <p className="sv-alert-desc">
+                      지금이 집중 행동의 골든타임입니다. {survivalData.user.gap_period + 1}~{survivalData.user.gap_period + 3}개월 이후 취업률 급감 구간에 진입하기 전
+                      자격증 취득을 완료하는 것이 중요합니다.
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -234,23 +224,19 @@ export default function SurvivalDiagnosis() {
                   <p className="sv-card-title">👥 선배 페르소나 매칭</p>
                   <p className="sv-card-sub">KNN으로 나와 가장 유사한 합격자 3인 매칭</p>
                   <div className="sv-persona-list">
-                    {personaLoading ? (
-                      <p style={{ color: '#888', fontSize: '13px', textAlign: 'center', padding: '12px 0' }}>매칭 중...</p>
-                    ) : (
-                      personas.map((p, i) => (
-                        <div key={i} className="sv-persona-item">
-                          <div className="sv-persona-avatar" style={{ background: p.avatar_color || '#f0ede7' }}>
-                            {p.avatar_label}
-                          </div>
-                          <div className="sv-persona-info">
-                            <p className="sv-persona-title">{p.career_path_summary}</p>
-                            <p className="sv-persona-desc">{p.gap_period} · {p.certifications}</p>
-                            <span className="sv-similarity">유사도 {p.similarity_score}%</span>
-                          </div>
-                          <span className="sv-pass-badge">합격</span>
+                    {DEFAULT_PERSONAS.map((p, i) => (
+                      <div key={i} className="sv-persona-item">
+                        <div className="sv-persona-avatar" style={{ background: p.color }}>
+                          {p.avatar}
                         </div>
-                      ))
-                    )}
+                        <div className="sv-persona-info">
+                          <p className="sv-persona-title">{p.title}</p>
+                          <p className="sv-persona-desc">{p.desc}</p>
+                          <span className="sv-similarity">유사도 {p.similarity || p.similarity_score}%</span>
+                        </div>
+                        <span className="sv-pass-badge">합격</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 

@@ -1,4 +1,4 @@
-const BASE_URL = ''
+const BASE_URL = 'http://localhost:8000'
 
 function getToken() {
   return localStorage.getItem('access_token')
@@ -77,9 +77,9 @@ export const api = {
   matchPersonas: (profile, k = 3) =>
     request('POST', `/senior-personas/match?k=${k}`, profile, false),
 
-  // Survival curve
-  getSurvivalCurve: (profile) =>
-    request('POST', '/survival/curve', profile, false),
+  // Survival diagnosis (Cox model - backend will be implemented later)
+  getSurvivalData: (userProfile) =>
+    request('POST', '/survival/analyze', userProfile, false),
 
   // PDF
   downloadReport: async (data) => {
