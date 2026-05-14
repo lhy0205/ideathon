@@ -6,13 +6,16 @@ import os
 
 load_dotenv()
 
-DB_URL = (
-    f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
-    f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
-    f"?charset=utf8mb4"
-)
-
-engine = create_engine(DB_URL, echo=False)
+if os.getenv('DB_PORT'):
+    DB_URL = (
+        f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
+        f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+        f"?charset=utf8mb4"
+    )
+    engine = create_engine(DB_URL, echo=False)
+else:
+    DB_URL = "sqlite:///./local.db"
+    engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

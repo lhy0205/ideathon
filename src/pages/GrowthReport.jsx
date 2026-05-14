@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './GrowthReport.css'
 
 const CERTS = [
@@ -226,6 +227,7 @@ function RadarChart() {
 }
 
 export default function GrowthReport({ onNavigate }) {
+  const navigate = useNavigate()
   const [certModalOpen, setCertModalOpen] = useState(false)
   const [pdfModalOpen, setPdfModalOpen] = useState(false)
 
@@ -286,7 +288,7 @@ export default function GrowthReport({ onNavigate }) {
           <p className="gr-card-title">STAR 자기소개서</p>
           <p className="gr-bottom-desc">7개 NCS 경험을 기업별 직무기술서에 맞춰 자동 변환한 자기소개서 초안 모음</p>
           <p className="gr-bottom-accent">7개 초안 · 마지막 업데이트 2일 전</p>
-          <button className="gr-view-btn" onClick={() => onNavigate?.('mapping')}>보기 →</button>
+          <button className="gr-view-btn" onClick={() => navigate('/dashboard?tab=experience&step=3')}>보기 →</button>
         </div>
 
         {/* 자격증 증빙 */}

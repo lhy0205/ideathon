@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import './ExperienceInput.css'
 
 const TYPES = ['아르바이트', '인턴', '동아리/학생회', '프리랜서', '봉사활동', '개인 프로젝트', '독학/공부', '기타']
@@ -12,6 +13,7 @@ const STAR_LABELS = {
 }
 
 export default function ExperienceInput() {
+  const [searchParams] = useSearchParams()
   const [selectedType, setSelectedType] = useState('아르바이트')
   const [form, setForm] = useState({ title: '', startDate: '', endDate: '', content: '', competency: '' })
   const [step, setStep] = useState(0)
@@ -30,6 +32,16 @@ export default function ExperienceInput() {
   useEffect(() => {
     if (step === 0) loadHistory()
   }, [step])
+
+  useEffect(() => {
+    if (searchParams.get('step') === '3') {
+      const saved = localStorage.getItem('ncs_result')
+      if (saved) {
+        setResult(JSON.parse(saved))
+        setStep(3)
+      }
+    }
+  }, [])
 
   const handleChange = (e) => {
     const { name, value } = e.target

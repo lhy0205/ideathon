@@ -168,7 +168,7 @@ def _build_pdf(req: PDFRequest) -> BytesIO:
 
     # ── STAR 자기소개서 ───────────────────────────────────────────────────────
     if req.star_drafts:
-        story.append(Paragraph("STAR 자기소개서 초안", H2))
+        story.append(Paragraph("자기소개서 추천 문구", H2))
         story.append(HRFlowable(width="100%", thickness=1, color=ORANGE, spaceAfter=4))
         STAR_LABELS = ["[상황 S]", "[과제 T]", "[행동 A]", "[결과 R]"]
         for i, draft in enumerate(req.star_drafts):

@@ -16,6 +16,7 @@ export default defineConfig({
       '/pdf': { target: BACKEND, changeOrigin: true },
       '/ai': { target: BACKEND, changeOrigin: true },
       '/uploads': { target: BACKEND, changeOrigin: true },
+      '/senior-personas': { target: BACKEND, changeOrigin: true },
     },
   },
 })

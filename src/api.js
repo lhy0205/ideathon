@@ -74,6 +74,8 @@ export const api = {
 
   // Senior personas
   getSeniorPersonas: (limit = 3) => request('GET', `/senior-personas/?limit=${limit}`, null, false),
+  matchPersonas: (profile, k = 3) =>
+    request('POST', `/senior-personas/match?k=${k}`, profile, false),
 
   // PDF
   downloadReport: async (data) => {
