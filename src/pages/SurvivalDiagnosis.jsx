@@ -249,19 +249,23 @@ export default function SurvivalDiagnosis() {
                   <p className="sv-card-title">👥 선배 페르소나 매칭</p>
                   <p className="sv-card-sub">KNN으로 나와 가장 유사한 합격자 3인 매칭</p>
                   <div className="sv-persona-list">
-                    {DEFAULT_PERSONAS.map((p, i) => (
-                      <div key={i} className="sv-persona-item">
-                        <div className="sv-persona-avatar" style={{ background: p.color }}>
-                          {p.avatar}
+                    {personaLoading ? (
+                      <p style={{ color: '#888', fontSize: '13px', textAlign: 'center', padding: '12px 0' }}>매칭 중...</p>
+                    ) : (
+                      personas.slice(0, 3).map((p, i) => (
+                        <div key={i} className="sv-persona-item">
+                          <div className="sv-persona-avatar" style={{ background: p.avatar_color || p.color || '#f0ede7' }}>
+                            {p.avatar_label || p.avatar}
+                          </div>
+                          <div className="sv-persona-info">
+                            <p className="sv-persona-title">{p.career_path_summary || p.title}</p>
+                            <p className="sv-persona-desc">{p.gap_period} · {p.certifications || p.desc}</p>
+                            <span className="sv-similarity">유사도 {p.similarity_score}%</span>
+                          </div>
+                          <span className="sv-pass-badge">합격</span>
                         </div>
-                        <div className="sv-persona-info">
-                          <p className="sv-persona-title">{p.title}</p>
-                          <p className="sv-persona-desc">{p.desc}</p>
-                          <span className="sv-similarity">유사도 {p.similarity || p.similarity_score}%</span>
-                        </div>
-                        <span className="sv-pass-badge">합격</span>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
 
