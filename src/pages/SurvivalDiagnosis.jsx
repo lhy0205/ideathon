@@ -17,55 +17,51 @@ const NAV_ITEMS = [
 ]
 
 const DEFAULT_PERSONAS = [
-  {
-    avatar: '김A',
-    title: '문과 → 데이터 분석 취업',
-    desc: '공백기 7개월 · ADsP + SQLD 취득',
-    similarity_score: 94,
-    color: '#f0ede7',
-  },
-  {
-    avatar: '이B',
-    title: '비전공자 SQL 독학 → SI기업',
-    desc: '공백기 6개월 · 정처기 + SQLD',
-    similarity_score: 89,
-    color: '#e8f0f7',
-  },
-  {
-    avatar: '박C',
-    title: '경영학 → 스타트업 기획',
-    desc: '공백기 5개월 · ADsP 취득',
-    similarity_score: 81,
-    color: '#f0f7ee',
-  },
+  { avatar: '김A', title: '문과 → 데이터 분석 취업', desc: '공백기 7개월 · ADsP + SQLD 취득', similarity_score: 94, color: '#f0ede7' },
+  { avatar: '이B', title: '비전공자 SQL 독학 → SI기업', desc: '공백기 6개월 · 정처기 + SQLD', similarity_score: 89, color: '#e8f0f7' },
+  { avatar: '박C', title: '경영학 → 스타트업 기획', desc: '공백기 5개월 · ADsP 취득', similarity_score: 81, color: '#f0f7ee' },
+  { avatar: '최D', title: '이공계 → 데이터 엔지니어링', desc: '공백기 4개월 · SQLD 취득', similarity_score: 88, color: '#ede7f0' },
+  { avatar: '정E', title: '경제학 → 핀테크 개발', desc: '공백기 6개월 · 정보처리기사', similarity_score: 85, color: '#f0e7ed' },
+  { avatar: '윤F', title: '디자인 → UX리서처', desc: '공백기 8개월 · ADsP + SQLD', similarity_score: 80, color: '#e7f0ed' },
+  { avatar: '하G', title: '문과 → 마케팅 분석가', desc: '공백기 5개월 · ADSP취득', similarity_score: 86, color: '#f0ede7' },
+  { avatar: '강H', title: '법학 → 법무 기술 담당', desc: '공백기 9개월 · 정처기', similarity_score: 79, color: '#e8f0f7' },
+  { avatar: '이I', title: '무역학 → 수출입 데이터분석', desc: '공백기 7개월 · SQLD + ADsP', similarity_score: 83, color: '#f0f7ee' },
+  { avatar: '박J', title: '의류학 → 이커머스 기획', desc: '공백기 6개월 · 데이터분석자격', similarity_score: 82, color: '#ede7f0' },
+  { avatar: '김K', title: '건축학 → BIM분석가', desc: '공백기 5개월 · 정보처리기사', similarity_score: 87, color: '#f0e7ed' },
+  { avatar: '이L', title: '환경학 → ESG분석가', desc: '공백기 8개월 · SQLD + ADsP', similarity_score: 81, color: '#e7f0ed' },
+  { avatar: '최M', title: '교육학 → 에듀테크 기획', desc: '공백기 4개월 · 정처기', similarity_score: 89, color: '#f0ede7' },
+  { avatar: '정N', title: '공학 → 제조 데이터 분석', desc: '공백기 7개월 · SQLD', similarity_score: 84, color: '#e8f0f7' },
+  { avatar: '윤O', title: '경영학 → 경영관리사', desc: '공백기 6개월 · ADsP + 정처기', similarity_score: 86, color: '#f0f7ee' },
+  { avatar: '하P', title: '미술학 → 브랜드 전략분석', desc: '공백기 5개월 · 데이터분석자격', similarity_score: 85, color: '#ede7f0' },
+  { avatar: '강Q', title: '음악학 → 음원 분석가', desc: '공백기 7개월 · SQLD + ADsP', similarity_score: 80, color: '#f0e7ed' },
+  { avatar: '이R', title: '체육학 → 스포츠 분석가', desc: '공백기 6개월 · 정정처기', similarity_score: 83, color: '#e7f0ed' },
+  { avatar: '박S', title: '약학 → 임상데이터관리', desc: '공백기 8개월 · CRA자격', similarity_score: 78, color: '#f0ede7' },
+  { avatar: '김T', title: '간호학 → 헬스케어 분석가', desc: '공백기 5개월 · ADsP', similarity_score: 88, color: '#e8f0f7' },
 ]
 
-// 더미 데이터: 나중에 Cox 모델 API로 교체
-const getDummySurvivalData = () => ({
+// 더미 사용자 데이터: 나중에 실제 사용자 데이터로 교체
+// curves (생존 곡선)은 Cox 모델에서 계산한 S(t) 값으로 받아올 것
+const getDummyUserData = () => ({
   user: {
     name: '김지',
     gap_period: 5,
     department: '경영학',
     certifications: ['ADsP'],
   },
-  curves: {
-    similar_group: [
-      [0, 95], [2, 85], [3, 76], [4, 68], [5, 60], [7, 42], [9, 24], [11, 12], [12, 8],
-    ],
-    overall_average: [
-      [0, 82], [2, 75], [3, 70], [4, 65], [5, 60], [7, 50], [9, 38], [11, 28], [12, 22],
-    ],
-  },
-  percentile: 38,
 })
 
-// 나중에 Cox 백엔드와 연동할 때는 이렇게 사용:
-// const getSurvivalData = async (userProfile) => {
+// 나중에 Cox 백엔드와 연동할 때:
+// const getSurvivalAnalysis = async (userProfile) => {
 //   try {
-//     return await api.getSurvivalData(userProfile)
+//     const response = await api.getSurvivalData(userProfile)
+//     return {
+//       user: userProfile,
+//       curves: response.curves,  // Cox 모델에서 계산한 S(t) 값
+//       percentile: response.percentile,
+//     }
 //   } catch (e) {
-//     console.error('생존 곡선 조회 실패:', e)
-//     return getDummySurvivalData()
+//     console.error('Cox 분석 실패:', e)
+//     return null
 //   }
 // }
 
@@ -150,7 +146,7 @@ function SurvivalCurve({ survivalData }) {
 export default function SurvivalDiagnosis() {
   const navigate = useNavigate()
   const [activeNav, setActiveNav] = useState('survival')
-  const survivalData = getDummySurvivalData()
+  const dummyUser = getDummyUserData()
 
   const handleNav = (item) => {
     setActiveNav(item.key)
@@ -189,7 +185,7 @@ export default function SurvivalDiagnosis() {
         <main className="sv-main">
           <div className="sv-topbar">
             <span className="sv-breadcrumb">생존 진단</span>
-            <span className="sv-user">· {survivalData.user.name}</span>
+            <span className="sv-user">· {dummyUser.user.name}</span>
           </div>
 
           <div className="sv-content">
@@ -202,9 +198,11 @@ export default function SurvivalDiagnosis() {
                 <div className="sv-card">
                   <p className="sv-card-title">≈ 공백기 생존 곡선</p>
                   <p className="sv-card-sub">Cox 비례 위험 모델 기반 · 동일 조건 청년 2,847명 데이터</p>
-                  <div className="sv-chart-wrap">
-                    <SurvivalCurve survivalData={survivalData} />
+                  <div className="sv-chart-wrap" style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
+                    <p>Cox 모델 분석 대기 중...</p>
                   </div>
+                  {/* Cox 모델 계산 완료 후 활성화
+                  <SurvivalCurve survivalData={survivalData} />
                   <div className="sv-alert">
                     <p className="sv-alert-title">
                       현재 {survivalData.user.gap_period}개월 공백기 → 상위 {survivalData.percentile}% 수준
@@ -214,6 +212,7 @@ export default function SurvivalDiagnosis() {
                       자격증 취득을 완료하는 것이 중요합니다.
                     </p>
                   </div>
+                  */}
                 </div>
               </div>
 
