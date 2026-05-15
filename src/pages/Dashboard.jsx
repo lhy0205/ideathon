@@ -95,6 +95,13 @@ function CircleProgress({ pct }) {
   )
 }
 
+function toLocalDate(d) {
+  const y = d.getFullYear()
+  const mo = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${mo}-${day}`
+}
+
 function MissionSection() {
   const [mood, setMood] = useState(1)
   const [missionText, setMissionText] = useState('')
@@ -108,6 +115,29 @@ function MissionSection() {
   const [completed, setCompleted] = useState(false)
   const [missionError, setMissionError] = useState('')
   const fileInputRef = useState(null)
+  const [heatmap, setHeatmap] = useState([])
+  const [heatmapLoading, setHeatmapLoading] = useState(true)
+  const [tooltip, setTooltip] = useState({ visible: false, text: '', x: 0, y: 0 })
+
+  const todayStr = toLocalDate(new Date())
+  const heatmapDays = Array.from({ length: 30 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - (29 - i))
+    return toLocalDate(d)
+  })
+  const heatmapMap = Object.fromEntries(heatmap.map(r => [r.date, r.count]))
+
+  const fetchHeatmap = async () => {
+    try {
+      const { api } = await import('../api')
+      const h = await api.getMissionHeatmap()
+      setHeatmap(h.heatmap || [])
+    } catch {
+      // 로그인 안 된 경우 무시
+    } finally {
+      setHeatmapLoading(false)
+    }
+  }
 
   // 미션 목록 불러오기
   useEffect(() => {
@@ -133,6 +163,7 @@ function MissionSection() {
       }
     }
     load()
+    fetchHeatmap()
   }, [])
 
   const handlePhotoChange = (e) => {
@@ -171,6 +202,7 @@ function MissionSection() {
         mission_type: 'daily_learning',
       })
       await api.completeMission(created.id)
+      fetchHeatmap()
     } catch {
       // 저장 실패해도 UI는 유지
     }
@@ -203,6 +235,7 @@ function MissionSection() {
       const missions = await api.getMissions()
       const target = missions.find(m => m.title === title && !m.completed)
       if (target) await api.completeMission(target.id)
+      fetchHeatmap()
     } catch {
       // 저장 실패해도 UI는 유지
     }
@@ -312,6 +345,51 @@ function MissionSection() {
 
         {/* Right column */}
         <div className="ms-right">
+          {/* 히트맵 */}
+          <div className="ms-card">
+            <div className="ms-heatmap-header">
+              <p className="ms-card-title">완료 기록 (최근 30일)</p>
+              <span className="ms-today-count">오늘 <strong>{heatmapMap[todayStr] || 0}개</strong> 완료</span>
+            </div>
+            {heatmapLoading ? (
+              <p className="ms-heatmap-loading">불러오는 중...</p>
+            ) : (
+              <>
+                <div className="ms-heatmap-grid">
+                  {heatmapDays.map(date => {
+                    const count = heatmapMap[date] || 0
+                    const level = count === 0 ? 0 : count === 1 ? 1 : count <= 3 ? 2 : 3
+                    const isToday = date === todayStr
+                    return (
+                      <div
+                        key={date}
+                        className={`ms-heatmap-cell level-${level}${isToday ? ' today' : ''}`}
+                        onMouseEnter={(e) => setTooltip({ visible: true, text: `${date}: ${count}개 완료`, x: e.clientX, y: e.clientY })}
+                        onMouseMove={(e) => setTooltip(t => ({ ...t, x: e.clientX, y: e.clientY }))}
+                        onMouseLeave={() => setTooltip(t => ({ ...t, visible: false }))}
+                      >
+                        {count > 0 && <span className="ms-heatmap-num">{count}</span>}
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="ms-heatmap-legend">
+                  <span>적음</span>
+                  <div className="ms-heatmap-cell level-0" />
+                  <div className="ms-heatmap-cell level-1" />
+                  <div className="ms-heatmap-cell level-2" />
+                  <div className="ms-heatmap-cell level-3" />
+                  <span>많음</span>
+                </div>
+              </>
+            )}
+            {tooltip.visible && (
+              <div className="ms-heatmap-tooltip" style={{ left: tooltip.x + 12, top: tooltip.y - 32 }}>
+                {tooltip.text}
+              </div>
+            )}
+          </div>
+
           {/* 나의 미션 현황 */}
           <div className="ms-card ms-status-card">
             <p className="ms-card-title">나의 미션 현황</p>
@@ -554,7 +632,7 @@ export default function Dashboard() {
           {activeNav === 'password' && <PasswordSection />}
           {activeNav === 'experience' && <div className="db-content"><ExperienceInput /></div>}
           {activeNav === 'roadmap' && <div className="db-content"><CertRoadmap /></div>}
-          {activeNav === 'mission' && <MissionSection />}
+          <div style={{ display: activeNav === 'mission' ? 'block' : 'none' }}><MissionSection /></div>
           {activeNav === 'community' && <CommunitySection />}
           {activeNav === 'report' && <div className="db-content"><GrowthReport /></div>}
           {activeNav !== 'password' && activeNav !== 'experience' && activeNav !== 'roadmap' && activeNav !== 'mission' && activeNav !== 'community' && activeNav !== 'report' && <div className="db-content">

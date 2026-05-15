@@ -733,3 +733,55 @@
   transition: opacity 0.15s;
 }
 .ms-extra-done-btn:hover { opacity: 0.85; }
+
+/* 히트맵 */
+.ms-heatmap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.ms-today-count { font-size: 0.82rem; color: #555; }
+.ms-today-count strong { color: #c4603d; font-size: 0.95rem; }
+.ms-heatmap-loading { font-size: 0.82rem; color: #aaa; margin: 0; }
+.ms-heatmap-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.ms-heatmap-cell {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  background: #e8ddd7;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+.ms-heatmap-cell.today { outline: 2px solid #c4603d; outline-offset: 1px; }
+.ms-heatmap-cell.level-0 { background: #e8ddd7; }
+.ms-heatmap-cell.level-1 { background: #f0a58a; }
+.ms-heatmap-cell.level-2 { background: #d9673e; }
+.ms-heatmap-cell.level-3 { background: #8b3520; }
+.ms-heatmap-num { font-size: 8px; font-weight: 700; color: #fff; line-height: 1; }
+.ms-heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: #888;
+}
+.ms-heatmap-tooltip {
+  position: fixed;
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 4px 8px;
+  border-radius: 5px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 9999;
+}
