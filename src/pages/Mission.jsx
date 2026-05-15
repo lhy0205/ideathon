@@ -2,16 +2,25 @@ import { useState, useEffect, useRef } from 'react'
 import { api } from '../api'
 import './Mission.css'
 
+function toLocalDate(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export default function Mission() {
   const [missions, setMissions] = useState([])
   const [recommendations, setRecommendations] = useState([])
   const [heatmap, setHeatmap] = useState([])
+  const [heatmapLoading, setHeatmapLoading] = useState(true)
   const [loadingRec, setLoadingRec] = useState(false)
   const [verifyTarget, setVerifyTarget] = useState(null)
   const [verifyText, setVerifyText] = useState('')
   const [verifyFile, setVerifyFile] = useState(null)
   const [verifying, setVerifying] = useState(false)
   const [msg, setMsg] = useState('')
+  const [tooltip, setTooltip] = useState({ visible: false, text: '', x: 0, y: 0 })
   const fileRef = useRef()
 
   useEffect(() => {
@@ -28,6 +37,8 @@ export default function Mission() {
       setHeatmap(h.heatmap || [])
     } catch (e) {
       console.error(e)
+    } finally {
+      setHeatmapLoading(false)
     }
   }
 
@@ -101,10 +112,11 @@ export default function Mission() {
 
   const heatmapMap = Object.fromEntries(heatmap.map(r => [r.date, r.count]))
   const today = new Date()
+  const todayStr = toLocalDate(today)
   const heatmapDays = Array.from({ length: 30 }, (_, i) => {
     const d = new Date(today)
     d.setDate(today.getDate() - (29 - i))
-    return d.toISOString().slice(0, 10)
+    return toLocalDate(d)
   })
 
   return (
@@ -115,21 +127,54 @@ export default function Mission() {
 
       {/* 히트맵 */}
       <section className="mission-section">
-        <h3>완료 기록 (최근 30일)</h3>
-        <div className="heatmap-grid">
-          {heatmapDays.map(date => {
-            const count = heatmapMap[date] || 0
-            const level = count === 0 ? 0 : count === 1 ? 1 : count <= 3 ? 2 : 3
-            return (
-              <div
-                key={date}
-                className={`heatmap-cell level-${level}`}
-                title={`${date}: ${count}개 완료`}
-              />
-            )
-          })}
+        <div className="section-header">
+          <h3>완료 기록 (최근 30일)</h3>
+          <span className="today-count">
+            오늘 <strong>{heatmapMap[todayStr] || 0}개</strong> 완료
+          </span>
         </div>
+        {heatmapLoading ? (
+          <p className="empty-text">불러오는 중...</p>
+        ) : (
+          <>
+            <div className="heatmap-grid">
+              {heatmapDays.map(date => {
+                const count = heatmapMap[date] || 0
+                const level = count === 0 ? 0 : count === 1 ? 1 : count <= 3 ? 2 : 3
+                const isToday = date === todayStr
+                return (
+                  <div
+                    key={date}
+                    className={`heatmap-cell level-${level} ${isToday ? 'today' : ''}`}
+                    onMouseEnter={(e) => setTooltip({ visible: true, text: `${date}: ${count}개 완료`, x: e.clientX, y: e.clientY })}
+                    onMouseMove={(e) => setTooltip(t => ({ ...t, x: e.clientX, y: e.clientY }))}
+                    onMouseLeave={() => setTooltip(t => ({ ...t, visible: false }))}
+                  >
+                    {count > 0 && <span className="heatmap-count">{count}</span>}
+                  </div>
+                )
+              })}
+            </div>
+            <div className="heatmap-legend">
+              <span>적음</span>
+              <div className="heatmap-cell level-0" />
+              <div className="heatmap-cell level-1" />
+              <div className="heatmap-cell level-2" />
+              <div className="heatmap-cell level-3" />
+              <span>많음</span>
+            </div>
+          </>
+        )}
       </section>
+
+      {tooltip.visible && (
+        <div
+          className="heatmap-tooltip"
+          style={{ left: tooltip.x + 12, top: tooltip.y - 32 }}
+        >
+          {tooltip.text}
+        </div>
+      )}
 
       {/* 추천 미션 */}
       <section className="mission-section">

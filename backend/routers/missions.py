@@ -31,6 +31,27 @@ def create_mission(body: schemas.MissionCreate,
     return mission
 
 
+@router.get("/heatmap")
+def get_heatmap(db: Session = Depends(get_db),
+                current_user: models.User = Depends(get_current_user)):
+    """날짜별 미션 완료 기록 반환 — Mission.completed_at 기준"""
+    rows = (
+        db.query(
+            cast(models.Mission.completed_at, Date).label("date"),
+            func.count(models.Mission.id).label("count"),
+        )
+        .filter(
+            models.Mission.user_id == current_user.id,
+            models.Mission.completed == True,
+            models.Mission.completed_at.isnot(None),
+        )
+        .group_by(cast(models.Mission.completed_at, Date))
+        .order_by(cast(models.Mission.completed_at, Date))
+        .all()
+    )
+    return {"heatmap": [{"date": str(r.date), "count": r.count} for r in rows]}
+
+
 @router.get("/recommend")
 async def recommend_missions(db: Session = Depends(get_db),
                               current_user: models.User = Depends(get_current_user)):
@@ -160,23 +181,6 @@ async def upload_mission_image(mission_id: int, file: UploadFile = File(...),
     db.commit()
     db.refresh(mission)
     return mission
-
-
-@router.get("/heatmap")
-def get_heatmap(db: Session = Depends(get_db),
-                current_user: models.User = Depends(get_current_user)):
-    """날짜별 미션 완료 기록 반환"""
-    rows = (
-        db.query(
-            cast(models.MissionLog.completed_at, Date).label("date"),
-            func.count(models.MissionLog.id).label("count"),
-        )
-        .filter(models.MissionLog.user_id == current_user.id)
-        .group_by(cast(models.MissionLog.completed_at, Date))
-        .order_by(cast(models.MissionLog.completed_at, Date))
-        .all()
-    )
-    return {"heatmap": [{"date": str(r.date), "count": r.count} for r in rows]}
 
 
 @router.delete("/{mission_id}")
