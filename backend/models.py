@@ -63,18 +63,33 @@ class Experience(Base):
 
 class Mission(Base):
     __tablename__ = "missions"
-    id           = Column(Integer, primary_key=True, index=True)
-    user_id      = Column(Integer, ForeignKey("users.id"), nullable=False)
-    title        = Column(String(200), nullable=False)
-    content      = Column(Text, nullable=True)
-    mission_type = Column(String(50), nullable=True)
-    image_url    = Column(String(500), nullable=True)
-    completed    = Column(Boolean, default=False)
-    completed_at = Column(DateTime, nullable=True)
-    streak       = Column(Integer, default=0)
-    created_at   = Column(DateTime, server_default=func.now())
+    id                = Column(Integer, primary_key=True, index=True)
+    user_id           = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title             = Column(String(200), nullable=False)
+    content           = Column(Text, nullable=True)
+    mission_type      = Column(String(50), nullable=True)
+    image_url         = Column(String(500), nullable=True)
+    completed         = Column(Boolean, default=False)
+    completed_at      = Column(DateTime, nullable=True)
+    streak            = Column(Integer, default=0)
+    verified          = Column(Boolean, default=False)
+    verification_note = Column(Text, nullable=True)
+    verified_at       = Column(DateTime, nullable=True)
+    created_at        = Column(DateTime, server_default=func.now())
 
     user = relationship("User", back_populates="missions")
+    logs = relationship("MissionLog", back_populates="mission")
+
+
+class MissionLog(Base):
+    __tablename__ = "mission_logs"
+    id           = Column(Integer, primary_key=True, index=True)
+    mission_id   = Column(Integer, ForeignKey("missions.id"), nullable=False)
+    user_id      = Column(Integer, ForeignKey("users.id"), nullable=False)
+    completed_at = Column(DateTime, nullable=False)
+    note         = Column(Text, nullable=True)
+
+    mission = relationship("Mission", back_populates="logs")
 
 
 class CommunityPost(Base):

@@ -58,6 +58,10 @@ def _migrate():
         "ALTER TABLE user_experiences ADD COLUMN user_id INT",
         # ncs_mapping 컬럼 추가
         "ALTER TABLE user_experiences ADD COLUMN ncs_mapping TEXT",
+        # missions 테이블 — 인증 관련 컬럼 추가
+        "ALTER TABLE missions ADD COLUMN verified BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE missions ADD COLUMN verification_note TEXT",
+        "ALTER TABLE missions ADD COLUMN verified_at DATETIME",
     ]
     for sql in migrations:
         try:

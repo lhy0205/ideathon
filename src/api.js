@@ -51,6 +51,24 @@ export const api = {
   createMission: (data) => request('POST', '/missions/', data),
   completeMission: (id) => request('PUT', `/missions/${id}/complete`),
   deleteMission: (id) => request('DELETE', `/missions/${id}`),
+  recommendMissions: () => request('GET', '/missions/recommend'),
+  verifyMission: async (id, text, file) => {
+    const token = localStorage.getItem('access_token')
+    const form = new FormData()
+    if (text) form.append('text', text)
+    if (file) form.append('file', file)
+    const res = await fetch(`${BASE_URL}/missions/${id}/verify`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: '오류가 발생했습니다' }))
+      throw new Error(err.detail || '오류가 발생했습니다')
+    }
+    return res.json()
+  },
+  getMissionHeatmap: () => request('GET', '/missions/heatmap'),
 
   // Community
   getPosts: (skip = 0, limit = 20) => request('GET', `/community/posts?skip=${skip}&limit=${limit}`, null, false),

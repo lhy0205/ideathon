@@ -1,0 +1,293 @@
+.mission-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.mission-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #1a1a2e;
+}
+
+.mission-msg {
+  background: #f0f4ff;
+  border-left: 4px solid #4f46e5;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.mission-section {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.mission-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 14px;
+  color: #111;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.section-header h3 {
+  margin: 0;
+}
+
+/* 히트맵 */
+.heatmap-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.heatmap-cell {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  background: #eee;
+}
+
+.heatmap-cell.level-0 { background: #eee; }
+.heatmap-cell.level-1 { background: #c6e48b; }
+.heatmap-cell.level-2 { background: #40c463; }
+.heatmap-cell.level-3 { background: #216e39; }
+
+/* 추천 카드 */
+.rec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rec-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  gap: 12px;
+}
+
+.rec-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rec-type {
+  font-size: 0.75rem;
+  color: #6366f1;
+  font-weight: 600;
+}
+
+.rec-info strong {
+  font-size: 0.95rem;
+  color: #111;
+}
+
+.rec-info p {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0;
+}
+
+/* 내 미션 */
+.mission-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mission-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  gap: 12px;
+}
+
+.mission-card.completed {
+  background: #f9fafb;
+  opacity: 0.85;
+}
+
+.mission-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mission-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.badge.type     { background: #ede9fe; color: #6d28d9; }
+.badge.done     { background: #d1fae5; color: #065f46; }
+.badge.verified { background: #dbeafe; color: #1d4ed8; }
+
+.mission-info strong {
+  font-size: 0.95rem;
+  color: #111;
+}
+
+.mission-info p {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0;
+}
+
+.verify-note {
+  font-size: 0.8rem;
+  color: #888;
+  font-style: italic;
+}
+
+.streak {
+  font-size: 0.8rem;
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.mission-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.empty-text {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* 버튼 */
+.btn-primary {
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-primary:hover   { background: #4338ca; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-outline {
+  background: #fff;
+  color: #4f46e5;
+  border: 1px solid #4f46e5;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-outline:hover { background: #ede9fe; }
+
+.btn-danger {
+  background: #fff;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-danger:hover { background: #fef2f2; }
+
+/* 모달 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 14px;
+  padding: 28px;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal h3 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  color: #111;
+}
+
+.modal label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.modal textarea {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.modal textarea:focus {
+  outline: none;
+  border-color: #4f46e5;
+}
+
+.file-name {
+  font-size: 0.82rem;
+  color: #555;
+  margin: 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}

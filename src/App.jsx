@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import MyPage from './pages/MyPage'
 import ExperienceMapping from './pages/ExperienceMapping'
 import SurvivalDiagnosis from './pages/SurvivalDiagnosis'
+import Mission from './pages/Mission'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/mapping" element={<ExperienceMapping />} />
         <Route path="/survival" element={<SurvivalDiagnosis />} />
+        <Route path="/mission" element={<Mission />} />
       </Routes>
     </BrowserRouter>
   )

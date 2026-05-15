@@ -90,7 +90,23 @@ class MissionResponse(BaseModel):
     completed: bool
     completed_at: Optional[datetime]
     streak: int
+    verified: bool
+    verification_note: Optional[str]
+    verified_at: Optional[datetime]
     created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class MissionVerifyRequest(BaseModel):
+    text: Optional[str] = None
+
+class MissionLogResponse(BaseModel):
+    id: int
+    mission_id: int
+    user_id: int
+    completed_at: datetime
+    note: Optional[str]
 
     class Config:
         from_attributes = True
