@@ -141,7 +141,7 @@ function SurvivalCurve({ curveData }) {
 export default function SurvivalDiagnosis() {
   const navigate = useNavigate()
   const [activeNav, setActiveNav] = useState('survival')
-  const [personas, setPersonas] = useState(FALLBACK_PERSONAS)
+  const [personas, setPersonas] = useState([])
   const [personaLoading, setPersonaLoading] = useState(true)
   const [curveData, setCurveData] = useState(null)
   const [curveLoading, setCurveLoading] = useState(true)
@@ -246,7 +246,7 @@ export default function SurvivalDiagnosis() {
                     }
                   </div>
                   {(() => {
-                    const d = curveData || FALLBACK_CURVE
+                    const d = curveData || FALLBACK_CURVE_DATA
                     return (
                       <div className="sv-alert">
                         <p className="sv-alert-title">
