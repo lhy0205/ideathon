@@ -115,19 +115,35 @@ export default function Mission() {
 
       {/* 히트맵 */}
       <section className="mission-section">
-        <h3>완료 기록 (최근 30일)</h3>
+        <div className="section-header">
+          <h3>완료 기록 (최근 30일)</h3>
+          <span className="today-count">
+            오늘 <strong>{heatmapMap[heatmapDays[heatmapDays.length - 1]] || 0}개</strong> 완료
+          </span>
+        </div>
         <div className="heatmap-grid">
           {heatmapDays.map(date => {
             const count = heatmapMap[date] || 0
             const level = count === 0 ? 0 : count === 1 ? 1 : count <= 3 ? 2 : 3
+            const isToday = date === heatmapDays[heatmapDays.length - 1]
             return (
               <div
                 key={date}
-                className={`heatmap-cell level-${level}`}
+                className={`heatmap-cell level-${level} ${isToday ? 'today' : ''}`}
                 title={`${date}: ${count}개 완료`}
-              />
+              >
+                {count > 0 && <span className="heatmap-count">{count}</span>}
+              </div>
             )
           })}
+        </div>
+        <div className="heatmap-legend">
+          <span>적음</span>
+          <div className="heatmap-cell level-0" />
+          <div className="heatmap-cell level-1" />
+          <div className="heatmap-cell level-2" />
+          <div className="heatmap-cell level-3" />
+          <span>많음</span>
         </div>
       </section>
 
