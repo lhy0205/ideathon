@@ -15,32 +15,31 @@ const NAV_ITEMS = [
   { key: 'report',     label: '성장 리포트',    path: '/dashboard?tab=report' },
 ]
 
-const FALLBACK_PERSONAS = [
-  {
-    avatar: '김A',
-    title: '문과 → 데이터 분석 취업',
-    desc: '공백기 7개월 · ADsP + SQLD 취득',
-    similarity_score: 94,
-    color: '#f0ede7',
-  },
-  {
-    avatar: '이B',
-    title: '비전공자 SQL 독학 → SI기업',
-    desc: '공백기 6개월 · 정처기 + SQLD',
-    similarity_score: 89,
-    color: '#e8f0f7',
-  },
-  {
-    avatar: '박C',
-    title: '경영학 → 스타트업 기획',
-    desc: '공백기 5개월 · ADsP 취득',
-    similarity_score: 81,
-    color: '#f0f7ee',
-  },
+/* ── Cox PH 더미 데이터 (20명의 user 프로필) ── */
+const FALLBACK_COX_DATA = [
+  { name: '김A', gap_period: '7개월', department: '경영학', certifications: 'ADsP, SQLD', job_interest: '데이터 분석' },
+  { name: '이B', gap_period: '6개월', department: '컴퓨터과학', certifications: '정처기, SQLD', job_interest: '소프트웨어 개발' },
+  { name: '박C', gap_period: '5개월', department: '경영학', certifications: 'ADsP', job_interest: '스타트업 기획' },
+  { name: '최D', gap_period: '8개월', department: '통계학', certifications: '', job_interest: '데이터 분석' },
+  { name: '정E', gap_period: '4개월', department: '정보통신', certifications: '정처기, SQLD, ADsP', job_interest: '웹 개발' },
+  { name: '한F', gap_period: '9개월', department: '마케팅', certifications: 'ADsP', job_interest: '디지털 마케팅' },
+  { name: '조G', gap_period: '3개월', department: '경제학', certifications: '', job_interest: '금융' },
+  { name: '유H', gap_period: '10개월', department: '컴퓨터과학', certifications: 'SQLD', job_interest: '데이터베이스' },
+  { name: '윤I', gap_period: '5개월', department: '통계학', certifications: 'ADsP, 정처기', job_interest: '데이터 분석' },
+  { name: '강J', gap_period: '6개월', department: '회계학', certifications: '', job_interest: '회계' },
+  { name: '송K', gap_period: '4개월', department: '정보', certifications: '정처기', job_interest: '정보보안' },
+  { name: '임L', gap_period: '7개월', department: '전자공학', certifications: 'SQLD', job_interest: '임베디드' },
+  { name: '홍M', gap_period: '5개월', department: '경영학', certifications: 'ADsP, SQLD, 정처기', job_interest: '데이터 분석' },
+  { name: '신N', gap_period: '8개월', department: '컴퓨터과학', certifications: '', job_interest: '게임 개발' },
+  { name: '곽O', gap_period: '6개월', department: '통신공학', certifications: 'SQLD', job_interest: '통신' },
+  { name: '오P', gap_period: '3개월', department: '경영학', certifications: '', job_interest: '경영컨설팅' },
+  { name: '문Q', gap_period: '9개월', department: '통계학', certifications: 'ADsP', job_interest: '리서치' },
+  { name: '백R', gap_period: '5개월', department: '소프트웨어', certifications: '정처기, SQLD', job_interest: '백엔드 개발' },
+  { name: '손S', gap_period: '7개월', department: '수학', certifications: 'ADsP', job_interest: '데이터 분석' },
+  { name: '노T', gap_period: '4개월', department: '정보통신', certifications: 'SQLD', job_interest: '네트워크' },
 ]
 
-/* ── SVG 생존 곡선 (Cox PH 동적 데이터) ── */
-const FALLBACK_CURVE = {
+const FALLBACK_CURVE_DATA = {
   points: [
     { month: 0, avg: 82, user: 95 }, { month: 1, avg: 78.5, user: 89.1 },
     { month: 2, avg: 75, user: 83.6 }, { month: 3, avg: 70, user: 76.5 },
@@ -58,7 +57,7 @@ const FALLBACK_CURVE = {
 }
 
 function SurvivalCurve({ curveData }) {
-  const data = curveData || FALLBACK_CURVE
+  const data = curveData || FALLBACK_CURVE_DATA
   const { points, current_month, current_prob } = data
 
   const W = 520, H = 260
@@ -158,14 +157,32 @@ export default function SurvivalDiagnosis() {
     const fetchAll = async () => {
       const { api } = await import('../api')
 
+      // 현재 사용자의 생존 곡선 계산
       api.getSurvivalCurve(profile)
         .then(data => setCurveData(data))
-        .catch(() => setCurveData(FALLBACK_CURVE))
+        .catch(() => setCurveLoading(false))
         .finally(() => setCurveLoading(false))
 
-      api.matchPersonas(profile, 3)
-        .then(data => { if (data && data.length > 0) setPersonas(data) })
-        .catch(() => setPersonas(FALLBACK_PERSONAS))
+      // 더미 데이터에서 처음 3명을 선택해서 각각 Cox 모델에 계산
+      Promise.all(
+        FALLBACK_COX_DATA.slice(0, 3).map(dummyUser =>
+          api.getSurvivalCurve(dummyUser).catch(() => null)
+        )
+      )
+        .then(results => {
+          const personaList = results
+            .map((data, idx) => ({
+              ...FALLBACK_COX_DATA[idx],
+              similarity_score: data?.percentile || 80,
+              avatar_label: FALLBACK_COX_DATA[idx].name,
+              avatar_color: ['#f0ede7', '#e8f0f7', '#f0f7ee'][idx],
+              career_path_summary: `${FALLBACK_COX_DATA[idx].department} → ${FALLBACK_COX_DATA[idx].job_interest}`,
+              gap_period: FALLBACK_COX_DATA[idx].gap_period,
+            }))
+            .filter(p => p)
+          if (personaList.length > 0) setPersonas(personaList)
+        })
+        .catch(() => {})
         .finally(() => setPersonaLoading(false))
     }
 
