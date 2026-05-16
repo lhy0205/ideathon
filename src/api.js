@@ -38,6 +38,7 @@ export const api = {
 
   // User
   getMe: () => request('GET', '/users/me'),
+  getUserProfile: () => request('GET', '/users/me'),
   updateMe: (data) => request('PUT', '/users/me', data),
 
   // Experiences

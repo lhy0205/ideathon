@@ -106,47 +106,41 @@ export default function SurvivalDiagnosis() {
   const [curveLoading, setCurveLoading] = useState(true)
 
   useEffect(() => {
-    const profile = {
-      gap_period:     localStorage.getItem('gap_period')     || '5개월',
-      department:     localStorage.getItem('department')     || '경영학과',
-      certifications: localStorage.getItem('certifications') || '',
-      job_interest:   localStorage.getItem('job_interest')   || '데이터 분석',
-    }
-
     const fetchAll = async () => {
       const { api } = await import('../api')
 
-      // 현재 사용자의 생존 곡선 계산
-      api.getSurvivalCurve(profile)
-        .then(data => setCurveData(data))
-        .catch(() => setCurveLoading(false))
-        .finally(() => setCurveLoading(false))
+      const profile = await api.getUserProfile()
 
-      // DB senior_personas에서 유사한 3명 조회 후 Cox 모델에 계산
-      api.matchPersonas(profile, 3)
-        .then(seniorPersonas =>
-          Promise.all(
-            seniorPersonas.map(persona =>
-              api.getSurvivalCurve({
-                gap_period: persona.gap_period,
-                department: persona.department,
-                certifications: persona.certifications,
-                job_interest: persona.employment_field,
-              }).catch(() => null)
-            )
-          ).then(survivalResults => ({ seniorPersonas, survivalResults }))
+      setCurveLoading(true)
+      setPersonaLoading(true)
+
+      const [curveData, seniorPersonas] = await Promise.all([
+        api.getSurvivalCurve(profile),
+        api.matchPersonas(profile, 3),
+      ])
+
+      setCurveData(curveData)
+
+      const survivalResults = await Promise.all(
+        seniorPersonas.map(persona =>
+          api.getSurvivalCurve({
+            gap_period: persona.gap_period,
+            department: persona.department,
+            certifications: persona.certifications,
+            job_interest: persona.employment_field,
+          }).catch(() => null)
         )
-        .then(({ seniorPersonas, survivalResults }) => {
-          const personaList = survivalResults
-            .map((data, idx) => ({
-              ...seniorPersonas[idx],
-              similarity_score: data?.percentile || seniorPersonas[idx].similarity_score,
-            }))
-            .filter(p => p)
-          if (personaList.length > 0) setPersonas(personaList)
-        })
-        .catch(() => {})
-        .finally(() => setPersonaLoading(false))
+      )
+      const personaList = survivalResults
+        .map((data, idx) => ({
+          ...seniorPersonas[idx],
+          similarity_score: data?.percentile || seniorPersonas[idx].similarity_score,
+        }))
+        .filter(p => p)
+      if (personaList.length > 0) setPersonas(personaList)
+
+      setCurveLoading(false)
+      setPersonaLoading(false)
     }
 
     fetchAll()
