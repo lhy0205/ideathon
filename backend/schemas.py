@@ -152,6 +152,56 @@ class NotificationResponse(BaseModel):
         from_attributes = True
 
 
+# ── CertProof ──
+class CertProofCreate(BaseModel):
+    cert_id: Optional[int] = None
+    cert_name: str
+    status: str = "준비 중"
+    exam_date: Optional[str] = None
+    passed_date: Optional[str] = None
+    score: Optional[float] = None
+    study_hours: Optional[int] = None
+    target_hours: Optional[int] = None
+    target_exam_date: Optional[str] = None
+    proof_image: Optional[str] = None
+
+class CertProofResponse(BaseModel):
+    id: int
+    user_id: int
+    cert_id: Optional[int]
+    cert_name: str
+    status: str
+    exam_date: Optional[str]
+    passed_date: Optional[str]
+    score: Optional[float]
+    study_hours: Optional[int]
+    target_hours: Optional[int]
+    target_exam_date: Optional[str]
+    proof_image: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# ── ReportSettings ──
+class ReportSettingsUpdate(BaseModel):
+    show_ncs: Optional[bool] = None
+    show_cert: Optional[bool] = None
+    show_experience: Optional[bool] = None
+    show_mission: Optional[bool] = None
+    show_survival: Optional[bool] = None
+
+class ReportSettingsResponse(BaseModel):
+    user_id: int
+    show_ncs: bool
+    show_cert: bool
+    show_experience: bool
+    show_mission: bool
+    show_survival: bool
+
+    class Config:
+        from_attributes = True
+
 class SeniorPersonaResponse(BaseModel):
     id: int
     user_id: str
