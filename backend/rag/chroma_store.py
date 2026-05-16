@@ -60,3 +60,5 @@ def index_ncs_from_db():
 
 if __name__ == "__main__":
     index_ncs_from_db()
+
+#ㅇㅍㅋㅍㅋㅊㅍ

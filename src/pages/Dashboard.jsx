@@ -108,7 +108,6 @@ function MissionSection() {
   const [completed, setCompleted] = useState(false)
   const [missionError, setMissionError] = useState('')
   const fileInputRef = useState(null)
-
   // 미션 목록 불러오기
   useEffect(() => {
     const load = async () => {
@@ -554,7 +553,7 @@ export default function Dashboard() {
           {activeNav === 'password' && <PasswordSection />}
           {activeNav === 'experience' && <div className="db-content"><ExperienceInput /></div>}
           {activeNav === 'roadmap' && <div className="db-content"><CertRoadmap /></div>}
-          {activeNav === 'mission' && <MissionSection />}
+          <div style={{ display: activeNav === 'mission' ? 'block' : 'none' }}><MissionSection /></div>
           {activeNav === 'community' && <CommunitySection />}
           {activeNav === 'report' && <div className="db-content"><GrowthReport /></div>}
           {activeNav !== 'password' && activeNav !== 'experience' && activeNav !== 'roadmap' && activeNav !== 'mission' && activeNav !== 'community' && activeNav !== 'report' && <div className="db-content">

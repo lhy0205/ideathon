@@ -58,6 +58,21 @@ def _migrate():
         "ALTER TABLE user_experiences ADD COLUMN user_id INT",
         # ncs_mapping 컬럼 추가
         "ALTER TABLE user_experiences ADD COLUMN ncs_mapping TEXT",
+        # missions 테이블 — 인증 관련 컬럼 추가
+        "ALTER TABLE missions ADD COLUMN verified BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE missions ADD COLUMN verification_note TEXT",
+        "ALTER TABLE missions ADD COLUMN verified_at DATETIME",
+        # mission_logs 백필 — MissionLog 도입 전에 완료된 미션 소급 등록
+        """
+        INSERT INTO mission_logs (mission_id, user_id, completed_at, note)
+        SELECT m.id, m.user_id, m.completed_at, m.title
+        FROM missions m
+        WHERE m.completed = TRUE
+          AND m.completed_at IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM mission_logs ml WHERE ml.mission_id = m.id
+          )
+        """,
     ]
     for sql in migrations:
         try:
