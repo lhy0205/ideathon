@@ -71,6 +71,11 @@ class PDFRequest(BaseModel):
     ncs_items: Optional[List[NCSItem]] = []
     star_drafts: Optional[List[str]] = []
     certs: Optional[List[CertItem]] = []
+    # report_settings 기반 섹션 포함 여부
+    show_ncs: Optional[bool] = True
+    show_cert: Optional[bool] = True
+    show_experience: Optional[bool] = True
+    show_mission: Optional[bool] = True
 
 # ── Table helpers ──────────────────────────────────────────────────────────────
 
@@ -161,13 +166,14 @@ def _build_pdf(req: PDFRequest) -> BytesIO:
         story.append(Spacer(1, 6))
 
     # ── NCS 역량 ──────────────────────────────────────────────────────────────
-    story.append(Paragraph("NCS 역량 분석 결과", H2))
-    story.append(HRFlowable(width="100%", thickness=1, color=ORANGE, spaceAfter=4))
-    story.append(_ncs_table(req.ncs_items or []))
-    story.append(Spacer(1, 8))
+    if req.show_ncs:
+        story.append(Paragraph("NCS 역량 분석 결과", H2))
+        story.append(HRFlowable(width="100%", thickness=1, color=ORANGE, spaceAfter=4))
+        story.append(_ncs_table(req.ncs_items or []))
+        story.append(Spacer(1, 8))
 
     # ── STAR 자기소개서 ───────────────────────────────────────────────────────
-    if req.star_drafts:
+    if req.show_experience and req.star_drafts:
         story.append(Paragraph("자기소개서 추천 문구", H2))
         story.append(HRFlowable(width="100%", thickness=1, color=ORANGE, spaceAfter=4))
         STAR_LABELS = ["[상황 S]", "[과제 T]", "[행동 A]", "[결과 R]"]
@@ -179,7 +185,7 @@ def _build_pdf(req: PDFRequest) -> BytesIO:
         story.append(Spacer(1, 4))
 
     # ── 자격증 이력 ───────────────────────────────────────────────────────────
-    if req.certs:
+    if req.show_cert and req.certs:
         story.append(Paragraph("자격증 이력", H2))
         story.append(HRFlowable(width="100%", thickness=1, color=ORANGE, spaceAfter=4))
         story.append(_cert_table(req.certs))

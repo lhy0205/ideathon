@@ -100,6 +100,31 @@ export const api = {
   getSurvivalData: (userProfile) =>
     request('POST', '/survival/analyze', userProfile, false),
 
+  // Certifications
+  getCertSchedule: (category = '') =>
+    request('GET', `/certifications/schedule${category ? `?category=${category}` : ''}`, null, false),
+
+  // Cert Proofs
+  getCertProofs: () => request('GET', '/cert-proofs/'),
+  createCertProof: async (formData) => {
+    const token = localStorage.getItem('access_token')
+    const res = await fetch(`${BASE_URL}/cert-proofs/`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: '오류가 발생했습니다' }))
+      throw new Error(err.detail || '오류가 발생했습니다')
+    }
+    return res.json()
+  },
+  deleteCertProof: (id) => request('DELETE', `/cert-proofs/${id}`),
+
+  // Report Settings
+  getReportSettings: () => request('GET', '/report-settings/'),
+  updateReportSettings: (data) => request('PUT', '/report-settings/', data),
+
   // PDF
   downloadReport: async (data) => {
     const res = await fetch(`${BASE_URL}/pdf/generate`, {
