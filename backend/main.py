@@ -8,97 +8,18 @@ from routers import auth, users, experiences, missions, community, notifications
 
 load_dotenv()
 
-# DB 마이그레이션 (create_all 이전: users 스키마 정규화)
-def _pre_migrate():
-    from sqlalchemy import text
-    from database import SessionLocal
-    db = SessionLocal()
-    for sql in [
-        # PK 컬럼명 통일
-        "ALTER TABLE users CHANGE idx id INT NOT NULL AUTO_INCREMENT",
-        # email 컬럼 추가 (없는 경우)
-        "ALTER TABLE users ADD COLUMN email VARCHAR(255)",
-        # user_id(이메일값)를 email로 복사
-        "UPDATE users SET email = user_id WHERE email IS NULL AND user_id LIKE '%@%'",
-        # user_id 컬럼 nullable 처리 (구버전 스키마 호환)
-        "ALTER TABLE users MODIFY COLUMN user_id VARCHAR(255) NULL DEFAULT NULL",
-        # email unique 인덱스
-        "ALTER TABLE users ADD UNIQUE INDEX uq_users_email (email)",
-        # password → password_hash
-        "ALTER TABLE users CHANGE password password_hash VARCHAR(255)",
-        # 누락 컬럼 추가
-        "ALTER TABLE users ADD COLUMN job_interest VARCHAR(100)",
-        "ALTER TABLE users ADD COLUMN gap_start_date VARCHAR(20)",
-        "ALTER TABLE users ADD COLUMN profile_image VARCHAR(500)",
-        "ALTER TABLE users ADD COLUMN phone VARCHAR(20)",
-        "ALTER TABLE users ADD COLUMN oauth_provider VARCHAR(20) DEFAULT 'local'",
-        "ALTER TABLE users ADD COLUMN oauth_id VARCHAR(255)",
-        "ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE NOT NULL",
-        "ALTER TABLE users ADD COLUMN updated_at DATETIME DEFAULT NOW()",
-    ]:
-        try:
-            db.execute(text(sql))
-            db.commit()
-        except Exception:
-            pass
-    db.close()
-
-_pre_migrate()
-
 # DB 테이블 자동 생성
 Base.metadata.create_all(bind=engine)
 
-# DB 마이그레이션
-def _migrate():
-    from sqlalchemy import text
-    from database import SessionLocal
-    db = SessionLocal()
-    migrations = [
-        # user_idx → user_id 컬럼명 수정 (스키마 재설계 이전 버전 호환)
-        "ALTER TABLE user_experiences CHANGE user_idx user_id INT",
-        # user_id 컬럼 추가 (테이블이 새로 생성된 경우)
-        "ALTER TABLE user_experiences ADD COLUMN user_id INT",
-        # ncs_mapping 컬럼 추가
-        "ALTER TABLE user_experiences ADD COLUMN ncs_mapping TEXT",
-        # missions 테이블 — 인증 관련 컬럼 추가
-        "ALTER TABLE missions ADD COLUMN verified BOOLEAN DEFAULT FALSE",
-        "ALTER TABLE missions ADD COLUMN verification_note TEXT",
-        "ALTER TABLE missions ADD COLUMN verified_at DATETIME",
-        # mission_logs 백필 — MissionLog 도입 전에 완료된 미션 소급 등록
-        """
-        INSERT INTO mission_logs (mission_id, user_id, completed_at, note)
-        SELECT m.id, m.user_id, m.completed_at, m.title
-        FROM missions m
-        WHERE m.completed = TRUE
-          AND m.completed_at IS NOT NULL
-          AND NOT EXISTS (
-            SELECT 1 FROM mission_logs ml WHERE ml.mission_id = m.id
-          )
-        """,
-    ]
-    for sql in migrations:
-        try:
-            db.execute(text(sql))
-            db.commit()
-        except Exception:
-            pass
-    db.close()
-
-_migrate()
-
 app = FastAPI(title="Pause to Pass API", version="1.0.0")
 
-# CORS 설정 (React 프론트와 연결)
+_origins = [o.strip() for o in os.getenv("FRONTEND_URL", "http://localhost:5173").split(",")]
+if os.getenv("ENV") != "production":
+    _origins += ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        os.getenv("FRONTEND_URL", "http://localhost:5173"),
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-        "http://localhost:5176",
-    ],
+    allow_origins=_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

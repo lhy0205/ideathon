@@ -8,7 +8,7 @@ import './Dashboard.css'
 const NAV_ITEMS = [
   { key: 'home',       label: '홈 대시보드',   path: '/dashboard' },
   { key: 'mypage',     label: '마이페이지',     path: '/mypage' },
-  { key: 'password',   label: '비밀번호 변경',  path: '/dashboard?tab=password' },
+  { key: 'profile',    label: '프로필 설정',    path: '/profile' },
   { key: 'experience', label: '경험 입력',      path: '/dashboard?tab=experience' },
   { key: 'mapping',    label: '경험 매핑 결과', path: '/mapping' },
   { key: 'roadmap',    label: '자격증 로드맵',  path: '/dashboard?tab=roadmap' },
@@ -528,12 +528,14 @@ export default function Dashboard() {
           </nav>
           <button
             className="db-logout"
-            onClick={() => {
-              import('../api').then(({ logout }) => logout())
-              navigate('/login')
+            onClick={async () => {
+              const { api, clearSession } = await import('../api')
+              try { await api.endSession() } catch {}
+              clearSession()
+              navigate('/')
             }}
           >
-            로그아웃
+            종료
           </button>
         </aside>
 
