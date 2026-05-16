@@ -1,7 +1,9 @@
 import httpx
 import os
 
-OLLAMA_HOST = "http://127.0.0.1:11434"
+# 외부 접속 시 backend/.env 파일에서 수정
+# OLLAMA_HOST=https://AI서버ngrok주소.ngrok.io
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "exaone3.5:7.8b")
 
 async def analyze(prompt: str) -> str:

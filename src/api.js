@@ -1,3 +1,5 @@
+// 외부 접속 시 루트 .env 파일에서 수정
+// VITE_API_URL=https://백엔드ngrok주소.ngrok.io
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 function getSessionToken() {
