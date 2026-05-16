@@ -15,50 +15,9 @@ const NAV_ITEMS = [
   { key: 'report',     label: '성장 리포트',    path: '/dashboard?tab=report' },
 ]
 
-/* ── Cox PH 더미 데이터 (20명의 user 프로필) ── */
-const FALLBACK_COX_DATA = [
-  { name: '김A', gap_period: '7개월', department: '경영학', certifications: 'ADsP, SQLD', job_interest: '데이터 분석' },
-  { name: '이B', gap_period: '6개월', department: '컴퓨터과학', certifications: '정처기, SQLD', job_interest: '소프트웨어 개발' },
-  { name: '박C', gap_period: '5개월', department: '경영학', certifications: 'ADsP', job_interest: '스타트업 기획' },
-  { name: '최D', gap_period: '8개월', department: '통계학', certifications: '', job_interest: '데이터 분석' },
-  { name: '정E', gap_period: '4개월', department: '정보통신', certifications: '정처기, SQLD, ADsP', job_interest: '웹 개발' },
-  { name: '한F', gap_period: '9개월', department: '마케팅', certifications: 'ADsP', job_interest: '디지털 마케팅' },
-  { name: '조G', gap_period: '3개월', department: '경제학', certifications: '', job_interest: '금융' },
-  { name: '유H', gap_period: '10개월', department: '컴퓨터과학', certifications: 'SQLD', job_interest: '데이터베이스' },
-  { name: '윤I', gap_period: '5개월', department: '통계학', certifications: 'ADsP, 정처기', job_interest: '데이터 분석' },
-  { name: '강J', gap_period: '6개월', department: '회계학', certifications: '', job_interest: '회계' },
-  { name: '송K', gap_period: '4개월', department: '정보', certifications: '정처기', job_interest: '정보보안' },
-  { name: '임L', gap_period: '7개월', department: '전자공학', certifications: 'SQLD', job_interest: '임베디드' },
-  { name: '홍M', gap_period: '5개월', department: '경영학', certifications: 'ADsP, SQLD, 정처기', job_interest: '데이터 분석' },
-  { name: '신N', gap_period: '8개월', department: '컴퓨터과학', certifications: '', job_interest: '게임 개발' },
-  { name: '곽O', gap_period: '6개월', department: '통신공학', certifications: 'SQLD', job_interest: '통신' },
-  { name: '오P', gap_period: '3개월', department: '경영학', certifications: '', job_interest: '경영컨설팅' },
-  { name: '문Q', gap_period: '9개월', department: '통계학', certifications: 'ADsP', job_interest: '리서치' },
-  { name: '백R', gap_period: '5개월', department: '소프트웨어', certifications: '정처기, SQLD', job_interest: '백엔드 개발' },
-  { name: '손S', gap_period: '7개월', department: '수학', certifications: 'ADsP', job_interest: '데이터 분석' },
-  { name: '노T', gap_period: '4개월', department: '정보통신', certifications: 'SQLD', job_interest: '네트워크' },
-]
-
-const FALLBACK_CURVE_DATA = {
-  points: [
-    { month: 0, avg: 82, user: 95 }, { month: 1, avg: 78.5, user: 89.1 },
-    { month: 2, avg: 75, user: 83.6 }, { month: 3, avg: 70, user: 76.5 },
-    { month: 4, avg: 65, user: 69.2 }, { month: 5, avg: 60, user: 62.3 },
-    { month: 6, avg: 55, user: 55.4 }, { month: 7, avg: 50, user: 48.9 },
-    { month: 8, avg: 44, user: 41.8 }, { month: 9, avg: 38, user: 35.2 },
-    { month: 10, avg: 33, user: 29.4 }, { month: 11, avg: 28, user: 24.1 },
-    { month: 12, avg: 22, user: 18.5 },
-  ],
-  current_month: 5,
-  current_prob: 62.3,
-  percentile: 38,
-  status: '집중 행동이 필요합니다',
-  advice: '6~8개월 이후 취업률 급감 구간 진입 전 자격증 취득을 완료하세요.',
-}
-
 function SurvivalCurve({ curveData }) {
-  const data = curveData || FALLBACK_CURVE_DATA
-  const { points, current_month, current_prob } = data
+  if (!curveData) return null
+  const { points, current_month, current_prob } = curveData
 
   const W = 520, H = 260
   const px = (mo) => 60 + (mo / 12) * 420
@@ -163,21 +122,25 @@ export default function SurvivalDiagnosis() {
         .catch(() => setCurveLoading(false))
         .finally(() => setCurveLoading(false))
 
-      // 더미 데이터에서 처음 3명을 선택해서 각각 Cox 모델에 계산
-      Promise.all(
-        FALLBACK_COX_DATA.slice(0, 3).map(dummyUser =>
-          api.getSurvivalCurve(dummyUser).catch(() => null)
+      // DB senior_personas에서 유사한 3명 조회 후 Cox 모델에 계산
+      api.matchPersonas(profile, 3)
+        .then(seniorPersonas =>
+          Promise.all(
+            seniorPersonas.map(persona =>
+              api.getSurvivalCurve({
+                gap_period: persona.gap_period,
+                department: persona.department,
+                certifications: persona.certifications,
+                job_interest: persona.employment_field,
+              }).catch(() => null)
+            )
+          ).then(survivalResults => ({ seniorPersonas, survivalResults }))
         )
-      )
-        .then(results => {
-          const personaList = results
+        .then(({ seniorPersonas, survivalResults }) => {
+          const personaList = survivalResults
             .map((data, idx) => ({
-              ...FALLBACK_COX_DATA[idx],
-              similarity_score: data?.percentile || 80,
-              avatar_label: FALLBACK_COX_DATA[idx].name,
-              avatar_color: ['#f0ede7', '#e8f0f7', '#f0f7ee'][idx],
-              career_path_summary: `${FALLBACK_COX_DATA[idx].department} → ${FALLBACK_COX_DATA[idx].job_interest}`,
-              gap_period: FALLBACK_COX_DATA[idx].gap_period,
+              ...seniorPersonas[idx],
+              similarity_score: data?.percentile || seniorPersonas[idx].similarity_score,
             }))
             .filter(p => p)
           if (personaList.length > 0) setPersonas(personaList)
@@ -245,8 +208,8 @@ export default function SurvivalDiagnosis() {
                       : <SurvivalCurve curveData={curveData} />
                     }
                   </div>
-                  {(() => {
-                    const d = curveData || FALLBACK_CURVE_DATA
+                  {curveData && (() => {
+                    const d = curveData
                     return (
                       <div className="sv-alert">
                         <p className="sv-alert-title">
