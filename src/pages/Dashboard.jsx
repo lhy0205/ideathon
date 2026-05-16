@@ -528,7 +528,10 @@ export default function Dashboard() {
           </nav>
           <button
             className="db-logout"
-            onClick={() => navigate('/login')}
+            onClick={() => {
+              import('../api').then(({ logout }) => logout())
+              navigate('/login')
+            }}
           >
             로그아웃
           </button>

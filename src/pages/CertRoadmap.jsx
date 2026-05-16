@@ -151,6 +151,21 @@ function GanttChart({ bars, certs }) {
   )
 }
 
+function calcDday(dateStr) {
+  if (!dateStr) return null
+  const target = new Date(dateStr)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24))
+  return diff
+}
+
+function isBetween(start, end) {
+  if (!start || !end) return false
+  const today = new Date()
+  return today >= new Date(start) && today <= new Date(end)
+}
+
 export default function CertRoadmap() {
   const [selected, setSelected] = useState('balanced')
   const [ncsItems, setNcsItems] = useState(null)
@@ -158,6 +173,7 @@ export default function CertRoadmap() {
   const [aiCerts, setAiCerts] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
+  const [scheduleMap, setScheduleMap] = useState({})
 
   useEffect(() => {
     const saved = localStorage.getItem('ncs_result')
@@ -167,6 +183,15 @@ export default function CertRoadmap() {
     }
     const exp = localStorage.getItem('ncs_experience')
     if (exp) setExpInfo(JSON.parse(exp))
+
+    // 자격증 시험 일정 API 로드
+    import('../api').then(({ api }) => {
+      api.getCertSchedule().then(list => {
+        const map = {}
+        list.forEach(c => { map[c.cert_name] = c })
+        setScheduleMap(map)
+      }).catch(() => {})
+    })
   }, [])
 
   useEffect(() => {
@@ -288,34 +313,36 @@ export default function CertRoadmap() {
           <div className="cr-card">
             <h3 className="cr-card-title">자격증별 정보</h3>
             <div className="cr-cert-list">
-              {aiCerts
-                ? currentPath.certs.map((certName, i) => {
-                    const certData = aiCerts.find(c => c.name === certName)
-                    return (
-                      <div key={i} className="cr-cert-row">
-                        <div className="cr-cert-name">{certName.length > 4 ? certName.slice(0, 4) + '…' : certName}</div>
-                        <div className="cr-cert-info">
-                          <div className="cr-cert-full">{certData?.org || '-'}</div>
-                          <div className="cr-cert-detail">{certData?.reason || ''}</div>
-                        </div>
-                        <div className="cr-cert-status ready">
-                          {PRIORITY_LABEL[certData?.priority] || `${i + 1}순위`}
-                        </div>
+              {(aiCerts ? currentPath.certs : CERT_INFO.map(c => c.name)).map((certName, i) => {
+                const certData = aiCerts ? aiCerts.find(c => c.name === certName) : CERT_INFO[i]
+                const sched = scheduleMap[certName]
+                const dday = sched ? calcDday(sched.exam_start) : null
+                const applying = sched ? isBetween(sched.apply_start, sched.apply_end) : false
+                return (
+                  <div key={i} className="cr-cert-row">
+                    <div className="cr-cert-name">{certName.length > 4 ? certName.slice(0, 4) + '…' : certName}</div>
+                    <div className="cr-cert-info">
+                      <div className="cr-cert-full">
+                        {aiCerts ? (certData?.org || '-') : certData?.fullName}
+                        {applying && <span className="cr-badge-applying">접수중</span>}
                       </div>
-                    )
-                  })
-                : CERT_INFO.map(cert => (
-                    <div key={cert.name} className="cr-cert-row">
-                      <div className="cr-cert-name">{cert.name}</div>
-                      <div className="cr-cert-info">
-                        <div className="cr-cert-full">{cert.fullName}</div>
-                        <div className="cr-cert-detail">{cert.detail}</div>
-                      </div>
-                      <div className={`cr-cert-status ${cert.status}`}>
-                        {cert.status === 'pass' ? '✅ 합격' : '🟡 준비중'}
+                      <div className="cr-cert-detail">
+                        {aiCerts ? certData?.reason : certData?.detail}
+                        {dday !== null && (
+                          <span className={`cr-dday ${dday <= 7 ? 'urgent' : ''}`}>
+                            {dday > 0 ? `D-${dday}` : dday === 0 ? 'D-Day' : `D+${Math.abs(dday)}`}
+                          </span>
+                        )}
                       </div>
                     </div>
-                  ))}
+                    <div className={`cr-cert-status ${aiCerts ? 'ready' : certData?.status}`}>
+                      {aiCerts
+                        ? (PRIORITY_LABEL[certData?.priority] || `${i + 1}순위`)
+                        : certData?.status === 'pass' ? '✅ 합격' : '🟡 준비중'}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>

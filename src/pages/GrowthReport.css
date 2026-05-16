@@ -387,3 +387,63 @@
 .gr-export-btn:hover {
   background: #a84f30;
 }
+
+/* 자격증 삭제 버튼 */
+.gr-cert-del-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid #e0c8c0;
+  border-radius: 6px;
+  color: #c04e28;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 8px;
+}
+.gr-cert-img-link {
+  display: inline-block;
+  font-size: 12px;
+  color: #c04e28;
+  text-decoration: underline;
+  margin: 4px 0;
+}
+
+/* 자격증 추가 폼 */
+.gr-cert-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 14px;
+  background: #fdf3ee;
+  border-radius: 10px;
+}
+.gr-cert-input {
+  padding: 8px 12px;
+  border: 1px solid #e8d5cb;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+}
+.gr-cert-add-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.gr-cert-cancel-btn {
+  padding: 7px 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+.gr-cert-save-btn {
+  padding: 7px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #c04e28;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}

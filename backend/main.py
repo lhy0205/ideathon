@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from database import engine, Base
 import models, os
 from dotenv import load_dotenv
-from routers import auth, users, experiences, missions, community, notifications, pdf, ai, senior_personas, survival
+from routers import auth, users, experiences, missions, community, notifications, pdf, ai, senior_personas, survival, certifications, cert_proofs, report_settings
 
 load_dotenv()
 
@@ -20,6 +20,8 @@ def _pre_migrate():
         "ALTER TABLE users ADD COLUMN email VARCHAR(255)",
         # user_id(이메일값)를 email로 복사
         "UPDATE users SET email = user_id WHERE email IS NULL AND user_id LIKE '%@%'",
+        # user_id 컬럼 nullable 처리 (구버전 스키마 호환)
+        "ALTER TABLE users MODIFY COLUMN user_id VARCHAR(255) NULL DEFAULT NULL",
         # email unique 인덱스
         "ALTER TABLE users ADD UNIQUE INDEX uq_users_email (email)",
         # password → password_hash
@@ -118,6 +120,9 @@ app.include_router(pdf.router)
 app.include_router(ai.router)
 app.include_router(senior_personas.router)
 app.include_router(survival.router)
+app.include_router(certifications.router)
+app.include_router(cert_proofs.router)
+app.include_router(report_settings.router)
 
 @app.get("/")
 def root():

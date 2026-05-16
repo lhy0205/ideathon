@@ -31,18 +31,46 @@ function Register() {
     setLoginForm((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault()
-    navigate('/dashboard')
+    setLoading(true)
+    setError('')
+    try {
+      const { api, saveTokens } = await import('./api')
+      const data = await api.login(loginForm.email, loginForm.password)
+      saveTokens(data.access_token, data.refresh_token)
+      navigate('/dashboard')
+    } catch (err) {
+      setError(err.message || '로그인에 실패했습니다')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault()
     if (form.password !== form.passwordConfirm) {
       setError('비밀번호가 일치하지 않습니다')
       return
     }
-    navigate('/dashboard')
+    setLoading(true)
+    setError('')
+    try {
+      const { api, saveTokens } = await import('./api')
+      const data = await api.register({
+        email: form.email,
+        password: form.password,
+        name: form.name,
+        job_interest: form.jobInterest,
+        gap_start_date: form.startDate ? form.startDate + '-01' : null,
+      })
+      saveTokens(data.access_token, data.refresh_token)
+      navigate('/dashboard')
+    } catch (err) {
+      setError(err.message || '회원가입에 실패했습니다')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

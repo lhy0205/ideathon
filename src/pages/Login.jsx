@@ -61,9 +61,20 @@ function LoginForm({ onGoRegister }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    navigate('/dashboard')
+    setLoading(true)
+    setError('')
+    try {
+      const { api, saveTokens } = await import('../api')
+      const data = await api.login(email, password)
+      saveTokens(data.access_token, data.refresh_token)
+      navigate('/dashboard')
+    } catch (err) {
+      setError(err.message || '로그인에 실패했습니다')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
