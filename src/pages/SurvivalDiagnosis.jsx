@@ -130,6 +130,7 @@ export default function SurvivalDiagnosis() {
   const [curveData, setCurveData] = useState(null)
   const [curveLoading, setCurveLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [verifyResult, setVerifyResult] = useState(null)
 
   useEffect(() => {
     import('../api').then(({ api }) => api.getMe().then(setUser).catch(() => {}))
@@ -139,6 +140,7 @@ export default function SurvivalDiagnosis() {
     const { api } = await import('../api')
     try {
       setError(null)
+      setVerifyResult(null)
       setCurveLoading(true)
       setPersonaLoading(true)
 
@@ -147,6 +149,20 @@ export default function SurvivalDiagnosis() {
         department: form.department,
         certifications: form.certifications,
         job_interest: form.job_interest,
+      }
+
+      // AI 입력값 검증 - 실패하면 분석 차단
+      try {
+        const verify = await api.verifyProfile(profile)
+        const failedCount = Object.values(verify.fields || {}).filter(f => !f.ok).length
+        if ((verify.score ?? 100) < 50 || failedCount >= 2) {
+          setVerifyResult(verify)
+          setCurveLoading(false)
+          setPersonaLoading(false)
+          return
+        }
+      } catch {
+        // 검증 API 오류는 분석을 막지 않음
       }
 
       // Cox 곡선 - 실패해도 계속 진행
@@ -251,27 +267,41 @@ export default function SurvivalDiagnosis() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>공백기</label>
-                  <input name="gap_period" placeholder="예) 1일, 5개월, 1년" value={form.gap_period} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  <input name="gap_period" placeholder="예) 1일, 5개월, 1년" value={form.gap_period} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: `1px solid ${verifyResult?.fields?.gap_period?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>전공 / 학과</label>
-                  <input name="department" placeholder="예) 경영학과, 컴퓨터공학과" value={form.department} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  <input name="department" placeholder="예) 경영학과, 컴퓨터공학과" value={form.department} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: `1px solid ${verifyResult?.fields?.department?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>보유 자격증</label>
-                  <input name="certifications" placeholder="예) 정보처리기사, SQLD, ADsP" value={form.certifications} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  <input name="certifications" placeholder="예) 정보처리기사, SQLD, ADsP" value={form.certifications} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: `1px solid ${verifyResult?.fields?.certifications?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
 
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>희망 직무</label>
-                  <input name="job_interest" placeholder="예) 데이터 분석, 백엔드 개발, 마케팅" value={form.job_interest} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  <input name="job_interest" placeholder="예) 데이터 분석, 백엔드 개발, 마케팅" value={form.job_interest} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: `1px solid ${verifyResult?.fields?.job_interest?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
               </div>
 
+              {verifyResult && (
+                <div style={{ marginTop: '16px', padding: '14px 16px', background: '#fff5f0', border: '1px solid #f5c6b8', borderRadius: '8px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: '700', color: '#c4603d', marginBottom: '6px' }}>⚠️ 입력값을 수정해주세요</p>
+                  <p style={{ fontSize: '13px', color: '#555', marginBottom: verifyResult.suggestions?.length ? '8px' : '0' }}>{verifyResult.overall}</p>
+                  {verifyResult.suggestions?.length > 0 && (
+                    <ul style={{ margin: '0', paddingLeft: '18px' }}>
+                      {verifyResult.suggestions.map((s, i) => (
+                        <li key={i} style={{ fontSize: '12px', color: '#777', marginBottom: '2px' }}>{s}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
               <button onClick={handleAnalyze} disabled={curveLoading || personaLoading} style={{ width: '100%', marginTop: '18px', padding: '11px', background: '#c4603d', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: curveLoading || personaLoading ? 'not-allowed' : 'pointer', opacity: curveLoading || personaLoading ? 0.7 : 1, fontFamily: 'inherit' }}>
-                {curveLoading || personaLoading ? '분석 중...' : '분석하기 →'}
+                {curveLoading || personaLoading ? 'AI 검증 중...' : '분석하기 →'}
               </button>
             </div>
 
