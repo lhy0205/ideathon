@@ -237,12 +237,18 @@ export default function ExperienceMapping() {
     setEditMode(true)
   }
 
-  const handleEditSave = () => {
+  const handleEditSave = async () => {
     if (ncsResult) {
       const updatedDrafts = editedItems.map(s => `[${s.label}] ${s.text}`)
       const updated = { ...ncsResult, star_drafts: updatedDrafts }
       setNcsResult(updated)
       localStorage.setItem('ncs_result', JSON.stringify(updated))
+      if (selectedIdx) {
+        try {
+          const { api } = await import('../api')
+          await api.updateStarDrafts(selectedIdx, updatedDrafts)
+        } catch {}
+      }
     }
     setEditMode(false)
   }

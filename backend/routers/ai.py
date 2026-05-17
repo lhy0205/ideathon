@@ -401,6 +401,28 @@ class AnalysisResultItem(BaseModel):
     created_at: str
 
 
+class UpdateStarDraftsRequest(BaseModel):
+    star_drafts: List[str]
+
+@router.patch("/history/{idx}/star-drafts")
+def update_star_drafts(
+    idx: int,
+    req: UpdateStarDraftsRequest,
+    current_user: m.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    exp = (db.query(m.UserExperience)
+           .filter(m.UserExperience.idx == idx, m.UserExperience.user_id == current_user.id)
+           .first())
+    if not exp or not exp.ncs_mapping:
+        raise HTTPException(status_code=404, detail="분석 결과가 없습니다")
+    mapping = json.loads(exp.ncs_mapping)
+    mapping["star_drafts"] = req.star_drafts
+    exp.ncs_mapping = json.dumps(mapping, ensure_ascii=False)
+    db.commit()
+    return {"ok": True}
+
+
 @router.get("/results", response_model=List[AnalysisResultItem])
 def get_results(
     current_user: m.User = Depends(get_current_user),
