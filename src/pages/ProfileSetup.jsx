@@ -25,6 +25,7 @@ export default function ProfileSetup() {
     try {
       const { api } = await import('../api')
       await api.updateMe(form)
+      localStorage.setItem('user_profile', JSON.stringify(form))
       navigate('/dashboard')
     } catch (e) {
       setError('저장에 실패했습니다: ' + e.message)

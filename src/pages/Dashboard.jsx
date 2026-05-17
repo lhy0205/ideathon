@@ -125,6 +125,8 @@ function MissionSection() {
   const [completed, setCompleted] = useState(false)
   const [missionError, setMissionError] = useState('')
   const [expandedLog, setExpandedLog] = useState(null)
+  const [extraTexts, setExtraTexts] = useState({})
+  const [extraErrors, setExtraErrors] = useState({})
 
   const todayKey = new Date().toISOString().slice(0, 10)
   const [todayCompleted, setTodayCompleted] = useState(() =>
@@ -218,27 +220,32 @@ function MissionSection() {
     const globalIdx = EXTRA_MISSIONS.indexOf(m)
     if (selectedExtra === globalIdx) { setSelectedExtra(null); return }
     setSelectedExtra(globalIdx)
-    const alreadyIn = logs.some(l => l.title === m.title)
-    if (!alreadyIn) {
-      setLogs(prev => [...prev, { title: m.title, status: '진행 중', done: false, content: '', createdAt: '' }])
-      import('../api').then(({ api }) =>
-        api.createMission({ title: m.title, content: m.title, mission_type: 'extra' })
-      ).catch(() => {})
-    }
   }
 
-  const handleExtraDone = async (title) => {
-    setLogs(prev => prev.map(l =>
-      l.title === title ? { ...l, status: '완료', done: true } : l
-    ))
+  const handleExtraDone = async (globalIdx, m) => {
+    const text = (extraTexts[globalIdx] || '').trim()
+    if (text.length < 10) {
+      setExtraErrors(prev => ({ ...prev, [globalIdx]: `최소 10자 이상 작성해주세요. (현재 ${text.length}자)` }))
+      return
+    }
+    setExtraErrors(prev => ({ ...prev, [globalIdx]: '' }))
+
+    const now = new Date().toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    const alreadyIn = logs.some(l => l.title === m.title)
+    if (alreadyIn) {
+      setLogs(prev => prev.map(l => l.title === m.title ? { ...l, status: '완료', done: true, content: text, createdAt: now } : l))
+    } else {
+      setLogs(prev => [{ title: m.title, status: '완료', done: true, content: text, createdAt: now }, ...prev])
+    }
     setTotalDone(t => t + 1)
-    setMonthDone(m => m + 1)
+    setMonthDone(mm => mm + 1)
+    setSelectedExtra(null)
+    setExtraTexts(prev => ({ ...prev, [globalIdx]: '' }))
 
     try {
       const { api } = await import('../api')
-      const missions = await api.getMissions()
-      const target = missions.find(m => m.title === title && !m.completed)
-      if (target) await api.completeMission(target.id)
+      const created = await api.createMission({ title: m.title, content: text, mission_type: 'extra' })
+      await api.completeMission(created.id)
     } catch {}
   }
 
@@ -328,22 +335,40 @@ function MissionSection() {
             <div className="ms-extra-grid">
               {filteredExtras.map((m, i) => {
                 const globalIdx = EXTRA_MISSIONS.indexOf(m)
+                const isSelected = selectedExtra === globalIdx
                 return (
                   <div
                     key={i}
-                    className={`ms-extra-item ${selectedExtra === globalIdx ? 'active' : ''}`}
-                    onClick={() => handleExtraSelect(i)}
+                    className={`ms-extra-item ${isSelected ? 'active' : ''}`}
+                    onClick={!isSelected ? () => handleExtraSelect(i) : undefined}
+                    style={isSelected ? { cursor: 'default' } : {}}
                   >
                     <p className="ms-extra-title">{m.title}</p>
                     <p className="ms-extra-meta">{m.time} · {m.moodLabel}</p>
-                    <span className="ms-extra-count">+{m.count}명</span>
-                    {selectedExtra === globalIdx && (
-                      <button
-                        className="ms-extra-done-btn"
-                        onClick={(e) => { e.stopPropagation(); handleExtraDone(m.title) }}
-                      >
-                        완료
-                      </button>
+                    {!isSelected && <span className="ms-extra-count">+{m.count}명</span>}
+                    {isSelected && (
+                      <>
+                        <textarea
+                          className="ms-extra-textarea"
+                          placeholder="미션을 어떻게 수행했나요? (최소 10자)"
+                          value={extraTexts[globalIdx] || ''}
+                          onChange={(e) => {
+                            setExtraTexts(prev => ({ ...prev, [globalIdx]: e.target.value }))
+                            setExtraErrors(prev => ({ ...prev, [globalIdx]: '' }))
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          rows={3}
+                        />
+                        {extraErrors[globalIdx] && (
+                          <p className="ms-error" style={{ fontSize: '11px', marginTop: '2px' }}>{extraErrors[globalIdx]}</p>
+                        )}
+                        <button
+                          className="ms-extra-done-btn"
+                          onClick={(e) => { e.stopPropagation(); handleExtraDone(globalIdx, m) }}
+                        >
+                          ✓ 완료
+                        </button>
+                      </>
                     )}
                   </div>
                 )

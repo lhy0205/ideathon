@@ -14,7 +14,7 @@ const PDF_OPTION_DEFS = [
 ]
 
 // ── PDF 모달 ──────────────────────────────────────────────────────────────────
-function PdfModal({ onClose, certProofs, ncsItems, starDrafts, experiences, aiCerts, missionsActiveDays }) {
+function PdfModal({ onClose, certProofs, ncsItems, starDrafts, experiences, aiCerts, missionsActiveDays, userName }) {
   const hasAiCerts = aiCerts?.length > 0
   const [settings, setSettings] = useState({
     show_ncs: true, show_cert: true, show_experience: true, show_mission: true,
@@ -46,7 +46,7 @@ function PdfModal({ onClose, certProofs, ncsItems, starDrafts, experiences, aiCe
         score: n.score || 75,
       }))
       await api.downloadReport({
-        user_name: '사용자',
+        user_name: userName || '사용자',
         summary: '',
         ncs_items: ncsForPdf,
         star_drafts: starDrafts || [],
@@ -293,16 +293,31 @@ function Heatmap({ data }) {
   )
 }
 
+// ── 레이블 2줄 분리 헬퍼 ─────────────────────────────────────────────────────
+function splitLabel(text) {
+  if (text.length <= 6) return [text]
+  const words = text.split(' ')
+  if (words.length === 1) {
+    const mid = Math.ceil(text.length / 2)
+    return [text.slice(0, mid), text.slice(mid)]
+  }
+  let best = 1, bestDiff = Infinity
+  for (let i = 1; i < words.length; i++) {
+    const diff = Math.abs(words.slice(0, i).join(' ').length - words.slice(i).join(' ').length)
+    if (diff < bestDiff) { bestDiff = diff; best = i }
+  }
+  return [words.slice(0, best).join(' '), words.slice(best).join(' ')]
+}
+
 // ── NCS 레이더 차트 ───────────────────────────────────────────────────────────
 function RadarChart({ ncsItems }) {
   const items = (ncsItems || []).slice(0, 5)
-  const labels = items.length > 0 ? items.map(n => {
-    const name = n.unit_name || ''
-    return name.length > 5 ? name.slice(0, 5) + '…' : name
-  }) : ['데이터분석', '의사소통', '문제해결', '기획력', '학습민첩성']
+  const rawLabels = items.length > 0
+    ? items.map(n => n.unit_name || '')
+    : ['데이터분석', '의사소통', '문제해결', '기획력', '학습민첩성']
   const values = items.length > 0 ? items.map(n => (n.score || 75) / 100) : [0.82, 0.65, 0.74, 0.78, 0.88]
-  const n = labels.length
-  const cx = 160, cy = 165, r = 100
+  const n = rawLabels.length
+  const cx = 170, cy = 175, r = 100
   const angle = (i) => (Math.PI * 2 * i) / n - Math.PI / 2
   const toXY = (val, i) => ({ x: cx + r * val * Math.cos(angle(i)), y: cy + r * val * Math.sin(angle(i)) })
   const dataPoints = values.map((v, i) => toXY(v, i))
@@ -310,7 +325,7 @@ function RadarChart({ ncsItems }) {
   const gridLevels = [0.25, 0.5, 0.75, 1.0]
 
   return (
-    <svg width="100%" height="auto" viewBox="0 0 320 310" style={{ display: 'block' }}>
+    <svg width="100%" height="auto" viewBox="0 0 340 340" style={{ display: 'block' }}>
       {gridLevels.map((level) => {
         const pts = Array.from({ length: n }, (_, i) => toXY(level, i))
         const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z'
@@ -323,10 +338,13 @@ function RadarChart({ ncsItems }) {
       <path d={dataPath} fill="#e8956c" fillOpacity="0.3" stroke="#c4603d" strokeWidth="2" />
       {dataPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="4" fill="#c4603d" />)}
       {Array.from({ length: n }, (_, i) => {
-        const pt = toXY(1.32, i)
+        const pt = toXY(1.42, i)
+        const lines = splitLabel(rawLabels[i])
         return (
-          <text key={i} x={pt.x} y={pt.y + (i === 0 ? 14 : 0)} textAnchor="middle" dominantBaseline="middle" fontSize="13" fill="#555" fontWeight="600">
-            {labels[i]}
+          <text key={i} x={pt.x} y={pt.y} textAnchor="middle" dominantBaseline="middle" fontSize="12" fill="#555" fontWeight="600">
+            {lines.map((line, li) => (
+              <tspan key={li} x={pt.x} dy={li === 0 ? (lines.length > 1 ? '-0.6em' : '0') : '1.3em'}>{line}</tspan>
+            ))}
           </text>
         )
       })}
@@ -346,8 +364,40 @@ export default function GrowthReport() {
   const [aiCerts, setAiCerts] = useState([])
   const [experiences, setExperiences] = useState([])
   const [missionsActiveDays, setMissionsActiveDays] = useState(0)
+  const [userName, setUserName] = useState('')
+  const [history, setHistory] = useState([])
+  const [radarExpSource, setRadarExpSource] = useState('all')
+  const [radarNcsItems, setRadarNcsItems] = useState(null)
+  const [selectedExpForPdf, setSelectedExpForPdf] = useState('all')
+  const [selectedExpDetail, setSelectedExpDetail] = useState(null)
+
+  const handleSelectExpForPdf = async (val) => {
+    setSelectedExpForPdf(val)
+    if (val === 'all') { setSelectedExpDetail(null); return }
+    const item = history.find(h => String(h.idx) === String(val))
+    if (!item) return
+    try {
+      const detail = await api.getAnalysisDetail(item.idx)
+      setSelectedExpDetail({ ncs_items: detail.ncs_items || [], star_drafts: detail.star_drafts || [], title: item.title, exp_type: item.exp_type || '' })
+    } catch {}
+  }
+
+  const handleRadarSourceChange = async (val) => {
+    setRadarExpSource(val)
+    if (val === 'all') {
+      setRadarNcsItems(null)
+    } else {
+      const item = history.find(h => String(h.idx) === String(val))
+      if (!item) return
+      try {
+        const detail = await api.getAnalysisDetail(item.idx)
+        setRadarNcsItems(detail.ncs_items || [])
+      } catch {}
+    }
+  }
 
   useEffect(() => {
+    api.getMe().then(data => setUserName(data.name || '')).catch(() => {})
     const saved = localStorage.getItem('ncs_result')
     if (saved) {
       const parsed = JSON.parse(saved)
@@ -366,6 +416,10 @@ export default function GrowthReport() {
       try { setAiCerts(JSON.parse(savedAiCerts)) } catch {}
     }
     api.getCertProofs().then(setCertProofs).catch(() => {})
+    api.getAnalysisHistory().then(data => setHistory(data || [])).catch(() => {})
+    api.getNcsSummary().then(data => {
+      if (data?.ncs_items?.length) setNcsItems(data.ncs_items.map(i => ({ ...i, score: i.avg_score ?? i.score ?? 0 })))
+    }).catch(() => {})
     api.getMissionHeatmap().then(data => {
       if (data?.heatmap) {
         setHeatmap(data.heatmap)
@@ -378,10 +432,16 @@ export default function GrowthReport() {
   const passedCount = certProofs.filter(c => c.status === '합격').length
   const totalStudyHours = certProofs.reduce((sum, c) => sum + (c.study_hours || 0), 0)
 
+  const pdfNcsItems = selectedExpDetail ? selectedExpDetail.ncs_items : ncsItems
+  const pdfStarDrafts = selectedExpDetail ? selectedExpDetail.star_drafts : starDrafts
+  const pdfExperiences = selectedExpDetail
+    ? [{ exp_type: selectedExpDetail.exp_type, title: selectedExpDetail.title }]
+    : experiences
+
   return (
     <div className="gr-root">
       {certModalOpen && <CertModal onClose={() => { setCertModalOpen(false); api.getCertProofs().then(setCertProofs).catch(() => {}) }} />}
-      {pdfModalOpen && <PdfModal onClose={() => setPdfModalOpen(false)} certProofs={certProofs} ncsItems={ncsItems} starDrafts={starDrafts} experiences={experiences} aiCerts={aiCerts} missionsActiveDays={missionsActiveDays} />}
+      {pdfModalOpen && <PdfModal onClose={() => setPdfModalOpen(false)} certProofs={certProofs} ncsItems={pdfNcsItems} starDrafts={pdfStarDrafts} experiences={pdfExperiences} aiCerts={aiCerts} missionsActiveDays={missionsActiveDays} userName={userName} />}
 
       <div className="gr-page-title">
         <h2>성장 리포트</h2>
@@ -411,8 +471,22 @@ export default function GrowthReport() {
         </div>
 
         <div className="gr-card gr-radar-card">
-          <p className="gr-card-title">NCS 역량 레이더</p>
-          <RadarChart ncsItems={ncsItems} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <p className="gr-card-title" style={{ margin: 0 }}>NCS 역량 레이더</p>
+            {history.length > 0 && (
+              <select
+                className="gr-radar-select"
+                value={radarExpSource}
+                onChange={e => handleRadarSourceChange(e.target.value)}
+              >
+                <option value="all">전체 경험 통합</option>
+                {history.map(h => (
+                  <option key={h.idx} value={String(h.idx)}>{h.title}</option>
+                ))}
+              </select>
+            )}
+          </div>
+          <RadarChart ncsItems={radarNcsItems ?? ncsItems} />
         </div>
       </div>
 
@@ -421,7 +495,7 @@ export default function GrowthReport() {
           <p className="gr-card-title">STAR 자기소개서</p>
           <p className="gr-bottom-desc">NCS 경험을 기업별 직무기술서에 맞춰 자동 변환한 자기소개서 초안 모음</p>
           <p className="gr-bottom-accent">{starDrafts.length}개 초안</p>
-          <button className="gr-view-btn" onClick={() => navigate('/dashboard?tab=experience&step=3')}>보기 →</button>
+          <button className="gr-view-btn" onClick={() => navigate('/mapping')}>보기 →</button>
         </div>
 
         <div className="gr-card gr-bottom-card">
@@ -434,6 +508,19 @@ export default function GrowthReport() {
         <div className="gr-card gr-bottom-card">
           <p className="gr-card-title">포트폴리오 내보내기</p>
           <p className="gr-bottom-desc">포트폴리오 PDF 생성</p>
+          {history.length > 0 && (
+            <select
+              className="gr-radar-select"
+              value={selectedExpForPdf}
+              onChange={e => handleSelectExpForPdf(e.target.value)}
+              style={{ width: '100%', marginBottom: '8px' }}
+            >
+              <option value="all">전체 경험 통합</option>
+              {history.map(h => (
+                <option key={h.idx} value={String(h.idx)}>{h.title}</option>
+              ))}
+            </select>
+          )}
           <button className="gr-export-btn" onClick={() => setPdfModalOpen(true)}>내보내기</button>
         </div>
       </div>

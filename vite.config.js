@@ -21,7 +21,7 @@ export default defineConfig({
       '/certifications': { target: BACKEND, changeOrigin: true },
       '/cert-proofs': { target: BACKEND, changeOrigin: true },
       '/report-settings': { target: BACKEND, changeOrigin: true },
-      '/survival': { target: BACKEND, changeOrigin: true },
+      '/survival/': { target: BACKEND, changeOrigin: true },
     },
   },
 })
