@@ -3,15 +3,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, cast, Date
 from typing import List, Optional
 from datetime import datetime
-import os, aiofiles, uuid, base64
 
 from database import get_db
 from dependencies import get_current_user
 from rag.exaone_client import analyze
+from cloudinary_utils import upload_file
 import models, schemas
 
 router = APIRouter(prefix="/missions", tags=["missions"])
-UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 
 
 @router.get("/", response_model=List[schemas.MissionResponse])
@@ -101,14 +100,7 @@ async def verify_mission(mission_id: int,
 
     image_desc = ""
     if file:
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
-        ext = file.filename.split(".")[-1]
-        filename = f"{uuid.uuid4()}.{ext}"
-        path = os.path.join(UPLOAD_DIR, filename)
-        content = await file.read()
-        async with aiofiles.open(path, "wb") as f:
-            await f.write(content)
-        mission.image_url = f"/uploads/{filename}"
+        mission.image_url = upload_file(await file.read(), folder="mission_verify")
         image_desc = "사용자가 인증 이미지를 첨부했습니다."
         evidence_parts.append(image_desc)
 
@@ -171,13 +163,7 @@ async def upload_mission_image(mission_id: int, file: UploadFile = File(...),
     ).first()
     if not mission:
         raise HTTPException(status_code=404, detail="미션을 찾을 수 없습니다")
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    ext = file.filename.split(".")[-1]
-    filename = f"{uuid.uuid4()}.{ext}"
-    path = os.path.join(UPLOAD_DIR, filename)
-    async with aiofiles.open(path, "wb") as f:
-        await f.write(await file.read())
-    mission.image_url = f"/uploads/{filename}"
+    mission.image_url = upload_file(await file.read(), folder="mission_images")
     db.commit()
     db.refresh(mission)
     return mission
