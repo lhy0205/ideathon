@@ -93,10 +93,10 @@ def _compute_employment_possibility(user_profile: dict) -> float:
     return round(max(5, min(95, possibility)), 1)
 
 
-def _user_survival(t: float, hr: float) -> float:
-    """Cox PH: S_user(t) = (S₀_norm(t))^HR × 95"""
+def _user_survival(t: float, start_prob: float) -> float:
+    """사용자 맞춤 생존 곡선: 시작 확률 기반으로 avg 곡선을 스케일링."""
     s0_norm = _avg_survival(t) / 82.0
-    return _USER_START * (s0_norm ** hr)
+    return round(start_prob * s0_norm, 1)
 
 
 # ── 외부 인터페이스 ───────────────────────────────────────────────────────────
@@ -120,10 +120,13 @@ def compute_survival_curves(user_profile: dict) -> dict:
     """
     gap_months = _parse_gap_months(user_profile.get('gap_period', '5개월'))
 
+    # 사용자 시작 확률 (0개월 기준) = 취업 가능성 점수 기반
+    user_start = _compute_employment_possibility(user_profile)
+
     points = []
     for t in CURVE_MONTHS:
         avg_prob  = round(_avg_survival(t), 1)
-        user_prob = round(_avg_survival(t), 1)  # 모두 평균값 사용
+        user_prob = _user_survival(t, user_start)
         points.append({'month': t, 'avg': avg_prob, 'user': user_prob})
 
     current_month = max(0, gap_months)
