@@ -103,11 +103,21 @@ function PdfModal({ onClose, certProofs, ncsItems, starDrafts, experiences, aiCe
 }
 
 // ── 자격증 증빙 모달 ───────────────────────────────────────────────────────────
+function calcDdayStr(dateStr) {
+  if (!dateStr) return null
+  const diff = Math.ceil((new Date(dateStr) - new Date().setHours(0,0,0,0)) / 86400000)
+  if (diff > 0) return `D-${diff}`
+  if (diff === 0) return 'D-Day'
+  return null
+}
+
+const EMPTY_FORM = { cert_name: '', status: '준비 중', passed_date: '', target_exam_date: '' }
+
 function CertModal({ onClose }) {
   const [proofs, setProofs] = useState([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
-  const [form, setForm] = useState({ cert_name: '', status: '준비 중', exam_date: '', passed_date: '', study_hours: '', target_hours: '', target_exam_date: '' })
+  const [form, setForm] = useState(EMPTY_FORM)
   const [file, setFile] = useState(null)
 
   useEffect(() => {
@@ -123,7 +133,7 @@ function CertModal({ onClose }) {
       const created = await api.createCertProof(fd)
       setProofs(prev => [created, ...prev])
       setAdding(false)
-      setForm({ cert_name: '', status: '준비 중', exam_date: '', passed_date: '', study_hours: '', target_hours: '', target_exam_date: '' })
+      setForm(EMPTY_FORM)
       setFile(null)
     } catch (e) { alert('추가 실패: ' + e.message) }
   }
@@ -132,12 +142,6 @@ function CertModal({ onClose }) {
     if (!confirm('삭제하시겠습니까?')) return
     await api.deleteCertProof(id).catch(() => {})
     setProofs(prev => prev.filter(p => p.id !== id))
-  }
-
-  const pct = (proof) => {
-    if (proof.status === '합격') return 100
-    if (!proof.study_hours || !proof.target_hours) return 0
-    return Math.min(100, Math.round((proof.study_hours / proof.target_hours) * 100))
   }
 
   return (
@@ -149,30 +153,26 @@ function CertModal({ onClose }) {
         </div>
         <div className="gr-modal-body">
           {loading && <p style={{textAlign:'center',color:'#999'}}>불러오는 중...</p>}
-          {!loading && proofs.map((proof) => (
-            <div key={proof.id} className={`gr-cert-item ${proof.status === '준비 중' ? 'preparing' : ''}`}>
-              <div className="gr-cert-top">
-                <span className="gr-cert-name">{proof.cert_name}</span>
-                <span className={`gr-cert-badge ${proof.status === '합격' ? 'pass' : 'ready'}`}>{proof.status}</span>
-                <button className="gr-cert-del-btn" onClick={() => handleDelete(proof.id)}>삭제</button>
-              </div>
-              <div className="gr-cert-info">
-                {proof.status === '합격'
-                  ? `시험일: ${proof.exam_date || '-'} · 합격일: ${proof.passed_date || '-'}`
-                  : `목표 시험일: ${proof.target_exam_date || '-'} · 학습: ${proof.study_hours || 0}h / ${proof.target_hours || 0}h`}
-              </div>
-              {proof.proof_image && (
-                <a href={proof.proof_image} target="_blank" rel="noreferrer" className="gr-cert-img-link">합격증 보기</a>
-              )}
-              <div className="gr-cert-progress-row">
-                <span className="gr-cert-progress-label">학습 진도</span>
-                <div className="gr-cert-bar-wrap">
-                  <div className={`gr-cert-bar ${proof.status === '합격' ? 'done' : 'ing'}`} style={{ width: `${pct(proof)}%` }} />
+          {!loading && proofs.map((proof) => {
+            const dday = proof.status !== '합격' ? calcDdayStr(proof.target_exam_date) : null
+            return (
+              <div key={proof.id} className={`gr-cert-item ${proof.status !== '합격' ? 'preparing' : ''}`}>
+                <div className="gr-cert-top">
+                  <span className="gr-cert-name">{proof.cert_name}</span>
+                  <span className={`gr-cert-badge ${proof.status === '합격' ? 'pass' : 'ready'}`}>{proof.status}</span>
+                  <button className="gr-cert-del-btn" onClick={() => handleDelete(proof.id)}>삭제</button>
                 </div>
-                <span className="gr-cert-progress-end">{proof.status === '합격' ? '완료' : `${pct(proof)}%`}</span>
+                <div className="gr-cert-info">
+                  {proof.status === '합격'
+                    ? `취득일: ${proof.passed_date || '-'}`
+                    : `목표 시험일: ${proof.target_exam_date || '-'}${dday ? ` · ${dday}` : ''}`}
+                </div>
+                {proof.proof_image && (
+                  <a href={proof.proof_image} target="_blank" rel="noreferrer" className="gr-cert-img-link">합격증 보기</a>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
 
           {adding ? (
             <div className="gr-cert-add-form">
@@ -182,16 +182,20 @@ function CertModal({ onClose }) {
                 <option>합격</option>
               </select>
               {form.status === '합격' ? (
-                <>
-                  <input type="date" placeholder="시험일" value={form.exam_date} onChange={e => setForm(p => ({...p, exam_date: e.target.value}))} className="gr-cert-input" />
-                  <input type="date" placeholder="합격일" value={form.passed_date} onChange={e => setForm(p => ({...p, passed_date: e.target.value}))} className="gr-cert-input" />
-                </>
+                <div className="gr-cert-input-group">
+                  <label className="gr-cert-input-label">취득일</label>
+                  <input type="date" value={form.passed_date} onChange={e => setForm(p => ({...p, passed_date: e.target.value}))} className="gr-cert-input" />
+                </div>
               ) : (
-                <input type="date" placeholder="목표 시험일" value={form.target_exam_date} onChange={e => setForm(p => ({...p, target_exam_date: e.target.value}))} className="gr-cert-input" />
+                <div className="gr-cert-input-group">
+                  <label className="gr-cert-input-label">목표 시험일</label>
+                  <input type="date" value={form.target_exam_date} onChange={e => setForm(p => ({...p, target_exam_date: e.target.value}))} className="gr-cert-input" />
+                </div>
               )}
-              <input type="number" placeholder="학습 시간" value={form.study_hours} onChange={e => setForm(p => ({...p, study_hours: e.target.value}))} className="gr-cert-input" />
-              <input type="number" placeholder="목표 시간" value={form.target_hours} onChange={e => setForm(p => ({...p, target_hours: e.target.value}))} className="gr-cert-input" />
-              <input type="file" accept="image/*,.pdf" onChange={e => setFile(e.target.files[0])} className="gr-cert-input" />
+              <div className="gr-cert-input-group">
+                <label className="gr-cert-input-label">합격증 첨부 (선택)</label>
+                <input type="file" accept="image/*,.pdf" onChange={e => setFile(e.target.files[0])} className="gr-cert-input" />
+              </div>
               <div className="gr-cert-add-actions">
                 <button className="gr-cert-cancel-btn" onClick={() => setAdding(false)}>취소</button>
                 <button className="gr-cert-save-btn" onClick={handleAdd}>저장</button>
