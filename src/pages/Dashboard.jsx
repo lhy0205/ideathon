@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import ExperienceInput from './ExperienceInput'
 import CertRoadmap from './CertRoadmap'
 import GrowthReport from './GrowthReport'
+import TopBar from '../components/TopBar'
 import './Dashboard.css'
 
 const NAV_ITEMS = [
@@ -606,18 +607,19 @@ export default function Dashboard() {
         {/* Main content */}
         <main className="db-main">
           {/* Breadcrumb bar */}
-          <div className="db-topbar">
-            <span className="db-breadcrumb">
-              {activeNav === 'experience' ? '경험 입력'
-                : activeNav === 'password' ? '비밀번호 변경'
-                : activeNav === 'roadmap' ? '자격증 로드맵'
-                : activeNav === 'mission' ? '오늘의 미션'
-                : activeNav === 'community' ? '커뮤니티'
-                : activeNav === 'report' ? '성장 리포트'
-                : '홈 대시보드'}
-            </span>
-            <span className="db-user">· {user?.name?.slice(0, 2) || ''}</span>
-          </div>
+          <TopBar
+            title={
+              activeNav === 'experience' ? '경험 입력'
+              : activeNav === 'password' ? '비밀번호 변경'
+              : activeNav === 'roadmap' ? '자격증 로드맵'
+              : activeNav === 'mission' ? '오늘의 미션'
+              : activeNav === 'community' ? '커뮤니티'
+              : activeNav === 'report' ? '성장 리포트'
+              : '홈 대시보드'
+            }
+            user={user}
+            onProfileClick={() => navigate('/mypage')}
+          />
 
           {activeNav === 'password' && <PasswordSection />}
           {activeNav === 'experience' && <div className="db-content"><ExperienceInput /></div>}

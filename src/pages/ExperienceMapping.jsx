@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import TopBar from '../components/TopBar'
 import './ExperienceMapping.css'
 
 const NAV_ITEMS = [
@@ -89,6 +90,7 @@ function RadarChart({ labels = RADAR_LABELS, values = RADAR_VALUES }) {
 export default function ExperienceMapping() {
   const navigate = useNavigate()
   const [activeNav, setActiveNav] = useState('mapping')
+  const [user, setUser] = useState(null)
   const [copied, setCopied] = useState(false)
   const [ncsResult, setNcsResult] = useState(null)
   const [expInfo, setExpInfo] = useState(null)
@@ -100,6 +102,7 @@ export default function ExperienceMapping() {
   const [editedItems, setEditedItems] = useState([])
 
   useEffect(() => {
+    import('../api').then(({ api }) => api.getMe().then(setUser).catch(() => {}))
     // localStorage 마지막 결과 로드
     const saved = localStorage.getItem('ncs_result')
     const exp = localStorage.getItem('ncs_experience')
@@ -243,10 +246,7 @@ export default function ExperienceMapping() {
 
         {/* Main */}
         <main className="em-main">
-          <div className="em-topbar">
-            <span className="em-breadcrumb">경험 매핑 결과</span>
-            <span className="em-user">· 김지</span>
-          </div>
+          <TopBar title="경험 매핑 결과" user={user} />
 
           <div className="em-content">
             <h2 className="em-title">경험 매핑 결과</h2>
