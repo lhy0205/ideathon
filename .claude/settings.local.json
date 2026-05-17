@@ -67,7 +67,10 @@
       "PowerShell(Get-Process -Name python -ErrorAction SilentlyContinue)",
       "PowerShell(taskkill /F /IM uvicorn.exe /T 2>&1)",
       "PowerShell(taskkill /F /IM python.exe /T 2>&1)",
-      "Bash(rm \"c:/Users/leehy/Desktop/test/src/pages/Auth.jsx\" \"c:/Users/leehy/Desktop/test/src/pages/Login.jsx\" \"c:/Users/leehy/Desktop/test/src/Register.jsx\" \"c:/Users/leehy/Desktop/test/src/pages/login/RegisterForm.jsx\" \"c:/Users/leehy/Desktop/test/src/pages/login/ResetPasswordForm.jsx\" 2>/dev/null; echo \"done\")"
+      "Bash(rm \"c:/Users/leehy/Desktop/test/src/pages/Auth.jsx\" \"c:/Users/leehy/Desktop/test/src/pages/Login.jsx\" \"c:/Users/leehy/Desktop/test/src/Register.jsx\" \"c:/Users/leehy/Desktop/test/src/pages/login/RegisterForm.jsx\" \"c:/Users/leehy/Desktop/test/src/pages/login/ResetPasswordForm.jsx\" 2>/dev/null; echo \"done\")",
+      "Bash(python -c *)",
+      "Bash(curl -s --max-time 10 https://820e-203-255-221-68.ngrok-free.app/api/tags)",
+      "Bash(gh pr create --base main --head hyunuk --title 'feat: 세션 기반 인증 전환 및 AI 분석 개선' --body ' *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\leehy\\Desktop\\test\\src\\pages"

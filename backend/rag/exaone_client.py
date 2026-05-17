@@ -2,23 +2,23 @@ import httpx
 import os
 
 # 외부 접속 시 backend/.env 파일에서 수정
-# OLLAMA_HOST=https://AI서버ngrok주소.ngrok.io
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "exaone3.5:7.8b")
+# VLLM_HOST=https://AI서버ngrok주소.ngrok-free.app
+VLLM_HOST = os.getenv("VLLM_HOST", "http://127.0.0.1:8001")
+VLLM_MODEL = os.getenv("VLLM_MODEL", "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct")
 
 async def analyze(prompt: str) -> str:
-    url = f"{OLLAMA_HOST}/api/generate"
+    url = f"{VLLM_HOST}/v1/chat/completions"
     payload = {
-        "model": OLLAMA_MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "options": {
-            "num_gpu": -1,
-            "temperature": 0.1,
-            "seed": 42,
-        },
+        "model": VLLM_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 2048,
+        "temperature": 0.7,
     }
     async with httpx.AsyncClient(timeout=600.0) as client:
-        res = await client.post(url, json=payload)
+        res = await client.post(
+            url,
+            json=payload,
+            headers={"ngrok-skip-browser-warning": "true"}
+        )
         res.raise_for_status()
-        return res.json().get("response", "")
+        return res.json()["choices"][0]["message"]["content"]
