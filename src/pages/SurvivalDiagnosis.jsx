@@ -140,6 +140,8 @@ export default function SurvivalDiagnosis() {
     const { api } = await import('../api')
     try {
       setError(null)
+      setCurveLoading(true)
+      setPersonaLoading(true)
 
       const profile = {
         gap_period: form.gap_period,
@@ -147,16 +149,6 @@ export default function SurvivalDiagnosis() {
         certifications: form.certifications,
         job_interest: form.job_interest,
       }
-
-      // 입력값 검증
-      const validation = await api.validateSurvivalInput(profile)
-      if (!validation.valid) {
-        setError(validation.errors.join(' / '))
-        return
-      }
-
-      setCurveLoading(true)
-      setPersonaLoading(true)
 
       // Cox 곡선 - 실패해도 계속 진행
       try {
