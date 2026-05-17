@@ -184,6 +184,52 @@ def compute_similarity(user_profile: dict, persona) -> float:
     return round(score, 1)
 
 
+def filter_candidates(user_profile: dict, personas: list) -> list:
+    """사용자 프로필 기반으로 후보자 필터링 (학과, 공백기간, 자격증)"""
+    if not personas:
+        return []
+
+    u_gap = parse_gap_months(user_profile.get('gap_period', ''))
+    u_dept = dept_to_category(user_profile.get('department', ''))
+    u_certs = parse_certs(user_profile.get('certifications', ''))
+
+    filtered = []
+
+    for persona in personas:
+        p_dept = dept_to_category(_get_attr(persona, 'department'))
+        p_gap = parse_gap_months(_get_attr(persona, 'gap_period'))
+        p_certs = parse_certs(_get_attr(persona, 'certifications'))
+
+        # 필터 1: 학과 (같은 카테고리만)
+        if u_dept != _UNKNOWN_CATEGORY and p_dept != u_dept:
+            continue
+
+        # 필터 2: 공백기간 (±4개월 범위)
+        gap_range = 4
+        if u_gap > 0 and abs(u_gap - p_gap) > gap_range:
+            continue
+
+        # 필터 3: 자격증 (최소 1개 겹치거나, 둘 다 없으면 통과)
+        if u_certs and p_certs:
+            if not (u_certs & p_certs):
+                # 자격증이 있는데 겹치지 않으면 제외
+                continue
+
+        filtered.append(persona)
+
+    # 필터링 후 최소 3명 이상 있어야 함
+    # 없으면 필터 완화: 학과 필터만 유지
+    if len(filtered) < 3:
+        filtered = [p for p in personas
+                   if dept_to_category(_get_attr(p, 'department')) == u_dept or u_dept == _UNKNOWN_CATEGORY]
+
+    # 그것도 없으면 모든 후보 반환
+    if not filtered:
+        filtered = personas
+
+    return filtered
+
+
 def knn_match(user_profile: dict, personas: list, k: int = 3) -> list:
     """
     KNN 매칭 실행.
@@ -192,6 +238,9 @@ def knn_match(user_profile: dict, personas: list, k: int = 3) -> list:
     - k: 반환할 상위 K명
     반환: similarity_score가 갱신된 persona 객체 리스트 (상위 K개)
     """
+    # 필터링을 통해 후보자 줄이기
+    personas = filter_candidates(user_profile, personas)
+
     if not personas:
         return []
 
