@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { key: 'roadmap',    label: '자격증 로드맵',  path: '/dashboard?tab=roadmap' },
   { key: 'survival',   label: '생존 진단',      path: '/survival' },
   { key: 'mission',    label: '오늘의 미션',    path: '/dashboard?tab=mission' },
-  { key: 'community',  label: '커뮤니티',       path: '/dashboard?tab=community' },
+  { key: 'community',  label: '커뮤니티 (준비 중)', path: null },
   { key: 'report',     label: '성장 리포트',    path: '/dashboard?tab=report' },
 ]
 
@@ -264,8 +264,9 @@ export default function ExperienceMapping() {
             {NAV_ITEMS.map(item => (
               <button
                 key={item.key}
-                className={`em-nav-item ${activeNav === item.key ? 'active' : ''}`}
+                className={`em-nav-item ${activeNav === item.key ? 'active' : ''}${item.path === null ? ' nav-disabled' : ''}`}
                 onClick={() => handleNav(item)}
+                disabled={item.path === null}
               >
                 {item.label}
               </button>
@@ -327,7 +328,15 @@ export default function ExperienceMapping() {
                 <div className="em-exp-card">
                   <p className="em-exp-label">선택된 경험</p>
                   <p className="em-exp-title">{expTitle}</p>
-                  <p className="em-exp-desc">{expContent ? (expContent.slice(0, 80) + (expContent.length > 80 ? '...' : '')) : '경험 내용이 없습니다'}</p>
+                  <p className="em-exp-desc">
+                    {expContent
+                      ? (expContent.slice(0, 80) + (expContent.length > 80 ? '...' : ''))
+                      : expTitle?.includes('통합')
+                        ? `입력한 모든 경험 ${history.length}개를 통합하여 분석합니다`
+                        : expTitle
+                          ? '해당 경험의 NCS 역량이 분석되었습니다'
+                          : '경험 내용이 없습니다'}
+                  </p>
                 </div>
 
                 {/* NCS cards */}
