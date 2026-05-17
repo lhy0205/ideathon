@@ -5,16 +5,19 @@ import './GrowthReport.css'
 
 // ── PDF 옵션 ──────────────────────────────────────────────────────────────────
 const PDF_OPTION_DEFS = [
-  { id: 'show_ncs',        label: 'NCS 역량 카드',        desc: 'NCS 역량 분석 결과' },
-  { id: 'show_cert',       label: '자격증 취득 이력',      desc: '합격증 및 학습 시간' },
-  { id: 'show_experience', label: 'STAR 자기소개서 초안',  desc: '직무별 맞춤 자기소개서' },
-  { id: 'show_mission',    label: '미션 활동 로그',        desc: '연속 실천 기록' },
+  { id: 'show_ncs',         label: 'NCS 역량 카드',        desc: 'NCS 역량 분석 결과' },
+  { id: 'show_experiences', label: '경험 목록',             desc: '입력한 경험 유형 및 제목' },
+  { id: 'show_experience',  label: 'STAR 자기소개서 초안',  desc: '직무별 맞춤 자기소개서' },
+  { id: 'show_ai_certs',   label: 'AI 추천 자격증',        desc: 'AI가 추천한 자격증 및 이유' },
+  { id: 'show_cert',        label: '자격증 취득 이력',      desc: '합격증 및 학습 시간' },
+  { id: 'show_mission',     label: '미션 달성 현황',        desc: '총 활동일 기록' },
 ]
 
 // ── PDF 모달 ──────────────────────────────────────────────────────────────────
-function PdfModal({ onClose, certProofs, ncsItems, starDrafts }) {
+function PdfModal({ onClose, certProofs, ncsItems, starDrafts, experiences, aiCerts, missionsActiveDays }) {
   const [settings, setSettings] = useState({
     show_ncs: true, show_cert: true, show_experience: true, show_mission: true,
+    show_experiences: true, show_ai_certs: true,
   })
   const [loading, setLoading] = useState(true)
 
@@ -48,6 +51,14 @@ function PdfModal({ onClose, certProofs, ncsItems, starDrafts }) {
         ncs_items: ncsForPdf,
         star_drafts: starDrafts || [],
         certs: certsData,
+        experiences: experiences || [],
+        ai_certs: (aiCerts || []).map(c => ({
+          name: c.name || '',
+          org: c.org || '',
+          reason: c.reason || '',
+          priority: c.priority || 1,
+        })),
+        missions_active_days: missionsActiveDays || 0,
         ...settings,
       })
     } catch (e) {
@@ -263,20 +274,35 @@ export default function GrowthReport() {
   const [ncsItems, setNcsItems] = useState(null)
   const [starDrafts, setStarDrafts] = useState([])
   const [heatmap, setHeatmap] = useState(null)
+  const [aiCerts, setAiCerts] = useState([])
+  const [experiences, setExperiences] = useState([])
+  const [missionsActiveDays, setMissionsActiveDays] = useState(0)
 
   useEffect(() => {
-    // localStorage에서 NCS 분석 결과 로드
     const saved = localStorage.getItem('ncs_result')
     if (saved) {
       const parsed = JSON.parse(saved)
       setNcsItems(parsed.ncs_items || null)
       setStarDrafts(parsed.star_drafts || [])
     }
-    // 자격증 이력 로드
+    const exp = localStorage.getItem('ncs_experience')
+    if (exp) {
+      const parsed = JSON.parse(exp)
+      if (parsed.type || parsed.title) {
+        setExperiences([{ exp_type: parsed.type || '', title: parsed.title || '' }])
+      }
+    }
+    const savedAiCerts = localStorage.getItem('ai_certs')
+    if (savedAiCerts) {
+      try { setAiCerts(JSON.parse(savedAiCerts)) } catch {}
+    }
     api.getCertProofs().then(setCertProofs).catch(() => {})
-    // 미션 히트맵 로드
     api.getMissionHeatmap().then(data => {
-      if (data?.heatmap) setHeatmap(data.heatmap)
+      if (data?.heatmap) {
+        setHeatmap(data.heatmap)
+        const activeDays = data.heatmap.flat().filter(v => v > 0).length
+        setMissionsActiveDays(activeDays)
+      }
     }).catch(() => {})
   }, [])
 
@@ -286,7 +312,7 @@ export default function GrowthReport() {
   return (
     <div className="gr-root">
       {certModalOpen && <CertModal onClose={() => { setCertModalOpen(false); api.getCertProofs().then(setCertProofs).catch(() => {}) }} />}
-      {pdfModalOpen && <PdfModal onClose={() => setPdfModalOpen(false)} certProofs={certProofs} ncsItems={ncsItems} starDrafts={starDrafts} />}
+      {pdfModalOpen && <PdfModal onClose={() => setPdfModalOpen(false)} certProofs={certProofs} ncsItems={ncsItems} starDrafts={starDrafts} experiences={experiences} aiCerts={aiCerts} missionsActiveDays={missionsActiveDays} />}
 
       <div className="gr-page-title">
         <h2>성장 리포트</h2>

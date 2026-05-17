@@ -218,7 +218,9 @@ export default function CertRoadmap() {
         .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
         .slice(0, 3)
       const data = await api.recommendCerts(topItems, expInfo?.type || '', expInfo?.title || '')
-      setAiCerts(data.certs || [])
+      const certs = data.certs || []
+      setAiCerts(certs)
+      localStorage.setItem('ai_certs', JSON.stringify(certs))
     } catch {
       setAiError('추천을 불러오지 못했습니다. 다시 시도해주세요.')
     } finally {
