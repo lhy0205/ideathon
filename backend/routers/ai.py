@@ -91,34 +91,59 @@ def build_prompt(req: AnalysisRequest, rag_context: str = "") -> str:
 }}"""
 
 
-def parse_response(text: str) -> dict:
+def _try_json(raw: str):
+    """JSON 파싱 시도 - 일반 → 줄바꿈 이스케이프 → 제어문자 제거 순으로 시도"""
+    for attempt in (raw, re.sub(r'\r\n|\r', '\n', raw)):
+        try:
+            return json.loads(attempt)
+        except Exception:
+            pass
+    # 문자열 내부 리터럴 줄바꿈 이스케이프 처리
     try:
-        # JSON 블록 추출 (마크다운 코드블록 포함) - greedy so nested braces work
-        match = re.search(r'```(?:json)?\s*(\{[\s\S]*\})\s*```', text)
-        if not match:
-            match = re.search(r'\{[\s\S]*\}', text)
-        if match:
-            raw = match.group(1) if match.lastindex else match.group()
-            parsed = json.loads(raw)
-            # star_drafts가 문자열로 왔을 경우 파싱
-            if isinstance(parsed.get("star_drafts"), str):
-                try:
-                    parsed["star_drafts"] = json.loads(parsed["star_drafts"])
-                except Exception:
-                    parsed["star_drafts"] = [parsed["star_drafts"]]
-            # ncs_items가 문자열로 왔을 경우 파싱
-            if isinstance(parsed.get("ncs_items"), str):
-                try:
-                    parsed["ncs_items"] = json.loads(parsed["ncs_items"])
-                except Exception:
-                    parsed["ncs_items"] = []
-            return parsed
+        fixed = re.sub(r'(?<=[^\\])\n', '\\n', raw)
+        return json.loads(fixed)
     except Exception:
         pass
+    return None
+
+
+def parse_response(text: str) -> dict:
+    candidates = []
+
+    # 전략 1: 마크다운 코드블록 안의 JSON
+    for m in re.finditer(r'```(?:json)?\s*(\{[\s\S]*?\})\s*```', text):
+        candidates.append(m.group(1).strip())
+
+    # 전략 2: 텍스트 전체에서 { } 블록 추출 (greedy)
+    m = re.search(r'\{[\s\S]*\}', text)
+    if m:
+        candidates.append(m.group())
+
+    for raw in candidates:
+        parsed = _try_json(raw)
+        if not parsed or not isinstance(parsed, dict):
+            continue
+        # ncs_items 문자열 → 리스트
+        if isinstance(parsed.get("ncs_items"), str):
+            try:
+                parsed["ncs_items"] = json.loads(parsed["ncs_items"])
+            except Exception:
+                parsed["ncs_items"] = []
+        # star_drafts 문자열 → 리스트
+        if isinstance(parsed.get("star_drafts"), str):
+            try:
+                parsed["star_drafts"] = json.loads(parsed["star_drafts"])
+            except Exception:
+                parsed["star_drafts"] = [parsed["star_drafts"]]
+        # 필수 키 확인
+        if "ncs_items" in parsed or "star_drafts" in parsed:
+            return parsed
+
+    # 모든 전략 실패 → 최소 fallback (raw text를 star_drafts에 노출하지 않음)
     return {
-        "ncs_items": [{"ncs_code": "NCS-분석완료", "unit_name": "분석 결과", "level": 3, "score": 75}],
-        "star_drafts": ["[상황 S] " + text[:200]] if text else ["분석 결과를 가져오는 중 오류가 발생했습니다."],
-        "summary": "AI 분석이 완료되었습니다.",
+        "ncs_items": [],
+        "star_drafts": ["AI 응답 파싱에 실패했습니다. 다시 시도해주세요."],
+        "summary": "분석 결과를 불러오지 못했습니다.",
     }
 
 

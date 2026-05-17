@@ -219,7 +219,8 @@ export default function ExperienceInput() {
                   : history.map((e) => (
                     <div key={e.idx} className="exp-prev-item" style={{ cursor: 'pointer' }}
                       onClick={async () => {
-                        // 로컬 캐시 우선, 없으면 API 호출
+                        setForm(prev => ({ ...prev, title: e.title || '', content: '' }))
+                        setSelectedType(e.exp_type || '아르바이트')
                         if (e._result) {
                           setResult(e._result)
                           setStep(2)
