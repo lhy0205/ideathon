@@ -65,19 +65,19 @@ const CERT_INFO = [
   {
     name: 'ADsP',
     fullName: '데이터분석 준전문가 · 한국데이터산업진흥원',
-    detail: '합격률 약 40~50% · 연 2회 (3, 9월)',
+    detail: '',
     status: 'pass',
   },
   {
     name: 'SQLD',
     fullName: 'SQL 개발자 · 한국데이터산업진흥원',
-    detail: '합격률 약 50% · 연 2회 (6, 12월)',
+    detail: '',
     status: 'pass',
   },
   {
     name: '정처기',
     fullName: '정보처리기사 · 한국산업인력공단',
-    detail: '합격률 약 20~30% · 연 3회',
+    detail: '',
     status: 'ready',
   },
 ]

@@ -103,26 +103,26 @@ export default function Home() {
             <div className="engine-card">
               <div className="engine-icon">📋</div>
               <div className="engine-tag">Experience Archive</div>
-              <h3>나 성장을 스토리化</h3>
-              <p>공백기의 경험을 체계적으로 기록하고 설득력 있는 스토리로 전환합니다.</p>
+              <h3>NCS 역량 분석</h3>
+              <p>공백기의 경험을 입력하면 AI가 NCS 기반으로 역량을 분석하고 자기소개서 초안을 생성합니다.</p>
             </div>
             <div className="engine-card">
-              <div className="engine-icon">📄</div>
-              <div className="engine-tag">Resume Platform</div>
-              <h3>합격 자소서 분석</h3>
-              <p>합격자 자기소개서를 분석해 나만의 합격 공식을 도출합니다.</p>
+              <div className="engine-icon">🏅</div>
+              <div className="engine-tag">Cert Roadmap</div>
+              <h3>자격증 로드맵</h3>
+              <p>내 역량과 희망 직무에 맞는 자격증을 추천하고 취득 순서를 안내합니다.</p>
             </div>
             <div className="engine-card">
-              <div className="engine-icon">🎙️</div>
-              <div className="engine-tag">Interview AI</div>
-              <h3>AI 면접 피드백 및 실전 연습</h3>
-              <p>AI 기반 모의 면접으로 실전 감각을 키우고 약점을 보완합니다.</p>
+              <div className="engine-icon">📊</div>
+              <div className="engine-tag">Survival Diagnosis</div>
+              <h3>취업 생존 진단</h3>
+              <p>AI가 취업 가능성을 예측하고 선배 합격자와의 유사도를 분석해 강점을 파악합니다.</p>
             </div>
             <div className="engine-card">
               <div className="engine-icon">🎯</div>
-              <div className="engine-tag">Career Guide</div>
-              <h3>합격 정보 큐레이션</h3>
-              <p>나에게 맞는 채용 정보와 합격 전략을 한곳에서 확인합니다.</p>
+              <div className="engine-tag">Growth Report</div>
+              <h3>성장 리포트 & 미션</h3>
+              <p>매일 미션으로 공백기를 기록하고 나의 성장을 시각화해 포트폴리오로 완성합니다.</p>
             </div>
           </div>
         </div>
@@ -133,26 +133,26 @@ export default function Home() {
         <div className="section-inner feature-inner">
           <div className="feature-text">
             <span className="feature-num">기능 1</span>
-            <h2>빌공 연대가<br />멘탈이 됩니다</h2>
+            <h2>경험을 입력하면<br />AI가 역량을 찾아냅니다</h2>
             <ul className="feature-list">
-              <li>비슷한 공백을 겪고 있는 — AI로 맞춤 커뮤니티 매칭</li>
-              <li>NCS 직무군별 그룹 스터디 → 합격 사례 공유</li>
-              <li>매일 공백기를 서로가 서로의 동기부여가 되는 커뮤니티</li>
+              <li>공백기 경험을 자유롭게 입력하면 NCS 기반으로 역량 자동 분류</li>
+              <li>STAR 구조 자기소개서 초안을 AI가 자동 생성</li>
+              <li>역량별 숙련도·적합도 점수로 나의 강점을 한눈에 확인</li>
             </ul>
           </div>
           <div className="feature-visual">
             <div className="feature-card-mock">
               <div className="fmock-row accent-bg">
-                <span>📌 오늘의 미션</span>
-                <span>자기소개서 초안 완성하기</span>
+                <span>📋 NCS 역량 분석</span>
+                <span>5개 역량 추출됨</span>
               </div>
               <div className="fmock-row">
-                <span>👥 스터디 멤버</span>
-                <span>12명 참여 중</span>
+                <span>✍️ STAR 초안</span>
+                <span>자동 생성 완료</span>
               </div>
               <div className="fmock-row">
-                <span>🔥 연속 달성</span>
-                <span>14일 연속</span>
+                <span>🏅 자격증 추천</span>
+                <span>3개 매칭</span>
               </div>
             </div>
           </div>
@@ -193,26 +193,26 @@ export default function Home() {
         <div className="section-inner feature-inner">
           <div className="feature-text">
             <span className="feature-num">기능 3</span>
-            <h2>나의 공백기가<br />어디에서든 보여집니다</h2>
+            <h2>매일 미션으로<br />성장을 기록합니다</h2>
             <ul className="feature-list">
-              <li>공개 포트폴리오 링크로 어디서든 공유 가능</li>
-              <li>채용 담당자에게 직접 전달되는 프로필 카드</li>
-              <li>활동 이력 → 시간순 스토리로 자동 정렬 및 시각화</li>
+              <li>오늘의 미션을 완료하며 공백기를 의미 있는 기록으로 전환</li>
+              <li>누적 활동이 성장 리포트로 자동 시각화</li>
+              <li>역량 변화 그래프로 나의 성장 흐름을 한눈에 확인</li>
             </ul>
           </div>
           <div className="feature-visual">
             <div className="feature-card-mock">
-              <div className="fmock-profile">
-                <div className="profile-avatar">P</div>
-                <div>
-                  <div className="profile-name">김지원</div>
-                  <div className="profile-sub">공백기 포트폴리오 · 마케팅</div>
-                </div>
+              <div className="fmock-row accent-bg">
+                <span>📌 오늘의 미션</span>
+                <span>자기소개서 초안 완성하기</span>
               </div>
-              <div className="profile-tags">
-                <span className="mockup-tag">브랜드 기획</span>
-                <span className="mockup-tag">SNS 운영</span>
-                <span className="mockup-tag accent">합격 전환</span>
+              <div className="fmock-row">
+                <span>🔥 연속 달성</span>
+                <span>14일 연속</span>
+              </div>
+              <div className="fmock-row">
+                <span>📈 성장 리포트</span>
+                <span>역량 3개 향상</span>
               </div>
             </div>
           </div>
@@ -231,11 +231,11 @@ export default function Home() {
           </div>
           <div className="feature-text">
             <span className="feature-num">기능 4</span>
-            <h2>5분의 보여<br />포트폴리오가 됩니다</h2>
+            <h2>하루 5분이 모여<br />공백기가 채워집니다</h2>
             <ul className="feature-list">
-              <li>경험 키워드 입력만으로 자동 포트폴리오 생성</li>
-              <li>AI 문장 다듬기로 전문성 있는 표현 완성</li>
-              <li>XS포맷의 그룹 경험 각 시간만 링크로 언제든 최신 업데이트</li>
+              <li>에너지 상태 선택 → AI 맞춤 5분 미션 생성</li>
+              <li>미션 인증 사진 업로드 및 활동 로그 저장</li>
+              <li>KNN 매칭 그룹의 실시간 참여 인원 공유로 고립감 해소</li>
             </ul>
           </div>
         </div>
@@ -247,11 +247,11 @@ export default function Home() {
           <h2 className="section-title">5단계로 공백기가<br />합격 포트폴리오가 됩니다</h2>
           <div className="steps-row">
             {[
-              { num: '01', title: '경험 입력', desc: '공백기 동안의 활동과 경험을 입력합니다.' },
-              { num: '02', title: 'NCS 프레임', desc: 'NCS 기반으로 역량을 분류·정리합니다.' },
-              { num: '03', title: '포트폴리오', desc: 'AI가 스토리 중심 포트폴리오를 생성합니다.' },
-              { num: '04', title: '서비스·인성 분석', desc: '직무 적합도와 인성 역량을 분석합니다.' },
-              { num: '05', title: '서류 피드백', desc: '합격 가능성과 개선점을 제시합니다.' },
+              { num: '01', title: '경험 입력', desc: '공백기 동안의 활동과 경험을 자유롭게 입력합니다.' },
+              { num: '02', title: 'NCS 역량 분석', desc: 'AI가 NCS 기반으로 역량을 분류하고 STAR 초안을 생성합니다.' },
+              { num: '03', title: '자격증 추천', desc: '내 역량에 맞는 자격증과 취득 순서를 안내합니다.' },
+              { num: '04', title: '생존 진단', desc: '취업 가능성을 예측하고 선배 합격자와 유사도를 비교합니다.' },
+              { num: '05', title: '성장 리포트', desc: '누적 활동과 역량 변화를 시각화해 포트폴리오로 완성합니다.' },
             ].map(step => (
               <div key={step.num} className="step-card">
                 <div className="step-num">{step.num}</div>
@@ -270,7 +270,7 @@ export default function Home() {
           <div className="testimonial-grid">
             {[
               { name: '이○○', role: '대기업 마케팅 합격', text: '공백 8개월이 오히려 강점이 됐어요. Pause to Pass 덕분에 경험을 체계적으로 정리하고 나만의 스토리를 만들 수 있었습니다.' },
-              { name: '김○○', role: '스타트업 기획 합격', text: '막연했던 공백기가 포트폴리오가 되는 경험, 정말 신기했어요. AI 면접 연습이 특히 도움이 많이 됐습니다.' },
+              { name: '김○○', role: '스타트업 기획 합격', text: '막연했던 공백기가 포트폴리오가 되는 경험, 정말 신기했어요. 생존 진단으로 내 강점을 객관적으로 파악할 수 있었습니다.' },
               { name: '박○○', role: '공공기관 NCS 합격', text: 'NCS 프레임으로 정리하니까 자소서가 완전히 달라졌어요. 공백기 때 한 일들이 이렇게 빛날 수 있다니 놀라웠습니다.' },
             ].map((t, i) => (
               <div key={i} className="testimonial-card">

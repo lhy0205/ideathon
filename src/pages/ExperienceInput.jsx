@@ -94,7 +94,7 @@ export default function ExperienceInput() {
       {/* 페이지 제목 */}
       <div className="exp-page-title">
         <h2>경험 입력</h2>
-        <p>앙상 언어로 자유롭게 작성하세요. AI가 NCS 역량으로 변환합니다.</p>
+        <p>일상 언어로 자유롭게 작성하세요. AI가 NCS 역량으로 변환합니다.</p>
       </div>
 
       {/* 단계 표시 */}

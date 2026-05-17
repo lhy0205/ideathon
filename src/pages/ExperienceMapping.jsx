@@ -68,7 +68,7 @@ function RadarChart({ labels = RADAR_LABELS, values = RADAR_VALUES }) {
   const dataPath = dataPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z'
 
   return (
-    <svg width="100%" height="auto" viewBox="0 0 300 300">
+    <svg width="100%" viewBox="0 0 300 300" style={{ height: 'auto' }}>
       {gridLevels.map(lvl =>
         angles.map((a, i) => {
           const next = angles[(i + 1) % n]
