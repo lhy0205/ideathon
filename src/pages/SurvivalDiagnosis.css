@@ -1,9 +1,10 @@
 .sv-root {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
   background: #f5ece6;
   font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+  overflow: hidden;
 }
 
 /* Header */
@@ -13,11 +14,15 @@
   font-size: 18px;
   font-weight: 700;
   border-bottom: 1px solid #e8ddd8;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 .sv-brand { color: #1a1a1a; font-weight: 800; }
 .sv-tagline { color: #c4603d; font-weight: 700; }
 
-.sv-body { display: flex; flex: 1; }
+.sv-body { display: flex; flex: 1; overflow: hidden; }
 
 /* Sidebar */
 .sv-sidebar {
@@ -28,6 +33,7 @@
   display: flex;
   flex-direction: column;
   padding: 20px 0;
+  overflow-y: auto;
 }
 .sv-pages-label {
   font-size: 10px;

@@ -6,14 +6,15 @@ export default function Home() {
 
   const handleStart = async () => {
     try {
-      const { api, saveSessionToken, hasSession } = await import('../api')
+      const { api, saveSessionToken, hasSession, clearSession } = await import('../api')
       if (hasSession()) {
         try {
           await api.getMe()
           navigate('/dashboard')
           return
         } catch {
-          // 토큰 만료/무효 → 새 세션 생성
+          // 토큰 만료/무효 → 이전 데이터 초기화 후 새 세션 생성
+          clearSession()
         }
       }
       const data = await api.startSession()
