@@ -214,7 +214,10 @@ export default function CertRoadmap() {
     setAiError('')
     try {
       const { api } = await import('../api')
-      const data = await api.recommendCerts(ncsItems, expInfo?.type || '', expInfo?.title || '')
+      const topItems = [...ncsItems]
+        .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+        .slice(0, 3)
+      const data = await api.recommendCerts(topItems, expInfo?.type || '', expInfo?.title || '')
       setAiCerts(data.certs || [])
     } catch {
       setAiError('추천을 불러오지 못했습니다. 다시 시도해주세요.')
