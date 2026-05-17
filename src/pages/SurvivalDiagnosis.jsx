@@ -281,7 +281,7 @@ export default function SurvivalDiagnosis() {
               <div className="sv-left">
                 <div className="sv-card">
                   <p className="sv-card-title">≈ 공백기 생존 곡선</p>
-                  <p className="sv-card-sub">Cox 비례 위험 모델 기반 · 동일 조건 청년 2,847명 데이터</p>
+                  <p className="sv-card-sub">Cox 비례 위험 모델 기반</p>
                   <div className="sv-chart-wrap">
                     {curveLoading
                       ? <p style={{ color: '#888', fontSize: '13px', textAlign: 'center', padding: '60px 0' }}>곡선 계산 중...</p>
