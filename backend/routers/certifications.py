@@ -55,10 +55,10 @@ async def get_cert_schedule(
     items = root.findall(".//item")
     return [
         CertItem(
-            cert_code=item.findtext("jmCd"),
-            cert_name=item.findtext("jmNm") or "",
-            category=item.findtext("seriesNm"),
-            related_job=item.findtext("instiNm"),
+            cert_code=item.findtext("jmcd"),
+            cert_name=item.findtext("jmfldnm") or "",
+            category=item.findtext("seriesnm"),
+            related_job=item.findtext("obligfldnm"),
         )
         for item in items
     ]
