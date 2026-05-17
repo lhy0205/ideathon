@@ -96,6 +96,8 @@ export default function ExperienceMapping() {
   const [selectedIdx, setSelectedIdx] = useState(null)
   const [batchLoading, setBatchLoading] = useState(false)
   const [allNcsSummary, setAllNcsSummary] = useState(null)
+  const [editMode, setEditMode] = useState(false)
+  const [editedItems, setEditedItems] = useState([])
 
   useEffect(() => {
     // localStorage 마지막 결과 로드
@@ -178,11 +180,35 @@ export default function ExperienceMapping() {
   const radarLabels = radarSource.map(c => c.unit_name || c.title)
   const radarValues = radarSource.map(c => (c.avg_score ?? c.score ?? c.pct ?? 70) / 100)
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     const text = starItems.map(s => `[${s.label}] ${s.text}`).join('\n')
-    navigator.clipboard.writeText(text)
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      const el = document.createElement('textarea')
+      el.value = text
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+    }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleEditStart = () => {
+    setEditedItems(starItems.map(s => ({ ...s })))
+    setEditMode(true)
+  }
+
+  const handleEditSave = () => {
+    if (ncsResult) {
+      const updatedDrafts = editedItems.map(s => `[${s.label}] ${s.text}`)
+      const updated = { ...ncsResult, star_drafts: updatedDrafts }
+      setNcsResult(updated)
+      localStorage.setItem('ncs_result', JSON.stringify(updated))
+    }
+    setEditMode(false)
   }
 
   return (
@@ -320,17 +346,47 @@ export default function ExperienceMapping() {
                   )}
                   {summary && <p style={{ fontSize: '13px', color: '#C75B3A', marginBottom: '10px', fontWeight: '600' }}>{summary}</p>}
                   <div className="em-star-list">
-                    {starItems.map((s, i) => (
-                      <p key={i} className="em-star-item">
-                        <span className="em-star-label">【{s.label}】</span> {s.text}
-                      </p>
-                    ))}
+                    {editMode
+                      ? editedItems.map((s, i) => (
+                          <div key={i} className="em-star-item" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span className="em-star-label">【{s.label}】</span>
+                            <textarea
+                              value={s.text}
+                              onChange={e => {
+                                const next = [...editedItems]
+                                next[i] = { ...next[i], text: e.target.value }
+                                setEditedItems(next)
+                              }}
+                              rows={3}
+                              style={{
+                                width: '100%', padding: '8px', fontSize: '13px',
+                                border: '1.5px solid #c4603d', borderRadius: '6px',
+                                fontFamily: 'inherit', resize: 'vertical',
+                              }}
+                            />
+                          </div>
+                        ))
+                      : starItems.map((s, i) => (
+                          <p key={i} className="em-star-item">
+                            <span className="em-star-label">【{s.label}】</span> {s.text}
+                          </p>
+                        ))
+                    }
                   </div>
                   <div className="em-btn-row">
-                    <button className="em-btn-primary">✏️ 내용 편집</button>
-                    <button className="em-btn-secondary" onClick={handleCopy}>
-                      {copied ? '✓ 복사됨' : '📋 복사'}
-                    </button>
+                    {editMode ? (
+                      <>
+                        <button className="em-btn-primary" onClick={handleEditSave}>💾 저장</button>
+                        <button className="em-btn-secondary" onClick={() => setEditMode(false)}>취소</button>
+                      </>
+                    ) : (
+                      <>
+                        <button className="em-btn-primary" onClick={handleEditStart}>✏️ 내용 편집</button>
+                        <button className="em-btn-secondary" onClick={handleCopy}>
+                          {copied ? '✓ 복사됨' : '📋 복사'}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -340,7 +396,7 @@ export default function ExperienceMapping() {
                   <div className="em-radar-wrap">
                     <RadarChart labels={radarLabels} values={radarValues} />
                   </div>
-                  <button className="em-btn-full">⚙️ 자격증 로드맵 설계하기</button>
+                  <button className="em-btn-full" onClick={() => navigate('/dashboard?tab=roadmap')}>⚙️ 자격증 로드맵 설계하기</button>
                 </div>
               </div>
             </div>
