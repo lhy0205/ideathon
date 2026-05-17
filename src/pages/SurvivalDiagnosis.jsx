@@ -163,10 +163,12 @@ export default function SurvivalDiagnosis() {
         job_interest: form.job_interest,
       }
 
-      // 2단계: AI 의미 검증 - 자격증이 실재하지 않으면 차단
+      // 2단계: AI 의미 검증 - 전공/자격증에 무의미한 입력 시 차단
       try {
         const verify = await api.verifyProfile(profile)
-        const criticalFailed = verify.fields?.certifications?.ok === false
+        const criticalFailed = ['department', 'certifications'].some(
+          k => verify.fields?.[k]?.ok === false
+        )
         if (criticalFailed) {
           setVerifyResult(verify)
           setCurveLoading(false)
