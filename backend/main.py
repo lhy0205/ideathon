@@ -38,12 +38,12 @@ _origins += [
     "http://localhost:3000",
     "http://localhost:5173",
     "http://localhost:5174",
-    "https://ideathon-olive.vercel.app",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
