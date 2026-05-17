@@ -132,9 +132,12 @@ export default function SurvivalDiagnosis() {
   const [curveLoading, setCurveLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  useEffect(() => {
+    import('../api').then(({ api }) => api.getMe().then(setUser).catch(() => {}))
+  }, [])
+
   const handleAnalyze = async () => {
     const { api } = await import('../api')
-
     try {
       setError(null)
       setCurveLoading(true)
@@ -146,12 +149,6 @@ export default function SurvivalDiagnosis() {
         certifications: form.certifications,
         job_interest: form.job_interest,
       }
-  const [curveLoading, setCurveLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchAll = async () => {
-      const { api } = await import('../api')
-      api.getMe().then(setUser).catch(() => {})
 
       // Cox 곡선 - 실패해도 계속 진행
       try {
@@ -166,7 +163,6 @@ export default function SurvivalDiagnosis() {
       // KNN 매칭 - 실패해도 계속 진행
       try {
         const seniorPersonas = await api.matchPersonas(profile, 3)
-
         const survivalResults = await Promise.all(
           seniorPersonas.map(persona =>
             api.getSurvivalCurve({
