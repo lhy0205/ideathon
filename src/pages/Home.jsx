@@ -45,7 +45,7 @@ export default function Home() {
             </h1>
             <div className="hero-btns">
               <button className="btn-primary" onClick={handleStart}>무료로 포트폴리오 보기</button>
-              <button className="btn-secondary">서비스 둘러보기</button>
+              <button className="btn-secondary" onClick={() => document.querySelector('.engines').scrollIntoView({ behavior: 'smooth' })}>서비스 둘러보기</button>
             </div>
             <div className="hero-stats">
               <div className="stat">
