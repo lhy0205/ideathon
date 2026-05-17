@@ -140,8 +140,6 @@ export default function SurvivalDiagnosis() {
     const { api } = await import('../api')
     try {
       setError(null)
-      setCurveLoading(true)
-      setPersonaLoading(true)
 
       const profile = {
         gap_period: form.gap_period,
@@ -149,6 +147,29 @@ export default function SurvivalDiagnosis() {
         certifications: form.certifications,
         job_interest: form.job_interest,
       }
+
+      // 기본 검증: 공백기 형식 확인
+      if (profile.gap_period && profile.gap_period.trim()) {
+        const gapRegex = /(\d+)\s*(일|개월|년)/
+        if (!gapRegex.test(profile.gap_period)) {
+          setError('공백기: 숫자와 단위(일/개월/년)를 입력해주세요. 예) 1일, 5개월, 1년')
+          return
+        }
+      }
+
+      // AI 검증 시도 (실패해도 계속 진행)
+      try {
+        const validation = await api.validateSurvivalInput(profile)
+        if (!validation.valid && validation.errors.length > 0) {
+          setError(validation.errors.join(' / '))
+          return
+        }
+      } catch (e) {
+        console.warn('AI validation unavailable, continuing with basic validation', e)
+      }
+
+      setCurveLoading(true)
+      setPersonaLoading(true)
 
       // Cox 곡선 - 실패해도 계속 진행
       try {
