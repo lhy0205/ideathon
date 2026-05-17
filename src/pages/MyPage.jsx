@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import TopBar from '../components/TopBar'
 import './MyPage.css'
 
 const NAV_ITEMS = [
@@ -108,13 +109,11 @@ export default function MyPage() {
       {/* Main */}
       <div className="mp-main">
         {/* Topbar */}
-        <div className="mp-topbar">
-          <span className="mp-breadcrumb">마이페이지</span>
-          <div className="mp-topbar-right">
-            <span className="mp-bell">🔔</span>
-            <span className="mp-topuser">{user?.name?.slice(0, 2) || ''}</span>
-          </div>
-        </div>
+        <TopBar
+          title="마이페이지"
+          user={user}
+          onProfileClick={() => setShowModal(true)}
+        />
 
         {/* Content */}
         <div className="mp-content">

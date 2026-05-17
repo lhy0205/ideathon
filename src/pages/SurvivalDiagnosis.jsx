@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import TopBar from '../components/TopBar'
 import './SurvivalDiagnosis.css'
 
 const NAV_ITEMS = [
@@ -100,6 +101,7 @@ function SurvivalCurve({ curveData }) {
 export default function SurvivalDiagnosis() {
   const navigate = useNavigate()
   const [activeNav, setActiveNav] = useState('survival')
+  const [user, setUser] = useState(null)
   const [personas, setPersonas] = useState([])
   const [personaLoading, setPersonaLoading] = useState(true)
   const [curveData, setCurveData] = useState(null)
@@ -108,6 +110,7 @@ export default function SurvivalDiagnosis() {
   useEffect(() => {
     const fetchAll = async () => {
       const { api } = await import('../api')
+      api.getMe().then(setUser).catch(() => {})
 
       try {
         const profile = await api.getUserProfile()
@@ -187,10 +190,7 @@ export default function SurvivalDiagnosis() {
 
         {/* Main */}
         <main className="sv-main">
-          <div className="sv-topbar">
-            <span className="sv-breadcrumb">생존 진단</span>
-            <span className="sv-user">· 김지</span>
-          </div>
+          <TopBar title="생존 진단" user={user} />
 
           <div className="sv-content">
             <h2 className="sv-title">생존 진단</h2>
