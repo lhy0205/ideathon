@@ -368,6 +368,19 @@ export default function GrowthReport() {
   const [history, setHistory] = useState([])
   const [radarExpSource, setRadarExpSource] = useState('all')
   const [radarNcsItems, setRadarNcsItems] = useState(null)
+  const [selectedExpForPdf, setSelectedExpForPdf] = useState('all')
+  const [selectedExpDetail, setSelectedExpDetail] = useState(null)
+
+  const handleSelectExpForPdf = async (val) => {
+    setSelectedExpForPdf(val)
+    if (val === 'all') { setSelectedExpDetail(null); return }
+    const item = history.find(h => String(h.idx) === String(val))
+    if (!item) return
+    try {
+      const detail = await api.getAnalysisDetail(item.idx)
+      setSelectedExpDetail({ ncs_items: detail.ncs_items || [], star_drafts: detail.star_drafts || [], title: item.title, exp_type: item.exp_type || '' })
+    } catch {}
+  }
 
   const handleRadarSourceChange = async (val) => {
     setRadarExpSource(val)
@@ -419,10 +432,16 @@ export default function GrowthReport() {
   const passedCount = certProofs.filter(c => c.status === '합격').length
   const totalStudyHours = certProofs.reduce((sum, c) => sum + (c.study_hours || 0), 0)
 
+  const pdfNcsItems = selectedExpDetail ? selectedExpDetail.ncs_items : ncsItems
+  const pdfStarDrafts = selectedExpDetail ? selectedExpDetail.star_drafts : starDrafts
+  const pdfExperiences = selectedExpDetail
+    ? [{ exp_type: selectedExpDetail.exp_type, title: selectedExpDetail.title }]
+    : experiences
+
   return (
     <div className="gr-root">
       {certModalOpen && <CertModal onClose={() => { setCertModalOpen(false); api.getCertProofs().then(setCertProofs).catch(() => {}) }} />}
-      {pdfModalOpen && <PdfModal onClose={() => setPdfModalOpen(false)} certProofs={certProofs} ncsItems={ncsItems} starDrafts={starDrafts} experiences={experiences} aiCerts={aiCerts} missionsActiveDays={missionsActiveDays} userName={userName} />}
+      {pdfModalOpen && <PdfModal onClose={() => setPdfModalOpen(false)} certProofs={certProofs} ncsItems={pdfNcsItems} starDrafts={pdfStarDrafts} experiences={pdfExperiences} aiCerts={aiCerts} missionsActiveDays={missionsActiveDays} userName={userName} />}
 
       <div className="gr-page-title">
         <h2>성장 리포트</h2>
@@ -489,6 +508,19 @@ export default function GrowthReport() {
         <div className="gr-card gr-bottom-card">
           <p className="gr-card-title">포트폴리오 내보내기</p>
           <p className="gr-bottom-desc">포트폴리오 PDF 생성</p>
+          {history.length > 0 && (
+            <select
+              className="gr-radar-select"
+              value={selectedExpForPdf}
+              onChange={e => handleSelectExpForPdf(e.target.value)}
+              style={{ width: '100%', marginBottom: '8px' }}
+            >
+              <option value="all">전체 경험 통합</option>
+              {history.map(h => (
+                <option key={h.idx} value={String(h.idx)}>{h.title}</option>
+              ))}
+            </select>
+          )}
           <button className="gr-export-btn" onClick={() => setPdfModalOpen(true)}>내보내기</button>
         </div>
       </div>
