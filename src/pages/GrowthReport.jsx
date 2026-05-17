@@ -456,21 +456,9 @@ export default function GrowthReport() {
         </div>
       </div>
 
-      <div className="gr-row">
-        <div className="gr-card gr-card-wide">
-          <p className="gr-card-title">성장 타임라인</p>
-          <div className="gr-heatmap-wrap">
-            <span className="gr-heatmap-label">활동 히트맵</span>
-            <Heatmap data={heatmap} />
-            <div className="gr-heatmap-legend">
-              <span>적음</span>
-              {HEAT_COLORS.map((c, i) => <div key={i} className="gr-legend-cell" style={{ background: c }} />)}
-              <span>많음</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="gr-card gr-radar-card">
+      <div className="gr-main-layout">
+        {/* 왼쪽: NCS 역량 레이더 (크게) */}
+        <div className="gr-card gr-radar-large">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
             <p className="gr-card-title" style={{ margin: 0 }}>NCS 역량 레이더</p>
             {history.length > 0 && (
@@ -488,40 +476,41 @@ export default function GrowthReport() {
           </div>
           <RadarChart ncsItems={radarNcsItems ?? ncsItems} />
         </div>
-      </div>
 
-      <div className="gr-row gr-bottom-row">
-        <div className="gr-card gr-bottom-card">
-          <p className="gr-card-title">STAR 자기소개서</p>
-          <p className="gr-bottom-desc">NCS 경험을 기업별 직무기술서에 맞춰 자동 변환한 자기소개서 초안 모음</p>
-          <p className="gr-bottom-accent">{starDrafts.length}개 초안</p>
-          <button className="gr-view-btn" onClick={() => navigate('/mapping')}>보기 →</button>
-        </div>
+        {/* 오른쪽: 3카드 세로 배열 */}
+        <div className="gr-right-col">
+          <div className="gr-card gr-side-card">
+            <p className="gr-card-title">STAR 자기소개서</p>
+            <p className="gr-bottom-desc">NCS 경험을 기업별 직무기술서에 맞춰 자동 변환한 자기소개서 초안 모음</p>
+            <p className="gr-bottom-accent">{starDrafts.length}개 초안</p>
+            <button className="gr-view-btn" onClick={() => navigate('/mapping')}>보기 →</button>
+          </div>
 
-        <div className="gr-card gr-bottom-card">
-          <p className="gr-card-title">자격증 증빙</p>
-          <p className="gr-bottom-desc">자격증 취득 현황 및 합격증 관리</p>
-          <p className="gr-bottom-accent">{passedCount}개 합격</p>
-          <button className="gr-view-btn" onClick={() => setCertModalOpen(true)}>보기 →</button>
-        </div>
+          <div className="gr-card gr-side-card">
+            <p className="gr-card-title">자격증 증빙</p>
+            <p className="gr-bottom-desc">자격증 취득 현황 및 합격증 관리</p>
+            <p className="gr-bottom-accent">{passedCount}개 합격</p>
+            <button className="gr-view-btn" onClick={() => setCertModalOpen(true)}>보기 →</button>
+          </div>
 
-        <div className="gr-card gr-bottom-card">
-          <p className="gr-card-title">포트폴리오 내보내기</p>
-          <p className="gr-bottom-desc">포트폴리오 PDF 생성</p>
-          {history.length > 0 && (
-            <select
-              className="gr-radar-select"
-              value={selectedExpForPdf}
-              onChange={e => handleSelectExpForPdf(e.target.value)}
-              style={{ width: '100%', marginBottom: '8px' }}
-            >
-              <option value="all">전체 경험 통합</option>
-              {history.map(h => (
-                <option key={h.idx} value={String(h.idx)}>{h.title}</option>
-              ))}
-            </select>
-          )}
-          <button className="gr-export-btn" onClick={() => setPdfModalOpen(true)}>내보내기</button>
+          <div className="gr-card gr-side-card">
+            <p className="gr-card-title">포트폴리오 내보내기</p>
+            <p className="gr-bottom-desc">포트폴리오 PDF 생성</p>
+            {history.length > 0 && (
+              <select
+                className="gr-radar-select"
+                value={selectedExpForPdf}
+                onChange={e => handleSelectExpForPdf(e.target.value)}
+                style={{ width: '100%', marginBottom: '8px' }}
+              >
+                <option value="all">전체 경험 통합</option>
+                {history.map(h => (
+                  <option key={h.idx} value={String(h.idx)}>{h.title}</option>
+                ))}
+              </select>
+            )}
+            <button className="gr-export-btn" onClick={() => setPdfModalOpen(true)}>내보내기</button>
+          </div>
         </div>
       </div>
     </div>
