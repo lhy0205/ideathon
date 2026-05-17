@@ -24,6 +24,10 @@ export default function ExperienceInput() {
   const [history, setHistory] = useState([])
 
   const loadHistory = () => {
+    // localStorage 먼저 표시 (즉시)
+    const local = JSON.parse(localStorage.getItem('exp_history') || '[]')
+    if (local.length) setHistory(local)
+    // API로 최신 동기화
     import('../api').then(({ api }) => {
       api.getAnalysisHistory().then(setHistory).catch(() => {})
     })
@@ -63,9 +67,22 @@ export default function ExperienceInput() {
       })
       setResult(data)
       setStep(2)
-      loadHistory()
       localStorage.setItem('ncs_result', JSON.stringify(data))
       localStorage.setItem('ncs_experience', JSON.stringify({ title: form.title, type: selectedType, content: form.content }))
+      // 로컬 히스토리 누적 저장
+      const newEntry = {
+        idx: data.id || Date.now(),
+        title: form.title || selectedType,
+        exp_type: selectedType,
+        ncs_count: data.ncs_items?.length || 0,
+        created_at: new Date().toISOString().slice(0, 10),
+        _result: data,
+      }
+      const prev = JSON.parse(localStorage.getItem('exp_history') || '[]')
+      const merged = [newEntry, ...prev.filter(e => e.idx !== newEntry.idx)].slice(0, 20)
+      localStorage.setItem('exp_history', JSON.stringify(merged))
+      setHistory(merged)
+      loadHistory()
     } catch (e) {
       setError('AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.')
       setStep(0)
@@ -180,10 +197,18 @@ export default function ExperienceInput() {
                   : history.map((e) => (
                     <div key={e.idx} className="exp-prev-item" style={{ cursor: 'pointer' }}
                       onClick={async () => {
-                        const { api } = await import('../api')
-                        const detail = await api.getAnalysisDetail(e.idx)
-                        setResult(detail)
-                        setStep(2)
+                        // 로컬 캐시 우선, 없으면 API 호출
+                        if (e._result) {
+                          setResult(e._result)
+                          setStep(2)
+                          return
+                        }
+                        try {
+                          const { api } = await import('../api')
+                          const detail = await api.getAnalysisDetail(e.idx)
+                          setResult(detail)
+                          setStep(2)
+                        } catch { setError('불러오기에 실패했습니다.') }
                       }}
                     >
                       <p className="exp-prev-title">{e.title}</p>
