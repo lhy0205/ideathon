@@ -148,6 +148,8 @@ export const api = {
     request('POST', '/survival/curve', userProfile, false),
   getSurvivalData: (userProfile) =>
     request('POST', '/survival/analyze', userProfile, false),
+  verifyProfile: (profile) =>
+    request('POST', '/survival/verify-profile', profile, false),
 
   // PDF
   downloadReport: async (data) => {

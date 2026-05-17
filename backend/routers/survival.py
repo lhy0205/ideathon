@@ -32,31 +32,31 @@ class VerifyProfileRequest(BaseModel):
 @router.post("/verify-profile")
 async def verify_profile(req: VerifyProfileRequest):
     """vLLM 기반 프로필 입력값 적절성 검증."""
-    prompt = f"""당신은 취업 준비 전문가입니다. 공백기 취업 준비생의 프로필 입력값을 검토하고 적절성을 평가해주세요.
+    prompt = f"""당신은 취업 준비 전문가입니다. 아래 입력값이 실제로 의미 있는 내용인지만 판단하세요.
 
-[사용자 프로필]
-- 공백기: {req.gap_period or '미입력'}
-- 전공/학과: {req.department or '미입력'}
-- 보유 자격증: {req.certifications or '없음'}
-- 희망 직무: {req.job_interest or '미입력'}
+[사용자 입력]
+- 공백기: {req.gap_period or '(비어있음)'}
+- 전공/학과: {req.department or '(비어있음)'}
+- 보유 자격증: {req.certifications or '(비어있음)'}
+- 희망 직무: {req.job_interest or '(비어있음)'}
 
-[평가 기준]
-1. 각 항목이 분석에 충분히 구체적인지 확인하세요.
-2. 자격증과 희망 직무의 연관성을 평가하세요.
-3. 공백기 기간이 명확하게 표현되어 있는지 확인하세요.
-4. 미입력 항목은 ok: false로 표시하세요.
+[판단 기준 - 엄격하게 적용하지 마세요]
+- ok: false 조건: 명백히 무의미한 글자(예: ㅁㄴㅇ, asdf, 아무말, 랜덤 문자)를 입력한 경우만
+- ok: true 조건: 비어있거나, 실제 존재할 법한 내용이면 무조건 true
+- 공백기가 비어있거나 숫자+단위(1개월, 반년 등) 형태면 ok: true
+- 희망 직무가 비어있거나 실제 직무명이면 ok: true
 
 다음 JSON 형식으로만 답하세요 (다른 말 없이):
 {{
-  "overall": "종합 평가 1~2문장",
+  "overall": "종합 평가 1문장",
   "score": 전체 준비도 점수(0-100),
   "fields": {{
-    "gap_period": {{"ok": true, "comment": "평가 한 문장"}},
-    "department": {{"ok": true, "comment": "평가 한 문장"}},
-    "certifications": {{"ok": true, "comment": "평가 한 문장"}},
-    "job_interest": {{"ok": true, "comment": "평가 한 문장"}}
+    "gap_period": {{"ok": true, "comment": "짧은 평가"}},
+    "department": {{"ok": true, "comment": "짧은 평가"}},
+    "certifications": {{"ok": true, "comment": "짧은 평가"}},
+    "job_interest": {{"ok": true, "comment": "짧은 평가"}}
   }},
-  "suggestions": ["개선 제안 한 문장", "개선 제안 한 문장"]
+  "suggestions": ["개선 제안 1문장"]
 }}"""
 
     try:
