@@ -20,9 +20,9 @@ const NAV_ITEMS = [
 ]
 
 const TODOS = [
-  { icon: '⚡', title: '오늘의 5분 미션', desc: '제큰 첫 글을 쓰기 · 127명 참여 중' },
-  { icon: '📝', title: '새 경험 기록하기', desc: '이번 주 활동을 NCS로 반환' },
-  { icon: '🧬', title: '생존 진단 확인', desc: '이번 달 취업 가능성 변화' },
+  { icon: '⚡', title: '오늘의 5분 미션', desc: '매일 실천 · 지금 참여 중', path: '/dashboard?tab=mission' },
+  { icon: '📝', title: '새 경험 기록하기', desc: '이번 주 활동을 NCS로 변환', path: '/dashboard?tab=experience' },
+  { icon: '🧬', title: '생존 진단 확인', desc: '이번 달 취업 가능성 변화', path: '/survival' },
 ]
 
 const ACTIVITIES = [
@@ -514,6 +514,7 @@ function CommunitySection() {
 }
 
 function PasswordSection() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
 
@@ -548,7 +549,7 @@ function PasswordSection() {
           )}
           <button type="submit" className="pw-btn">재설정 메일 보내기 ✉</button>
           <div className="pw-footer">
-            <span className="pw-link" onClick={() => setSent(false)}>← 로그인으로 돌아가기</span>
+            <span className="pw-link" onClick={() => navigate('/')}>← 로그인으로 돌아가기</span>
           </div>
         </form>
       </div>
@@ -561,11 +562,35 @@ export default function Dashboard() {
   const activeNav = searchParams.get('tab') || 'home'
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
+  const [gapMonths, setGapMonths] = useState(null)
+  const [totalNcs, setTotalNcs] = useState(null)
+  const [missionStreak, setMissionStreak] = useState(null)
 
   useEffect(() => {
     import('../api').then(({ api }) => {
-      api.getMe().then(setUser).catch(() => {})
+      api.getMe().then(data => {
+        setUser(data)
+        if (data.gap_start_date) {
+          const start = new Date(data.gap_start_date + '-01')
+          const now = new Date()
+          const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
+          setGapMonths(months)
+        }
+      }).catch(() => {})
+
+      api.getMissions().then(data => {
+        if (data && data.length > 0) {
+          const done = data.filter(m => m.completed).length
+          setMissionStreak(done)
+        }
+      }).catch(() => {})
     })
+
+    try {
+      const history = JSON.parse(localStorage.getItem('exp_history') || '[]')
+      const count = history.reduce((sum, exp) => sum + (exp._result?.ncs_items?.length || 0), 0)
+      if (count > 0) setTotalNcs(count)
+    } catch {}
   }, [])
 
   return (
@@ -633,20 +658,20 @@ export default function Dashboard() {
             {/* Stats */}
             <div className="db-stats">
               <div className="db-stat">
-                <span className="db-stat-num">5개월</span>
+                <span className="db-stat-num">{gapMonths != null ? `${gapMonths}개월` : '-'}</span>
                 <span className="db-stat-label">현재 공백기</span>
               </div>
               <div className="db-stat">
-                <span className="db-stat-num">12개</span>
+                <span className="db-stat-num">{totalNcs != null ? `${totalNcs}개` : '-'}</span>
                 <span className="db-stat-label">확보된 NCS 역량</span>
               </div>
               <div className="db-stat">
-                <span className="db-stat-num">2/3</span>
-                <span className="db-stat-label">목표 자격증 취득</span>
+                <span className="db-stat-num" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard?tab=roadmap')}>자격증 로드맵 →</span>
+                <span className="db-stat-label">목표 자격증 현황</span>
               </div>
               <div className="db-stat">
-                <span className="db-stat-num">127일</span>
-                <span className="db-stat-label">미션 연속 실천</span>
+                <span className="db-stat-num">{missionStreak != null ? `${missionStreak}개` : '-'}</span>
+                <span className="db-stat-label">완료한 미션</span>
               </div>
             </div>
 
@@ -691,12 +716,18 @@ export default function Dashboard() {
                 </div>
                 <div className="db-todo-list">
                   {TODOS.map((t, i) => (
-                    <div key={i} className="db-todo-item">
+                    <div
+                      key={i}
+                      className="db-todo-item"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => navigate(t.path)}
+                    >
                       <span className="db-todo-icon">{t.icon}</span>
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <p className="db-todo-title">{t.title}</p>
                         <p className="db-todo-desc">{t.desc}</p>
                       </div>
+                      <span style={{ fontSize: '14px', color: '#c4603d' }}>›</span>
                     </div>
                   ))}
                 </div>
@@ -722,7 +753,7 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
-                <button className="db-more-btn">피드 더 보기</button>
+                <button className="db-more-btn" onClick={() => navigate('/dashboard?tab=community')}>피드 더 보기</button>
               </div>
 
               {/* 이번 달 실천 현황 */}
