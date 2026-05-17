@@ -389,8 +389,19 @@
 }
 
 /* 자격증 삭제 버튼 */
-.gr-cert-del-btn {
+.gr-cert-edit-btn {
   margin-left: auto;
+  background: none;
+  border: 1px solid #d0c8c0;
+  border-radius: 6px;
+  color: #888;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 8px;
+}
+.gr-cert-edit-btn:hover { border-color: #c04e28; color: #c04e28; }
+.gr-cert-del-btn {
+  margin-left: 4px;
   background: none;
   border: 1px solid #e0c8c0;
   border-radius: 6px;

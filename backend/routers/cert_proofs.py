@@ -66,6 +66,40 @@ def create_cert_proof(
     return proof
 
 
+@router.patch("/{proof_id}", response_model=schemas.CertProofResponse)
+def update_cert_proof(
+    proof_id: int,
+    cert_name: Optional[str] = Form(None),
+    status: Optional[str] = Form(None),
+    passed_date: Optional[str] = Form(None),
+    target_exam_date: Optional[str] = Form(None),
+    proof_image: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """자격증 이력 수정"""
+    proof = db.query(models.CertProof).filter(
+        models.CertProof.id == proof_id,
+        models.CertProof.user_id == current_user.id,
+    ).first()
+    if not proof:
+        raise HTTPException(status_code=404, detail="이력을 찾을 수 없습니다")
+    if cert_name is not None: proof.cert_name = cert_name
+    if status is not None: proof.status = status
+    if passed_date is not None: proof.passed_date = passed_date
+    if target_exam_date is not None: proof.target_exam_date = target_exam_date
+    if proof_image and proof_image.filename:
+        ext = os.path.splitext(proof_image.filename)[1]
+        filename = f"{uuid.uuid4().hex}{ext}"
+        save_path = os.path.join(UPLOAD_DIR, filename)
+        with open(save_path, "wb") as f:
+            shutil.copyfileobj(proof_image.file, f)
+        proof.proof_image = f"/uploads/cert_proofs/{filename}"
+    db.commit()
+    db.refresh(proof)
+    return proof
+
+
 @router.delete("/{proof_id}")
 def delete_cert_proof(
     proof_id: int,

@@ -115,6 +115,19 @@ export const api = {
     }
     return res.json()
   },
+  updateCertProof: async (id, formData) => {
+    const token = getSessionToken()
+    const res = await fetch(`${BASE_URL}/cert-proofs/${id}`, {
+      method: 'PATCH',
+      headers: { 'ngrok-skip-browser-warning': 'true', ...(token ? { 'X-Session-Token': token } : {}) },
+      body: formData,
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: '오류가 발생했습니다' }))
+      throw new Error(err.detail || '오류가 발생했습니다')
+    }
+    return res.json()
+  },
   deleteCertProof: (id) => request('DELETE', `/cert-proofs/${id}`),
 
   // Report Settings
