@@ -215,7 +215,7 @@ export default function ExperienceMapping() {
     <div className="em-root">
       {/* Top header */}
       <header className="em-header">
-        <span className="em-brand">Pause to Pass</span>
+        <span className="em-brand" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>Pause to Pass</span>
         <span className="em-tagline"> - 나의 오늘이 내일의 발판이 되지 못하는 불안</span>
       </header>
 
