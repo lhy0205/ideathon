@@ -78,6 +78,8 @@ class AiCertItem(BaseModel):
 class PDFRequest(BaseModel):
     user_name: Optional[str] = "사용자"
     summary: Optional[str] = ""
+    intro: Optional[str] = ""
+    aspiration: Optional[str] = ""
     ncs_items: Optional[List[NCSItem]] = []
     star_drafts: Optional[List[str]] = []
     certs: Optional[List[CertItem]] = []
@@ -243,17 +245,49 @@ def _build_pdf(req: PDFRequest) -> BytesIO:
         story.append(_experience_table(req.experiences))
         story.append(Spacer(1, 8))
 
-    # ── STAR 자기소개서 ───────────────────────────────────────────────────────
-    if req.show_experience and req.star_drafts:
-        story.append(Paragraph("자기소개서 추천 문구", H2))
-        story.append(HRFlowable(width="100%", thickness=1, color=ORANGE, spaceAfter=4))
-        STAR_LABELS = ["[상황 S]", "[과제 T]", "[행동 A]", "[결과 R]"]
-        for i, draft in enumerate(req.star_drafts):
-            label = STAR_LABELS[i] if i < len(STAR_LABELS) else f"[{i+1}]"
-            story.append(Paragraph(label, LABEL))
-            story.append(Paragraph(draft, BODY))
+    # ── 자기소개서 ────────────────────────────────────────────────────────────
+    if req.show_experience and (req.star_drafts or req.intro or req.aspiration):
+        story.append(Paragraph("자기소개서", H2))
+        story.append(HRFlowable(width="100%", thickness=1, color=ORANGE, spaceAfter=6))
+
+        BODY_PARA = _style("body_para", fontSize=10, leading=17, spaceAfter=6,
+                           textColor=colors.HexColor("#2D2017"))
+        STAR_HEAD = _style("star_head", fontSize=10, leading=14, textColor=ORANGE,
+                           spaceBefore=8, spaceAfter=3, fontName=FONT)
+        SECTION_LABEL = _style("sec_label", fontSize=9, leading=13,
+                               textColor=colors.HexColor("#888888"), spaceAfter=2)
+
+        # 자기소개
+        if req.intro:
+            story.append(Paragraph("▪ 자기소개", SECTION_LABEL))
+            story.append(Paragraph(req.intro, BODY_PARA))
             story.append(Spacer(1, 4))
-        story.append(Spacer(1, 4))
+
+        # STAR
+        STAR_LABELS = [
+            ("상황 (Situation)", "S"),
+            ("과제 (Task)",      "T"),
+            ("행동 (Action)",    "A"),
+            ("결과 (Result)",    "R"),
+        ]
+        if req.star_drafts:
+            story.append(Paragraph("▪ 주요 경험 사례", SECTION_LABEL))
+            for i, draft in enumerate(req.star_drafts):
+                if i < len(STAR_LABELS):
+                    label_text, abbr = STAR_LABELS[i]
+                    story.append(Paragraph(f"[{abbr}] {label_text}", STAR_HEAD))
+                # 태그 제거 후 본문만 출력
+                text = draft
+                for tag in ["[상황 S]", "[과제 T]", "[행동 A]", "[결과 R]"]:
+                    text = text.replace(tag, "").strip()
+                story.append(Paragraph(text, BODY_PARA))
+            story.append(Spacer(1, 4))
+
+        # 포부
+        if req.aspiration:
+            story.append(Paragraph("▪ 향후 포부", SECTION_LABEL))
+            story.append(Paragraph(req.aspiration, BODY_PARA))
+            story.append(Spacer(1, 4))
 
     # ── AI 추천 자격증 ────────────────────────────────────────────────────────
     if req.show_ai_certs and req.ai_certs:

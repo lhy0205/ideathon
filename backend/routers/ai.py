@@ -25,6 +25,8 @@ class AnalysisResponse(BaseModel):
     ncs_items: list[dict]
     star_drafts: list[str]
     summary: str
+    intro: Optional[str] = ""
+    aspiration: Optional[str] = ""
 
 
 class CertRecommendRequest(BaseModel):
@@ -77,12 +79,14 @@ def build_prompt(req: AnalysisRequest, rag_context: str = "") -> str:
     {{"ncs_code": "NCS 코드", "unit_name": "역량명", "level": 숙련도(1-5), "score": 점수(0-100)}},
     ...최대 5개
   ],
+  "intro": "이 경험을 한 사람을 소개하는 2~3문장. 어떤 경험을 얼마나 했는지 구체적으로.",
   "star_drafts": [
-    "[상황 S] ...",
-    "[과제 T] ...",
-    "[행동 A] ...",
-    "[결과 R] ..."
+    "[상황 S] 3~4문장. 언제, 어디서, 어떤 상황이었는지 구체적 배경을 서술. 팀 규모나 환경 등 맥락 포함.",
+    "[과제 T] 2~3문장. 그 상황에서 본인이 맡은 역할과 해결해야 했던 핵심 과제를 구체적으로 서술.",
+    "[행동 A] 4~5문장. 과제를 해결하기 위해 취한 구체적인 행동들을 상세히 서술. 어떤 방법을 선택했고 왜 그 방법을 택했는지 포함. 가능하면 수치나 빈도 포함.",
+    "[결과 R] 2~3문장. 행동의 결과와 그 경험에서 얻은 역량 또는 교훈을 서술. 수치화된 성과가 있다면 포함."
   ],
+  "aspiration": "이 경험을 바탕으로 앞으로 어떻게 성장하고 싶은지 2~3문장. 직무 연관성 포함.",
   "summary": "역량 한줄 요약"
 }}"""
 
