@@ -537,7 +537,7 @@ export default function Dashboard() {
     <div className="db-root">
       {/* Top header */}
       <header className="db-header">
-        <span className="db-brand">Pause to Pass</span>
+        <span className="db-brand" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>Pause to Pass</span>
         <span className="db-tagline"> - 나의 오늘이 내일의 발판이 되지 못하는 불안</span>
       </header>
 
