@@ -7,6 +7,7 @@ const AI_BACKEND = 'https://28c9-203-255-221-68.ngrok-free.app/ai'
 export default defineConfig({
   plugins: [react()],
   server: {
+    open: true,
     proxy: {
       '/auth': { target: BACKEND, changeOrigin: true },
       '/users': { target: BACKEND, changeOrigin: true },
