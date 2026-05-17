@@ -168,6 +168,10 @@ export function saveSessionToken(token) {
 
 export function clearSession() {
   localStorage.removeItem('session_token')
+  localStorage.removeItem('mission_done_date')
+  localStorage.removeItem('ncs_result')
+  localStorage.removeItem('ncs_experience')
+  localStorage.removeItem('exp_history')
 }
 
 export function hasSession() {
