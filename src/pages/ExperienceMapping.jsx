@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { key: 'roadmap',    label: '자격증 로드맵',  path: '/dashboard?tab=roadmap' },
   { key: 'survival',   label: '생존 진단',      path: '/survival' },
   { key: 'mission',    label: '오늘의 미션',    path: '/dashboard?tab=mission' },
-  { key: 'community',  label: '커뮤니티',       path: '/dashboard?tab=community' },
+  { key: 'community',  label: '커뮤니티 (준비 중)', path: null },
   { key: 'report',     label: '성장 리포트',    path: '/dashboard?tab=report' },
 ]
 
@@ -264,8 +264,9 @@ export default function ExperienceMapping() {
             {NAV_ITEMS.map(item => (
               <button
                 key={item.key}
-                className={`em-nav-item ${activeNav === item.key ? 'active' : ''}`}
+                className={`em-nav-item ${activeNav === item.key ? 'active' : ''}${item.path === null ? ' nav-disabled' : ''}`}
                 onClick={() => handleNav(item)}
+                disabled={item.path === null}
               >
                 {item.label}
               </button>

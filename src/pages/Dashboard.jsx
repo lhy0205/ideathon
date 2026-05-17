@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   { key: 'roadmap',    label: '자격증 로드맵',  path: '/dashboard?tab=roadmap' },
   { key: 'survival',   label: '생존 진단',      path: '/survival' },
   { key: 'mission',    label: '오늘의 미션',    path: '/dashboard?tab=mission' },
-  { key: 'community',  label: '커뮤니티',       path: '/dashboard?tab=community' },
+  { key: 'community',  label: '커뮤니티 (준비 중)', path: null },
   { key: 'report',     label: '성장 리포트',    path: '/dashboard?tab=report' },
 ]
 
@@ -634,8 +634,9 @@ export default function Dashboard() {
             {NAV_ITEMS.map(item => (
               <button
                 key={item.key}
-                className={`db-nav-item ${activeNav === item.key ? 'active' : ''}`}
-                onClick={() => navigate(item.path)}
+                className={`db-nav-item ${activeNav === item.key ? 'active' : ''}${item.path === null ? ' nav-disabled' : ''}`}
+                onClick={() => item.path && navigate(item.path)}
+                disabled={item.path === null}
               >
                 {item.label}
               </button>
@@ -675,9 +676,8 @@ export default function Dashboard() {
           {activeNav === 'experience' && <div className="db-content"><ExperienceInput /></div>}
           {activeNav === 'roadmap' && <div className="db-content"><CertRoadmap /></div>}
           <div style={{ display: activeNav === 'mission' ? 'block' : 'none' }}><MissionSection /></div>
-          {activeNav === 'community' && <CommunitySection />}
           {activeNav === 'report' && <div className="db-content"><GrowthReport /></div>}
-          {activeNav !== 'password' && activeNav !== 'experience' && activeNav !== 'roadmap' && activeNav !== 'mission' && activeNav !== 'community' && activeNav !== 'report' && <div className="db-content">
+          {activeNav !== 'password' && activeNav !== 'experience' && activeNav !== 'roadmap' && activeNav !== 'mission' && activeNav !== 'report' && <div className="db-content">
             <h2 className="db-welcome">안녕하세요, {user?.name || ''} 님</h2>
 
             {/* Stats */}
@@ -778,7 +778,7 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
-                <button className="db-more-btn" onClick={() => navigate('/dashboard?tab=community')}>피드 더 보기</button>
+                <button className="db-more-btn" disabled style={{ opacity: 0.4, cursor: 'not-allowed' }}>피드 더 보기 (준비 중)</button>
               </div>
 
               {/* 이번 달 실천 현황 */}

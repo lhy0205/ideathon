@@ -4,6 +4,13 @@
   box-sizing: border-box;
 }
 
+button.nav-disabled,
+button.nav-disabled:hover {
+  opacity: 0.4;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
 html, body, #root {
   width: 100%;
   min-height: 100vh;
