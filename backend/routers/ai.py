@@ -552,3 +552,71 @@ def get_ncs_summary(
         })
     summary.sort(key=lambda x: x["avg_score"], reverse=True)
     return {"ncs_items": summary}
+
+
+class SurvivalInputValidation(BaseModel):
+    gap_period: Optional[str] = ""
+    department: Optional[str] = ""
+    certifications: Optional[str] = ""
+    job_interest: Optional[str] = ""
+
+
+@router.post("/validate-survival-input")
+async def validate_survival_input(req: SurvivalInputValidation):
+    """생존 진단 입력값을 AI로 검증"""
+    errors = []
+
+    # 1. gap_period 검증: 숫자만 허용 (1일, 5개월, 1년 등)
+    if req.gap_period and req.gap_period.strip():
+        import re
+        if not re.search(r'\d', req.gap_period):
+            errors.append("공백기: 숫자를 포함해야 합니다 (예: 1일, 5개월, 1년)")
+        elif not re.search(r'(일|개월|년)', req.gap_period):
+            errors.append("공백기: 일, 개월, 년 중 하나를 포함해야 합니다")
+
+    # 2. AI를 사용해서 department, certifications, job_interest 검증
+    if (req.department and req.department.strip()) or \
+       (req.certifications and req.certifications.strip()) or \
+       (req.job_interest and req.job_interest.strip()):
+
+        prompt = f"""당신은 한국 대학 학과, 자격증, 직무 정보 전문가입니다.
+아래 입력값들이 실제로 존재하는 것인지 검증해주세요.
+
+[입력값]
+- 학과: {req.department or "없음"}
+- 자격증: {req.certifications or "없음"}
+- 희망직무: {req.job_interest or "없음"}
+
+다음 JSON 형식으로만 답하세요 (다른 말 없이):
+{{
+  "department_valid": true/false,
+  "department_msg": "학과에 대한 피드백 (존재하지 않으면 왜인지 설명)",
+  "certifications_valid": true/false,
+  "certifications_msg": "자격증에 대한 피드백",
+  "job_interest_valid": true/false,
+  "job_interest_msg": "희망직무에 대한 피드백"
+}}"""
+
+        try:
+            result = await analyze(prompt)
+            try:
+                validation_result = json.loads(result)
+                if not validation_result.get("department_valid") and req.department:
+                    errors.append(f"학과: {validation_result.get('department_msg', '유효하지 않은 학과입니다')}")
+                if not validation_result.get("certifications_valid") and req.certifications:
+                    errors.append(f"자격증: {validation_result.get('certifications_msg', '유효하지 않은 자격증입니다')}")
+                if not validation_result.get("job_interest_valid") and req.job_interest:
+                    errors.append(f"희망직무: {validation_result.get('job_interest_msg', '유효하지 않은 직무입니다')}")
+            except json.JSONDecodeError:
+                logger.error(f"AI validation response parsing failed: {result}")
+                # JSON 파싱 실패 시 기본 검증 스킵 (사용자가 진행 가능)
+                pass
+        except Exception as e:
+            logger.error(f"AI validation error: {e}")
+            # AI 실패 시 계속 진행 가능
+            pass
+
+    return {
+        "valid": len(errors) == 0,
+        "errors": errors
+    }
