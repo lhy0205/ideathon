@@ -41,23 +41,35 @@ const STAR_TEXT = [
 const RADAR_LABELS = ['판매관리', '고객', '물류', '현금관리', '재고']
 const RADAR_VALUES = [0.88, 0.76, 0.62, 0.58, 0.70]
 
+function splitLabel(text) {
+  if (text.length <= 6) return [text]
+  const words = text.split(' ')
+  if (words.length === 1) {
+    const mid = Math.ceil(text.length / 2)
+    return [text.slice(0, mid), text.slice(mid)]
+  }
+  let best = 1, bestDiff = Infinity
+  for (let i = 1; i < words.length; i++) {
+    const diff = Math.abs(words.slice(0, i).join(' ').length - words.slice(i).join(' ').length)
+    if (diff < bestDiff) { bestDiff = diff; best = i }
+  }
+  return [words.slice(0, best).join(' '), words.slice(best).join(' ')]
+}
+
 function RadarChart({ labels = RADAR_LABELS, values = RADAR_VALUES }) {
-  const cx = 130, cy = 130, r = 90
+  const cx = 150, cy = 150, r = 90
   const n = labels.length
   const angles = labels.map((_, i) => (Math.PI * 2 * i) / n - Math.PI / 2)
-
   const gridLevels = [0.25, 0.5, 0.75, 1]
-
   const toXY = (angle, val) => ({
     x: cx + r * val * Math.cos(angle),
     y: cy + r * val * Math.sin(angle),
   })
-
   const dataPoints = angles.map((a, i) => toXY(a, values[i] ?? 0.5))
   const dataPath = dataPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z'
 
   return (
-    <svg width="260" height="260" viewBox="0 0 260 260">
+    <svg width="100%" height="auto" viewBox="0 0 300 300">
       {gridLevels.map(lvl =>
         angles.map((a, i) => {
           const next = angles[(i + 1) % n]
@@ -75,11 +87,13 @@ function RadarChart({ labels = RADAR_LABELS, values = RADAR_VALUES }) {
         <circle key={i} cx={p.x} cy={p.y} r="4" fill="#c4603d" />
       ))}
       {angles.map((a, i) => {
-        const lp = toXY(a, 1.22)
+        const lp = toXY(a, 1.38)
+        const lines = splitLabel(labels[i])
         return (
-          <text key={i} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle"
-            fontSize="11" fill="#555" fontFamily="inherit">
-            {labels[i]}
+          <text key={i} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle" fontSize="11" fill="#555" fontFamily="inherit">
+            {lines.map((line, li) => (
+              <tspan key={li} x={lp.x} dy={li === 0 ? (lines.length > 1 ? '-0.6em' : '0') : '1.3em'}>{line}</tspan>
+            ))}
           </text>
         )
       })}
@@ -100,6 +114,9 @@ export default function ExperienceMapping() {
   const [allNcsSummary, setAllNcsSummary] = useState(null)
   const [editMode, setEditMode] = useState(false)
   const [editedItems, setEditedItems] = useState([])
+  const [ncsExpanded, setNcsExpanded] = useState(false)
+  const [radarExpSource, setRadarExpSource] = useState('all')
+  const [radarNcsItems, setRadarNcsItems] = useState(null)
 
   useEffect(() => {
     import('../api').then(({ api }) => api.getMe().then(setUser).catch(() => {}))
@@ -177,11 +194,28 @@ export default function ExperienceMapping() {
   const expTitle = expInfo?.title || ''
   const expContent = expInfo?.content ?? ''
 
-  const radarSource = allNcsSummary?.length > 0
-    ? allNcsSummary.slice(0, 5).map(c => ({ unit_name: c.unit_name, score: c.avg_score }))
-    : ncsCards.slice(0, 5)
-  const radarLabels = radarSource.map(c => c.unit_name || c.title)
-  const radarValues = radarSource.map(c => (c.avg_score ?? c.score ?? c.pct ?? 70) / 100)
+  const handleRadarSourceChange = async (val) => {
+    setRadarExpSource(val)
+    if (val === 'all') {
+      setRadarNcsItems(null)
+    } else {
+      const item = history.find(h => String(h.idx) === String(val))
+      if (!item) return
+      try {
+        const { api } = await import('../api')
+        const detail = await api.getAnalysisDetail(item.idx)
+        setRadarNcsItems(detail.ncs_items || [])
+      } catch {}
+    }
+  }
+
+  const radarBase = radarNcsItems
+    ? radarNcsItems.slice(0, 5).map(c => ({ unit_name: c.unit_name, score: c.score }))
+    : allNcsSummary?.length > 0
+      ? allNcsSummary.slice(0, 5).map(c => ({ unit_name: c.unit_name, score: c.avg_score }))
+      : ncsCards.slice(0, 5)
+  const radarLabels = radarBase.map(c => c.unit_name || c.title)
+  const radarValues = radarBase.map(c => (c.avg_score ?? c.score ?? c.pct ?? 70) / 100)
 
   const handleCopy = async () => {
     const text = starItems.map(s => `[${s.label}] ${s.text}`).join('\n')
@@ -392,7 +426,21 @@ export default function ExperienceMapping() {
 
                 {/* 레이더 */}
                 <div className="em-card">
-                  <p className="em-card-title">⭐ 전체 역량 레이더</p>
+                  <div className="em-ncs-full-header" style={{ marginBottom: '4px' }}>
+                    <p className="em-card-title" style={{ margin: 0 }}>⭐ 전체 역량 레이더</p>
+                    {history.length > 0 && (
+                      <select
+                        className="em-radar-select"
+                        value={radarExpSource}
+                        onChange={e => handleRadarSourceChange(e.target.value)}
+                      >
+                        <option value="all">전체 경험 통합</option>
+                        {history.map(h => (
+                          <option key={h.idx} value={String(h.idx)}>{h.title}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
                   <p className="em-card-sub" style={{ marginBottom: '8px' }}>상위 5개 역량 시각화</p>
                   <div className="em-radar-wrap">
                     <RadarChart labels={radarLabels} values={radarValues} />
@@ -403,16 +451,21 @@ export default function ExperienceMapping() {
                 {/* 전체 NCS 역량 목록 */}
                 {allNcsSummary?.length > 0 && (
                   <div className="em-card">
-                    <p className="em-card-title">📋 전체 NCS 역량 목록</p>
-                    <p className="em-card-sub" style={{ marginBottom: '12px' }}>모든 경험에서 추출된 {allNcsSummary.length}개 역량 (평균 점수순)</p>
+                    <div className="em-ncs-full-header">
+                      <div>
+                        <p className="em-card-title" style={{ margin: 0 }}>📋 전체 NCS 역량 목록</p>
+                        <p className="em-card-sub">모든 경험에서 추출된 {allNcsSummary.length}개 역량 (평균 점수순)</p>
+                      </div>
+                      <button className="em-ncs-toggle-btn" onClick={() => setNcsExpanded(p => !p)}>
+                        {ncsExpanded ? '접기 ▲' : `전체보기 (${allNcsSummary.length}개) ▼`}
+                      </button>
+                    </div>
                     <div className="em-ncs-full-list">
-                      {allNcsSummary.map((c, i) => (
+                      {(ncsExpanded ? allNcsSummary : allNcsSummary.slice(0, 3)).map((c, i) => (
                         <div key={i} className="em-ncs-full-row">
                           <div className="em-ncs-full-top">
                             <span className="em-ncs-full-name">{c.unit_name}</span>
-                            <span className="em-ncs-full-meta">
-                              경험 {c.count}개 · Lv.{c.level}
-                            </span>
+                            <span className="em-ncs-full-meta">경험 {c.count}개 · Lv.{c.level}</span>
                           </div>
                           <div className="em-ncs-full-bar-row">
                             <div className="em-bar-wrap" style={{ flex: 1 }}>
@@ -424,6 +477,9 @@ export default function ExperienceMapping() {
                         </div>
                       ))}
                     </div>
+                    {!ncsExpanded && allNcsSummary.length > 3 && (
+                      <p className="em-ncs-more-hint">+ {allNcsSummary.length - 3}개 더 있음</p>
+                    )}
                   </div>
                 )}
               </div>
