@@ -33,11 +33,13 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Pause to Pass API", version="1.0.0")
 
-# 외부 접속 시 backend/.env 파일에서 수정
-# FRONTEND_URL=https://프론트ngrok주소.ngrok.io
 _origins = [o.strip() for o in os.getenv("FRONTEND_URL", "http://localhost:5173").split(",")]
-if os.getenv("ENV") != "production":
-    _origins += ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"]
+_origins += [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://ideathon-olive.vercel.app",
+]
 
 app.add_middleware(
     CORSMiddleware,
