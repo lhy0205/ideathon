@@ -93,8 +93,8 @@ export const api = {
   getStarLetters: () => request('GET', '/ai/star-letters'),
   updateStarLetter: (id, content) => request('PUT', `/ai/star-letters/${id}`, { content }),
   getNcsSummary: () => request('GET', '/ai/ncs-summary'),
-  recommendCerts: (ncs_items, exp_type = '', exp_title = '') =>
-    request('POST', '/ai/recommend-certs', { ncs_items, exp_type, exp_title }, false),
+  recommendCerts: (ncs_items, exp_type = '', exp_title = '', count = 5) =>
+    request('POST', '/ai/recommend-certs', { ncs_items, exp_type, exp_title, count }, false),
 
   // Certifications
   getCertSchedule: (category = '') =>

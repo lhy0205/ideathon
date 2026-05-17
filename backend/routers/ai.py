@@ -2,11 +2,13 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, List
-import json, re
+import json, re, traceback, logging
 from rag.exaone_client import analyze
 from database import get_db
 from dependencies import get_current_user
 import models as m
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -33,6 +35,7 @@ class CertRecommendRequest(BaseModel):
     ncs_items: list[dict]
     exp_type: Optional[str] = ""
     exp_title: Optional[str] = ""
+    count: Optional[int] = 5
 
 
 class CertRecommendResponse(BaseModel):
@@ -197,9 +200,17 @@ async def analyze_experience(
         db.commit()
         db.refresh(analysis)
 
-        return AnalysisResponse(id=analysis.id, **result)
+        return AnalysisResponse(
+            id=analysis.id,
+            ncs_items=result.get("ncs_items", []),
+            star_drafts=result.get("star_drafts", []),
+            summary=result.get("summary", ""),
+            intro=result.get("intro", ""),
+            aspiration=result.get("aspiration", ""),
+        )
 
     except Exception as e:
+        logger.error("analyze_experience 오류:\n%s", traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"AI 분석 오류: {str(e)}")
 
 
@@ -295,6 +306,7 @@ async def recommend_certs(req: CertRecommendRequest):
 
     type_hint = _TYPE_CERT_HINT.get(req.exp_type or "", "NCS 역량과 가장 연관성 높은 자격증을 추천하세요.")
 
+    count = max(1, min(7, req.count or 5))
     prompt = f"""당신은 취업 준비생을 돕는 자격증 추천 전문가입니다.
 
 아래 NCS 역량 분석 결과를 보고 취업에 유리한 국내 자격증을 추천해주세요.
@@ -310,7 +322,7 @@ async def recommend_certs(req: CertRecommendRequest):
 {{
   "certs": [
     {{"name": "자격증명", "org": "발급기관", "reason": "추천 이유 (1문장)", "priority": 1}},
-    ...최대 5개
+    ...정확히 {count}개
   ]
 }}"""
     try:

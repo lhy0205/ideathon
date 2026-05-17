@@ -184,6 +184,9 @@ export default function CertRoadmap() {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
   const [scheduleMap, setScheduleMap] = useState({})
+  const [certCount, setCertCount] = useState(5)
+  const [history, setHistory] = useState([])
+  const [expSource, setExpSource] = useState('all') // 'all' or history idx
 
   useEffect(() => {
     const saved = localStorage.getItem('ncs_result')
@@ -194,12 +197,23 @@ export default function CertRoadmap() {
     const exp = localStorage.getItem('ncs_experience')
     if (exp) setExpInfo(JSON.parse(exp))
 
-    // 자격증 시험 일정 API 로드
     import('../api').then(({ api }) => {
       api.getCertSchedule().then(list => {
         const map = {}
         list.forEach(c => { map[c.cert_name] = c })
         setScheduleMap(map)
+      }).catch(() => {})
+
+      api.getAnalysisHistory().then(data => {
+        setHistory(data || [])
+      }).catch(() => {})
+
+      // 기본: 전체 경험 통합 NCS 로드
+      api.getNcsSummary().then(data => {
+        if (data?.ncs_items?.length) {
+          setNcsItems(data.ncs_items.map(item => ({ ...item, score: item.avg_score ?? item.score ?? 0 })))
+          setExpInfo(prev => prev || { title: '전체 경험 통합', type: '' })
+        }
       }).catch(() => {})
     })
   }, [])
@@ -207,6 +221,31 @@ export default function CertRoadmap() {
   useEffect(() => {
     if (aiCerts?.length) setSelected('ai_balanced')
   }, [aiCerts])
+
+  const handleExpSourceChange = async (val) => {
+    setExpSource(val)
+    if (val === 'all') {
+      // 전체 통합 NCS
+      try {
+        const { api } = await import('../api')
+        const data = await api.getNcsSummary()
+        if (data?.ncs_items?.length) {
+          setNcsItems(data.ncs_items.map(item => ({ ...item, score: item.avg_score ?? item.score ?? 0 })))
+          setExpInfo({ title: '전체 경험 통합', type: '' })
+        }
+      } catch {}
+    } else {
+      // 특정 경험
+      const item = history.find(h => String(h.idx) === String(val))
+      if (!item) return
+      try {
+        const { api } = await import('../api')
+        const detail = await api.getAnalysisDetail(item.idx)
+        setNcsItems(detail.ncs_items || [])
+        setExpInfo({ title: item.title, type: item.exp_type || '' })
+      } catch {}
+    }
+  }
 
   const handleRecommend = async () => {
     if (!ncsItems?.length) return
@@ -217,7 +256,7 @@ export default function CertRoadmap() {
       const topItems = [...ncsItems]
         .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
         .slice(0, 3)
-      const data = await api.recommendCerts(topItems, expInfo?.type || '', expInfo?.title || '')
+      const data = await api.recommendCerts(topItems, expInfo?.type || '', expInfo?.title || '', certCount)
       const certs = data.certs || []
       setAiCerts(certs)
       localStorage.setItem('ai_certs', JSON.stringify(certs))
@@ -246,10 +285,39 @@ export default function CertRoadmap() {
             <span className="cr-ai-title">AI 추천 자격증</span>
             {ncsItems && <span className="cr-ai-sub"> · NCS 상위 역량 {Math.min(3, ncsItems.length)}개 기반</span>}
           </div>
-          {ncsItems ? (
-            <button className="cr-ai-btn" onClick={handleRecommend} disabled={aiLoading}>
-              {aiLoading ? '분석 중...' : aiCerts ? '다시 추천받기' : 'AI 추천받기'}
-            </button>
+          {history.length > 0 ? (
+            <div className="cr-ai-controls">
+              <div className="cr-count-selector">
+                <span className="cr-count-label">기반 경험</span>
+                <select
+                  className="cr-exp-select"
+                  value={expSource}
+                  onChange={e => handleExpSourceChange(e.target.value)}
+                  disabled={aiLoading}
+                >
+                  <option value="all">전체 경험 통합</option>
+                  {history.map(h => (
+                    <option key={h.idx} value={String(h.idx)}>{h.title}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="cr-count-selector">
+                <span className="cr-count-label">추천 개수</span>
+                <div className="cr-count-btns">
+                  {[1,2,3,4,5,6,7].map(n => (
+                    <button
+                      key={n}
+                      className={`cr-count-btn ${certCount === n ? 'active' : ''}`}
+                      onClick={() => setCertCount(n)}
+                      disabled={aiLoading}
+                    >{n}</button>
+                  ))}
+                </div>
+              </div>
+              <button className="cr-ai-btn" onClick={handleRecommend} disabled={aiLoading || !ncsItems?.length}>
+                {aiLoading ? '분석 중...' : aiCerts ? '다시 추천받기' : 'AI 추천받기'}
+              </button>
+            </div>
           ) : (
             <span className="cr-ai-empty-hint">경험 매핑을 먼저 진행해주세요</span>
           )}

@@ -264,3 +264,11 @@
   transition: background 0.2s;
 }
 .em-btn-full:hover { background: #b0522f; }
+
+.em-ncs-full-list { display: flex; flex-direction: column; gap: 10px; }
+.em-ncs-full-row { padding: 10px 0; border-bottom: 1px solid #f0ece7; }
+.em-ncs-full-row:last-child { border-bottom: none; }
+.em-ncs-full-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.em-ncs-full-name { font-size: 13px; font-weight: 700; color: #1a1a1a; }
+.em-ncs-full-meta { font-size: 11px; color: #aaa; }
+.em-ncs-full-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }

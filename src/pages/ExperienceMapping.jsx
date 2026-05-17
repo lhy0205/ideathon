@@ -174,8 +174,8 @@ export default function ExperienceMapping() {
     ? ncsResult.star_drafts.map((draft, i) => parseDraft(draft, i))
     : STAR_TEXT
   const summary = ncsResult?.summary || ''
-  const expTitle = expInfo?.title || '편의점 아르바이트 2년'
-  const expContent = expInfo?.content || '야간 혼자 편의점 운영, 재고 체크, 발주, 고객 트러블 대응, 현금 정산'
+  const expTitle = expInfo?.title || ''
+  const expContent = expInfo?.content ?? ''
 
   const radarSource = allNcsSummary?.length > 0
     ? allNcsSummary.slice(0, 5).map(c => ({ unit_name: c.unit_name, score: c.avg_score }))
@@ -293,7 +293,7 @@ export default function ExperienceMapping() {
                 <div className="em-exp-card">
                   <p className="em-exp-label">선택된 경험</p>
                   <p className="em-exp-title">{expTitle}</p>
-                  <p className="em-exp-desc">{expContent.slice(0, 80)}{expContent.length > 80 ? '...' : ''}</p>
+                  <p className="em-exp-desc">{expContent ? (expContent.slice(0, 80) + (expContent.length > 80 ? '...' : '')) : '경험 내용이 없습니다'}</p>
                 </div>
 
                 {/* NCS cards */}
@@ -393,11 +393,39 @@ export default function ExperienceMapping() {
                 {/* 레이더 */}
                 <div className="em-card">
                   <p className="em-card-title">⭐ 전체 역량 레이더</p>
+                  <p className="em-card-sub" style={{ marginBottom: '8px' }}>상위 5개 역량 시각화</p>
                   <div className="em-radar-wrap">
                     <RadarChart labels={radarLabels} values={radarValues} />
                   </div>
                   <button className="em-btn-full" onClick={() => navigate('/dashboard?tab=roadmap')}>⚙️ 자격증 로드맵 설계하기</button>
                 </div>
+
+                {/* 전체 NCS 역량 목록 */}
+                {allNcsSummary?.length > 0 && (
+                  <div className="em-card">
+                    <p className="em-card-title">📋 전체 NCS 역량 목록</p>
+                    <p className="em-card-sub" style={{ marginBottom: '12px' }}>모든 경험에서 추출된 {allNcsSummary.length}개 역량 (평균 점수순)</p>
+                    <div className="em-ncs-full-list">
+                      {allNcsSummary.map((c, i) => (
+                        <div key={i} className="em-ncs-full-row">
+                          <div className="em-ncs-full-top">
+                            <span className="em-ncs-full-name">{c.unit_name}</span>
+                            <span className="em-ncs-full-meta">
+                              경험 {c.count}개 · Lv.{c.level}
+                            </span>
+                          </div>
+                          <div className="em-ncs-full-bar-row">
+                            <div className="em-bar-wrap" style={{ flex: 1 }}>
+                              <div className="em-bar" style={{ width: `${c.avg_score}%` }} />
+                            </div>
+                            <span className="em-pct">{c.avg_score}%</span>
+                          </div>
+                          <span className="em-code">{c.ncs_code}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
