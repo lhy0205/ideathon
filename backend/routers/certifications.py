@@ -34,18 +34,21 @@ async def get_cert_schedule(
     if category:
         params["seriesCd"] = category
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        list_res = await client.get(QNET_LIST_URL, params=params)
-        list_res.raise_for_status()
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            list_res = await client.get(QNET_LIST_URL, params=params)
+            list_res.raise_for_status()
+    except Exception:
+        return []
 
     try:
         root = ET.fromstring(list_res.text)
     except ET.ParseError:
-        raise HTTPException(status_code=502, detail="Q-Net API 응답 파싱 실패")
+        return []
 
     result_code = root.findtext(".//resultCode")
     if result_code and result_code != "00":
-        raise HTTPException(status_code=502, detail=f"Q-Net API 오류: {root.findtext('.//resultMsg')}")
+        return []
 
     items = root.findall(".//item")
     result = []
