@@ -173,15 +173,21 @@ export default function ExperienceMapping() {
     }
   }
 
-  const STAR_PREFIXES = ['[상황 S]', '[과제 T]', '[행동 A]', '[결과 R]']
-  const STAR_KEY_LABELS = ['상황 S', '과제 T', '행동 A', '결과 R']
+  const STAR_PREFIXES = ['[상황 S]', '[과제 T]', '[행동 A]', '[결과 R]', '【상황 S】', '【과제 T】', '【행동 A】', '【결과 R】']
+  const STAR_KEY_LABELS = ['상황 S', '과제 T', '행동 A', '결과 R', '상황 S', '과제 T', '행동 A', '결과 R']
 
   const parseDraft = (draft, i) => {
     if (typeof draft !== 'string') return { label: `항목 ${i+1}`, text: String(draft) }
-    const prefix = STAR_PREFIXES.find(p => draft.startsWith(p))
+    const prefixIdx = STAR_PREFIXES.findIndex(p => draft.startsWith(p))
+    if (prefixIdx !== -1) {
+      return {
+        label: STAR_KEY_LABELS[prefixIdx],
+        text: draft.slice(STAR_PREFIXES[prefixIdx].length).trim(),
+      }
+    }
     return {
-      label: prefix ? STAR_KEY_LABELS[STAR_PREFIXES.indexOf(prefix)] : (STAR_KEY_LABELS[i] || `항목 ${i+1}`),
-      text: prefix ? draft.slice(prefix.length).trim() : draft,
+      label: STAR_KEY_LABELS[i] || `항목 ${i+1}`,
+      text: draft,
     }
   }
 
@@ -238,17 +244,16 @@ export default function ExperienceMapping() {
   }
 
   const handleEditSave = async () => {
-    if (ncsResult) {
-      const updatedDrafts = editedItems.map(s => `[${s.label}] ${s.text}`)
-      const updated = { ...ncsResult, star_drafts: updatedDrafts }
-      setNcsResult(updated)
-      localStorage.setItem('ncs_result', JSON.stringify(updated))
-      if (selectedIdx) {
-        try {
-          const { api } = await import('../api')
-          await api.updateStarDrafts(selectedIdx, updatedDrafts)
-        } catch {}
-      }
+    const updatedDrafts = editedItems.map(s => `[${s.label}] ${s.text}`)
+    const base = ncsResult || { ncs_items: [], star_drafts: [], summary: '' }
+    const updated = { ...base, star_drafts: updatedDrafts }
+    setNcsResult(updated)
+    localStorage.setItem('ncs_result', JSON.stringify(updated))
+    if (selectedIdx) {
+      try {
+        const { api } = await import('../api')
+        await api.updateStarDrafts(selectedIdx, updatedDrafts)
+      } catch {}
     }
     setEditMode(false)
   }

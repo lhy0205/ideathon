@@ -180,6 +180,9 @@ export default function ExperienceInput() {
                   value={form.content}
                   onChange={handleChange}
                 />
+                <p style={{ fontSize: '12px', color: '#c4603d', margin: '6px 0 0' }}>
+                  ⚠️ 의미 없는 글자(예: ㅁㄴㅇ, 아무말)를 입력하면 분석 결과가 엉터리로 나옵니다.
+                </p>
               </div>
               <div className="exp-field">
                 <label className="exp-label">어떤 역량이 성장했다고 느끼나요? <span className="exp-optional">(선택)</span></label>
@@ -194,6 +197,10 @@ export default function ExperienceInput() {
               </div>
             </div>
 
+            <p style={{ fontSize: '12px', color: '#888', margin: '0 0 8px', lineHeight: '1.6' }}>
+              💡 구체적인 경험을 입력할수록 정확한 분석 결과가 나옵니다.<br />
+              모호하거나 짧은 내용은 AI가 없는 내용을 만들어 낼 수 있어요.
+            </p>
             {error && <p className="exp-error">{error}</p>}
             <button className="exp-submit-btn" onClick={handleAnalyze}>
               AI NCS 분석 시작하기
