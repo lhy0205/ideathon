@@ -8,6 +8,26 @@ from routers import auth, users, experiences, missions, community, notifications
 
 load_dotenv()
 
+def _migrate():
+    from sqlalchemy import text
+    from database import SessionLocal
+    db = SessionLocal()
+    for sql in [
+        "ALTER TABLE users ADD COLUMN session_token VARCHAR(255) NULL",
+        "ALTER TABLE users ADD UNIQUE INDEX uq_session_token (session_token)",
+        "ALTER TABLE users ADD COLUMN department VARCHAR(100) NULL",
+        "ALTER TABLE users ADD COLUMN certifications TEXT NULL",
+        "ALTER TABLE users MODIFY COLUMN name VARCHAR(100) NULL",
+    ]:
+        try:
+            db.execute(text(sql))
+            db.commit()
+        except Exception:
+            pass
+    db.close()
+
+_migrate()
+
 # DB 테이블 자동 생성
 Base.metadata.create_all(bind=engine)
 

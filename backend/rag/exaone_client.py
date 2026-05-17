@@ -14,6 +14,8 @@ async def analyze(prompt: str) -> str:
         "stream": False,
         "options": {
             "num_gpu": -1,
+            "temperature": 0.1,
+            "seed": 42,
         },
     }
     async with httpx.AsyncClient(timeout=600.0) as client:
