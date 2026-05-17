@@ -76,7 +76,7 @@ export default function MyPage() {
     <div className="mp-root">
       {/* Top header */}
       <header className="mp-header">
-        <span className="mp-brand">Pause to Pass</span>
+        <span className="mp-brand" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>Pause to Pass</span>
         <span className="mp-tagline"> - 나의 오늘이 내일의 발판이 되지 못하는 불안</span>
       </header>
 
