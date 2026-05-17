@@ -9,7 +9,7 @@ import './Dashboard.css'
 const NAV_ITEMS = [
   { key: 'home',       label: '홈 대시보드',   path: '/dashboard' },
   { key: 'mypage',     label: '마이페이지',     path: '/mypage' },
-  { key: 'profile',    label: '프로필 설정',    path: '/profile' },
+  { key: 'password',   label: '비밀번호 변경',  path: '/dashboard?tab=password' },
   { key: 'experience', label: '경험 입력',      path: '/dashboard?tab=experience' },
   { key: 'mapping',    label: '경험 매핑 결과', path: '/mapping' },
   { key: 'roadmap',    label: '자격증 로드맵',  path: '/dashboard?tab=roadmap' },
