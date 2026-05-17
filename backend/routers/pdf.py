@@ -100,24 +100,29 @@ def _ncs_table(items: List[NCSItem]):
     if not items:
         return Paragraph("NCS 역량 분석 결과가 없습니다.", SMALL)
 
-    header = ["NCS 코드", "역량명", "숙련도", "점수"]
+    CW = _style("ncs_cw", fontSize=8, leading=12)
+    CH = _style("ncs_ch", fontSize=8, leading=12, textColor=ORANGE)
+    header = [Paragraph(h, CH) for h in ["NCS 코드", "역량명", "숙련도", "점수"]]
     rows = [header]
     for it in items:
         stars = "★" * it.level + "☆" * (5 - it.level)
-        rows.append([it.ncs_code or "-", it.unit_name or "-", stars, f"{it.score}점"])
+        rows.append([
+            Paragraph(it.ncs_code or "-", CW),
+            Paragraph(it.unit_name or "-", CW),
+            Paragraph(stars, CW),
+            Paragraph(f"{it.score}점", CW),
+        ])
 
     t = Table(rows, colWidths=[35*mm, 75*mm, 30*mm, 25*mm])
     t.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), ORANGE_LIGHT),
-        ("TEXTCOLOR",  (0, 0), (-1, 0), ORANGE),
-        ("FONTNAME",   (0, 0), (-1, -1), FONT),
-        ("FONTSIZE",   (0, 0), (-1, -1), 8),
-        ("ALIGN",      (0, 0), (-1, -1), "CENTER"),
-        ("ALIGN",      (1, 1), (1, -1), "LEFT"),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ORANGE_LIGHT]),
         ("GRID",       (0, 0), (-1, -1), 0.5, LIGHT_BORDER),
         ("TOPPADDING",    (0, 0), (-1, -1), 4),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 4),
+        ("VALIGN",     (0, 0), (-1, -1), "MIDDLE"),
     ]))
     return t
 
@@ -145,28 +150,32 @@ def _ai_cert_table(ai_certs: List[AiCertItem]):
     if not ai_certs:
         return Paragraph("AI 추천 자격증 정보가 없습니다.", SMALL)
     PRIORITY_MAP = {1: "★ 1순위", 2: "2순위", 3: "3순위", 4: "4순위", 5: "5순위"}
-    header = ["순위", "자격증명", "발급기관", "추천 이유"]
+    CELL_WRAP = _style("cw", fontSize=8, leading=12)
+    HEADER_STYLE = _style("ch", fontSize=8, leading=12, textColor=ORANGE)
+    header = [
+        Paragraph("순위", HEADER_STYLE),
+        Paragraph("자격증명", HEADER_STYLE),
+        Paragraph("발급기관", HEADER_STYLE),
+        Paragraph("추천 이유", HEADER_STYLE),
+    ]
     rows = [header]
     for c in ai_certs:
         rows.append([
-            PRIORITY_MAP.get(c.priority, f"{c.priority}순위"),
-            c.name or "-",
-            c.org or "-",
-            c.reason or "-",
+            Paragraph(PRIORITY_MAP.get(c.priority, f"{c.priority}순위"), CELL_WRAP),
+            Paragraph(c.name or "-", CELL_WRAP),
+            Paragraph(c.org or "-", CELL_WRAP),
+            Paragraph(c.reason or "-", CELL_WRAP),
         ])
     t = Table(rows, colWidths=[18*mm, 32*mm, 38*mm, 77*mm])
     t.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), ORANGE_LIGHT),
-        ("TEXTCOLOR",  (0, 0), (-1, 0), ORANGE),
-        ("FONTNAME",   (0, 0), (-1, -1), FONT),
-        ("FONTSIZE",   (0, 0), (-1, -1), 8),
-        ("ALIGN",      (0, 0), (-1, -1), "CENTER"),
-        ("ALIGN",      (3, 1), (3, -1), "LEFT"),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ORANGE_LIGHT]),
         ("GRID",       (0, 0), (-1, -1), 0.5, LIGHT_BORDER),
-        ("TOPPADDING",    (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-        ("WORDWRAP",   (3, 1), (3, -1), "CJK"),
+        ("TOPPADDING",    (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 4),
+        ("VALIGN",     (0, 0), (-1, -1), "TOP"),
     ]))
     return t
 
