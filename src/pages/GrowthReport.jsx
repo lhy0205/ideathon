@@ -5,30 +5,30 @@ import './GrowthReport.css'
 
 // ── PDF 옵션 ──────────────────────────────────────────────────────────────────
 const PDF_OPTION_DEFS = [
-  { id: 'show_ncs',         label: 'NCS 역량 카드',        desc: 'NCS 역량 분석 결과' },
-  { id: 'show_experiences', label: '경험 목록',             desc: '입력한 경험 유형 및 제목' },
-  { id: 'show_experience',  label: 'STAR 자기소개서 초안',  desc: '직무별 맞춤 자기소개서' },
-  { id: 'show_ai_certs',   label: 'AI 추천 자격증',        desc: 'AI가 추천한 자격증 및 이유' },
-  { id: 'show_cert',        label: '자격증 취득 이력',      desc: '합격증 및 학습 시간' },
-  { id: 'show_mission',     label: '미션 달성 현황',        desc: '총 활동일 기록' },
+  { id: 'show_ncs',         label: 'NCS 역량 카드',       desc: 'NCS 역량 분석 결과' },
+  { id: 'show_experiences', label: '경험 목록',            desc: '입력한 경험 유형 및 제목' },
+  { id: 'show_experience',  label: 'STAR 자기소개서 초안', desc: '직무별 맞춤 자기소개서' },
+  { id: 'show_ai_certs',   label: 'AI 추천 자격증',       desc: 'AI가 추천한 자격증 및 이유', requiresAiCerts: true },
+  { id: 'show_cert',        label: '자격증 취득 이력',     desc: '합격증 관리' },
+  { id: 'show_mission',     label: '미션 달성 현황',       desc: '총 활동일 기록' },
 ]
 
 // ── PDF 모달 ──────────────────────────────────────────────────────────────────
 function PdfModal({ onClose, certProofs, ncsItems, starDrafts, experiences, aiCerts, missionsActiveDays }) {
+  const hasAiCerts = aiCerts?.length > 0
   const [settings, setSettings] = useState({
     show_ncs: true, show_cert: true, show_experience: true, show_mission: true,
-    show_experiences: true, show_ai_certs: true,
+    show_experiences: true, show_ai_certs: hasAiCerts,
   })
-  const [loading, setLoading] = useState(true)
+  const [aiCertWarn, setAiCertWarn] = useState(false)
 
-  useEffect(() => {
-    setLoading(false)
-  }, [])
-
-  const toggle = async (id) => {
-    const next = { ...settings, [id]: !settings[id] }
-    setSettings(next)
-    api.updateReportSettings({ [id]: next[id] }).catch(() => {})
+  const toggle = (id) => {
+    if (id === 'show_ai_certs' && !hasAiCerts) {
+      setAiCertWarn(true)
+      setTimeout(() => setAiCertWarn(false), 3000)
+      return
+    }
+    setSettings(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
   const handleDownload = async () => {
@@ -80,18 +80,34 @@ function PdfModal({ onClose, certProofs, ncsItems, starDrafts, experiences, aiCe
           </svg>
         </div>
         <p className="gr-pdf-subtitle">포트폴리오에 포함할 내용을 선택하세요</p>
-        {loading ? <p style={{textAlign:'center',color:'#999'}}>설정 불러오는 중...</p> : (
-          <div className="gr-pdf-options">
-            {PDF_OPTION_DEFS.map(opt => (
-              <label key={opt.id} className={`gr-pdf-option ${settings[opt.id] ? 'selected' : ''}`}>
-                <input type="checkbox" checked={!!settings[opt.id]} onChange={() => toggle(opt.id)} className="gr-pdf-checkbox" />
+        <div className="gr-pdf-options">
+          {PDF_OPTION_DEFS.map(opt => {
+            const isDisabled = opt.requiresAiCerts && !hasAiCerts
+            return (
+              <label
+                key={opt.id}
+                className={`gr-pdf-option ${settings[opt.id] && !isDisabled ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+                onClick={isDisabled ? () => toggle(opt.id) : undefined}
+              >
+                <input
+                  type="checkbox"
+                  checked={!!settings[opt.id] && !isDisabled}
+                  onChange={() => toggle(opt.id)}
+                  disabled={isDisabled}
+                  className="gr-pdf-checkbox"
+                />
                 <div className="gr-pdf-option-text">
                   <span className="gr-pdf-option-label">{opt.label}</span>
-                  <span className="gr-pdf-option-desc">{opt.desc}</span>
+                  <span className="gr-pdf-option-desc">
+                    {isDisabled ? '자격증 로드맵에서 AI 추천을 먼저 받아주세요' : opt.desc}
+                  </span>
                 </div>
               </label>
-            ))}
-          </div>
+            )
+          })}
+        </div>
+        {aiCertWarn && (
+          <p className="gr-pdf-warn">⚠ 자격증 로드맵 페이지에서 AI 추천받기를 먼저 실행해주세요</p>
         )}
         <div className="gr-pdf-actions">
           <button className="gr-pdf-cancel" onClick={onClose}>취소</button>
