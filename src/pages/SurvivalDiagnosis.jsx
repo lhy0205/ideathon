@@ -151,16 +151,19 @@ export default function SurvivalDiagnosis() {
         job_interest: form.job_interest,
       }
 
-      // AI 입력값 검증 - 실패하면 분석 차단
+      // AI 입력값 검증 - 필수 필드(공백기·희망 직무) 미달 시 차단
       try {
         const verify = await api.verifyProfile(profile)
-        const failedCount = Object.values(verify.fields || {}).filter(f => !f.ok).length
-        if ((verify.score ?? 100) < 50 || failedCount >= 2) {
+        const criticalFailed = ['gap_period', 'job_interest'].some(
+          k => verify.fields?.[k]?.ok === false
+        )
+        if (criticalFailed) {
           setVerifyResult(verify)
           setCurveLoading(false)
           setPersonaLoading(false)
           return
         }
+        if (verify.overall) setVerifyResult(verify)
       } catch {
         // 검증 API 오류는 분석을 막지 않음
       }
@@ -287,16 +290,15 @@ export default function SurvivalDiagnosis() {
               </div>
 
               {verifyResult && (
-                <div style={{ marginTop: '16px', padding: '14px 16px', background: '#fff5f0', border: '1px solid #f5c6b8', borderRadius: '8px' }}>
-                  <p style={{ fontSize: '13px', fontWeight: '700', color: '#c4603d', marginBottom: '6px' }}>⚠️ 입력값을 수정해주세요</p>
-                  <p style={{ fontSize: '13px', color: '#555', marginBottom: verifyResult.suggestions?.length ? '8px' : '0' }}>{verifyResult.overall}</p>
-                  {verifyResult.suggestions?.length > 0 && (
-                    <ul style={{ margin: '0', paddingLeft: '18px' }}>
-                      {verifyResult.suggestions.map((s, i) => (
-                        <li key={i} style={{ fontSize: '12px', color: '#777', marginBottom: '2px' }}>{s}</li>
-                      ))}
-                    </ul>
-                  )}
+                <div style={{ marginTop: '16px', padding: '12px 16px', background: '#fff5f0', border: '1px solid #f5c6b8', borderRadius: '8px' }}>
+                  {['gap_period', 'job_interest', 'department', 'certifications'].map(k => {
+                    const f = verifyResult.fields?.[k]
+                    if (!f || f.ok) return null
+                    const label = { gap_period: '공백기', job_interest: '희망 직무', department: '전공', certifications: '자격증' }[k]
+                    return (
+                      <p key={k} style={{ fontSize: '13px', color: '#c4603d', margin: '2px 0' }}>⚠️ {label}: {f.comment}</p>
+                    )
+                  })}
                 </div>
               )}
 
