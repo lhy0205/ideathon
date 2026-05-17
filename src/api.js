@@ -181,6 +181,8 @@ export function clearSession() {
   localStorage.removeItem('ncs_result')
   localStorage.removeItem('ncs_experience')
   localStorage.removeItem('exp_history')
+  localStorage.removeItem('user_profile')
+  localStorage.removeItem('ai_certs')
 }
 
 export function hasSession() {
