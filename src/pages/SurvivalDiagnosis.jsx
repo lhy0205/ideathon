@@ -132,6 +132,10 @@ export default function SurvivalDiagnosis() {
   const [curveLoading, setCurveLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  useEffect(() => {
+    import('../api').then(({ api }) => api.getMe().then(setUser).catch(() => {}))
+  }, [])
+
   const handleAnalyze = async () => {
     const { api } = await import('../api')
 
@@ -146,12 +150,6 @@ export default function SurvivalDiagnosis() {
         certifications: form.certifications,
         job_interest: form.job_interest,
       }
-  const [curveLoading, setCurveLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchAll = async () => {
-      const { api } = await import('../api')
-      api.getMe().then(setUser).catch(() => {})
 
       // Cox 곡선 - 실패해도 계속 진행
       try {
