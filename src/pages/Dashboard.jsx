@@ -63,15 +63,10 @@ const MOOD_MISSIONS = [
 ]
 
 const EXTRA_MISSIONS = [
-  { title: '자격증 문제 5개', time: '10분', mood: '기분 상관없음', count: 43 },
-  { title: '채용공고 1개 정독', time: '3분', mood: '기분무관', count: 69 },
-  { title: '5분 영상보기', time: '5분', mood: '자신감 낮을 때', count: 33 },
-  { title: '목표 직무 리서치', time: '15분', mood: '의욕이 충분할때', count: 37 },
-]
-
-const MISSION_LOGS = [
-  { title: '빠른 첫 번째 글쓰기', status: '완료', done: true },
-  { title: '자격증 문제 5개', status: '진행 중', done: false },
+  { title: '자격증 문제 5개', time: '10분', mood: '기분무관', moodLabel: '기분 상관없음', count: 43 },
+  { title: '채용공고 1개 정독', time: '3분', mood: '기분무관', moodLabel: '기분 무관', count: 69 },
+  { title: '5분 영상보기', time: '5분', mood: 'low', moodLabel: '의욕 낮을 때', count: 33 },
+  { title: '목표 직무 리서치', time: '15분', mood: 'good', moodLabel: '의욕 충분할 때', count: 37 },
 ]
 
 const FEED_POSTS = [
@@ -121,15 +116,20 @@ function MissionSection() {
   const [missionText, setMissionText] = useState('')
   const [selectedExtra, setSelectedExtra] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
-  const [logs, setLogs] = useState(MISSION_LOGS)
-  const [streak, setStreak] = useState(127)
-  const [totalDone, setTotalDone] = useState(342)
-  const [monthDone, setMonthDone] = useState(28)
+  const [logs, setLogs] = useState([])
+  const [streak, setStreak] = useState(0)
+  const [totalDone, setTotalDone] = useState(0)
+  const [monthDone, setMonthDone] = useState(0)
   const [showAllLogs, setShowAllLogs] = useState(false)
   const [completed, setCompleted] = useState(false)
   const [missionError, setMissionError] = useState('')
-  const fileInputRef = useState(null)
-  // 미션 목록 불러오기
+  const [expandedLog, setExpandedLog] = useState(null)
+
+  const todayKey = new Date().toISOString().slice(0, 10)
+  const [todayCompleted, setTodayCompleted] = useState(() =>
+    localStorage.getItem('mission_done_date') === todayKey
+  )
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -141,6 +141,10 @@ function MissionSection() {
             title: m.title,
             status: m.completed ? '완료' : '진행 중',
             done: m.completed,
+            content: m.content || '',
+            createdAt: m.created_at
+              ? new Date(m.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+              : '',
           }))
           setLogs(loaded)
           const done = data.filter(m => m.completed).length
@@ -164,6 +168,11 @@ function MissionSection() {
   }
 
   const currentMission = MOOD_MISSIONS[mood]
+  const moodKeyMap = { 0: 'good', 1: null, 2: 'low' }
+  const currentMoodKey = moodKeyMap[mood]
+  const filteredExtras = EXTRA_MISSIONS.filter(m =>
+    m.mood === '기분무관' || m.mood === currentMoodKey
+  )
 
   const handleMissionComplete = async () => {
     const text = missionText.trim()
@@ -177,8 +186,8 @@ function MissionSection() {
     }
     setMissionError('')
 
-    // 즉시 UI 반영
-    const newLog = { title: currentMission.title, status: '완료', done: true }
+    const now = new Date().toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    const newLog = { title: currentMission.title, status: '완료', done: true, content: text, createdAt: now }
     setLogs(prev => [newLog, ...prev])
     setStreak(s => s + 1)
     setTotalDone(t => t + 1)
@@ -186,9 +195,10 @@ function MissionSection() {
     setMissionText('')
     setPhotoPreview(null)
     setCompleted(true)
+    setTodayCompleted(true)
+    localStorage.setItem('mission_done_date', todayKey)
     setTimeout(() => setCompleted(false), 3000)
 
-    // 백엔드 저장
     try {
       const { api } = await import('../api')
       const created = await api.createMission({
@@ -202,14 +212,14 @@ function MissionSection() {
     }
   }
 
-  const handleExtraSelect = (i) => {
-    if (selectedExtra === i) { setSelectedExtra(null); return }
-    setSelectedExtra(i)
-    const m = EXTRA_MISSIONS[i]
+  const handleExtraSelect = (filteredIdx) => {
+    const m = filteredExtras[filteredIdx]
+    const globalIdx = EXTRA_MISSIONS.indexOf(m)
+    if (selectedExtra === globalIdx) { setSelectedExtra(null); return }
+    setSelectedExtra(globalIdx)
     const alreadyIn = logs.some(l => l.title === m.title)
     if (!alreadyIn) {
-      setLogs(prev => [...prev, { title: m.title, status: '진행 중', done: false }])
-      // 백엔드 저장
+      setLogs(prev => [...prev, { title: m.title, status: '진행 중', done: false, content: '', createdAt: '' }])
       import('../api').then(({ api }) =>
         api.createMission({ title: m.title, content: m.title, mission_type: 'extra' })
       ).catch(() => {})
@@ -223,15 +233,12 @@ function MissionSection() {
     setTotalDone(t => t + 1)
     setMonthDone(m => m + 1)
 
-    // 백엔드에서 해당 미션 id 찾아서 완료 처리
     try {
       const { api } = await import('../api')
       const missions = await api.getMissions()
       const target = missions.find(m => m.title === title && !m.completed)
       if (target) await api.completeMission(target.id)
-    } catch {
-      // 저장 실패해도 UI는 유지
-    }
+    } catch {}
   }
 
   const visibleLogs = showAllLogs ? logs : logs.slice(0, 3)
@@ -274,67 +281,72 @@ function MissionSection() {
             </div>
             <p className="ms-mission-title">{currentMission.title}</p>
             <p className="ms-mission-desc">{currentMission.desc}</p>
-            <textarea
-              className="ms-textarea"
-              placeholder={currentMission.placeholder}
-              value={missionText}
-              onChange={(e) => { setMissionText(e.target.value); setMissionError('') }}
-              rows={4}
-            />
-            {missionText.trim().length > 0 && missionText.trim().length < currentMission.minLen && (
-              <p style={{ fontSize: '12px', color: '#aaa', marginTop: '4px' }}>
-                {missionText.trim().length} / {currentMission.minLen}자 (최소 {currentMission.minLen}자)
-              </p>
-            )}
-            {missionError && <p className="ms-error">{missionError}</p>}
 
-            {photoPreview && (
-              <div className="ms-photo-preview">
-                <img src={photoPreview} alt="인증 사진" />
-                <button className="ms-photo-remove" onClick={() => setPhotoPreview(null)}>✕</button>
+            {todayCompleted ? (
+              <div className="ms-today-done">
+                ✓ 오늘의 미션을 완료했습니다! 내일 또 도전해보세요.
               </div>
-            )}
-
-            <div className="ms-mission-actions">
-              <label className="ms-btn-outline ms-photo-label">
-                📷 인증 사진
-                <input
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={handlePhotoChange}
+            ) : (
+              <>
+                <textarea
+                  className="ms-textarea"
+                  placeholder={currentMission.placeholder}
+                  value={missionText}
+                  onChange={(e) => { setMissionText(e.target.value); setMissionError('') }}
+                  rows={4}
                 />
-              </label>
-              <button className="ms-btn-primary" onClick={handleMissionComplete}>
-                ✓ 미션 완료
-              </button>
-            </div>
+                {missionText.trim().length > 0 && missionText.trim().length < currentMission.minLen && (
+                  <p style={{ fontSize: '12px', color: '#aaa', marginTop: '4px' }}>
+                    {missionText.trim().length} / {currentMission.minLen}자 (최소 {currentMission.minLen}자)
+                  </p>
+                )}
+                {missionError && <p className="ms-error">{missionError}</p>}
+                {photoPreview && (
+                  <div className="ms-photo-preview">
+                    <img src={photoPreview} alt="인증 사진" />
+                    <button className="ms-photo-remove" onClick={() => setPhotoPreview(null)}>✕</button>
+                  </div>
+                )}
+                <div className="ms-mission-actions">
+                  <label className="ms-btn-outline ms-photo-label">
+                    📷 인증 사진
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange} />
+                  </label>
+                  <button className="ms-btn-primary" onClick={handleMissionComplete}>
+                    ✓ 미션 완료
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* 추가 미션 선택 */}
           <div className="ms-card">
             <p className="ms-card-title">추가 미션 선택</p>
-            <p className="ms-card-sub">선택하면 로그에 추가됩니다</p>
+            <p className="ms-card-sub">현재 기분에 맞는 미션을 선택해보세요</p>
             <div className="ms-extra-grid">
-              {EXTRA_MISSIONS.map((m, i) => (
-                <div
-                  key={i}
-                  className={`ms-extra-item ${selectedExtra === i ? 'active' : ''}`}
-                  onClick={() => handleExtraSelect(i)}
-                >
-                  <p className="ms-extra-title">{m.title}</p>
-                  <p className="ms-extra-meta">{m.time} · {m.mood}</p>
-                  <span className="ms-extra-count">+{m.count}명</span>
-                  {selectedExtra === i && (
-                    <button
-                      className="ms-extra-done-btn"
-                      onClick={(e) => { e.stopPropagation(); handleExtraDone(m.title) }}
-                    >
-                      완료
-                    </button>
-                  )}
-                </div>
-              ))}
+              {filteredExtras.map((m, i) => {
+                const globalIdx = EXTRA_MISSIONS.indexOf(m)
+                return (
+                  <div
+                    key={i}
+                    className={`ms-extra-item ${selectedExtra === globalIdx ? 'active' : ''}`}
+                    onClick={() => handleExtraSelect(i)}
+                  >
+                    <p className="ms-extra-title">{m.title}</p>
+                    <p className="ms-extra-meta">{m.time} · {m.moodLabel}</p>
+                    <span className="ms-extra-count">+{m.count}명</span>
+                    {selectedExtra === globalIdx && (
+                      <button
+                        className="ms-extra-done-btn"
+                        onClick={(e) => { e.stopPropagation(); handleExtraDone(m.title) }}
+                      >
+                        완료
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
@@ -363,20 +375,42 @@ function MissionSection() {
           {/* 최근 인증 로그 */}
           <div className="ms-card">
             <p className="ms-card-title">최근 인증 로그</p>
-            <div className="ms-logs">
-              {visibleLogs.map((log, i) => (
-                <div key={i} className="ms-log-item">
-                  <div className={`ms-log-icon ${log.done ? 'done' : ''}`}>{log.done ? '✓' : '→'}</div>
-                  <p className="ms-log-title">{log.title}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {!log.done && (
-                      <button className="ms-log-done-btn" onClick={() => handleExtraDone(log.title)}>완료</button>
+            {logs.length === 0 ? (
+              <p style={{ fontSize: '13px', color: '#aaa', textAlign: 'center', padding: '12px 0' }}>
+                아직 완료한 미션이 없어요
+              </p>
+            ) : (
+              <div className="ms-logs">
+                {visibleLogs.map((log, i) => (
+                  <div key={i} className="ms-log-item">
+                    <div className="ms-log-row">
+                      <div className={`ms-log-icon ${log.done ? 'done' : ''}`}>{log.done ? '✓' : '→'}</div>
+                      <div className="ms-log-main">
+                        <p className="ms-log-title">{log.title}</p>
+                        {log.createdAt && <p className="ms-log-date">{log.createdAt}</p>}
+                      </div>
+                      <div className="ms-log-actions">
+                        {log.content && (
+                          <button
+                            className="ms-log-view-btn"
+                            onClick={() => setExpandedLog(expandedLog === i ? null : i)}
+                          >
+                            {expandedLog === i ? '접기' : '내용 보기'}
+                          </button>
+                        )}
+                        {!log.done && (
+                          <button className="ms-log-done-btn" onClick={() => handleExtraDone(log.title)}>완료</button>
+                        )}
+                        <span className={`ms-log-badge ${log.done ? 'done' : 'ing'}`}>{log.status}</span>
+                      </div>
+                    </div>
+                    {expandedLog === i && log.content && (
+                      <div className="ms-log-content">{log.content}</div>
                     )}
-                    <span className={`ms-log-badge ${log.done ? 'done' : 'ing'}`}>{log.status}</span>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             {logs.length > 3 && (
               <button className="db-more-btn" onClick={() => setShowAllLogs(v => !v)}>
                 {showAllLogs ? '접기 ▲' : `전체 로그 보기 (${logs.length}개) ▼`}
