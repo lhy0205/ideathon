@@ -11,7 +11,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-import os
+import os, urllib.request
 
 router = APIRouter(prefix="/pdf", tags=["pdf"])
 
@@ -21,12 +21,16 @@ ORANGE_MID = colors.HexColor("#E8956C")
 GRAY = colors.HexColor("#555555")
 LIGHT_BORDER = colors.HexColor("#E8D5CB")
 
+_NANUM_URL = "https://github.com/google/fonts/raw/main/ofl/nanumgothic/NanumGothic-Regular.ttf"
+_NANUM_CACHE = "/tmp/NanumGothic.ttf"
+
 def _register_font() -> str:
     candidates = [
         "C:\\Windows\\Fonts\\malgun.ttf",
         "C:\\Windows\\Fonts\\NanumGothic.ttf",
         "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
         "/System/Library/Fonts/AppleGothic.ttf",
+        _NANUM_CACHE,
     ]
     for path in candidates:
         if os.path.exists(path):
@@ -35,6 +39,13 @@ def _register_font() -> str:
                 return "KR"
             except Exception:
                 continue
+    # 폰트 없으면 다운로드
+    try:
+        urllib.request.urlretrieve(_NANUM_URL, _NANUM_CACHE)
+        pdfmetrics.registerFont(TTFont("KR", _NANUM_CACHE))
+        return "KR"
+    except Exception:
+        pass
     return "Helvetica"
 
 FONT = _register_font()
