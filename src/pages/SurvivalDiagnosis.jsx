@@ -138,7 +138,6 @@ export default function SurvivalDiagnosis() {
 
   const handleAnalyze = async () => {
     const { api } = await import('../api')
-
     try {
       setError(null)
       setCurveLoading(true)
@@ -164,7 +163,6 @@ export default function SurvivalDiagnosis() {
       // KNN 매칭 - 실패해도 계속 진행
       try {
         const seniorPersonas = await api.matchPersonas(profile, 3)
-
         const survivalResults = await Promise.all(
           seniorPersonas.map(persona =>
             api.getSurvivalCurve({
