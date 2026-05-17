@@ -327,7 +327,15 @@ export default function ExperienceMapping() {
                 <div className="em-exp-card">
                   <p className="em-exp-label">선택된 경험</p>
                   <p className="em-exp-title">{expTitle}</p>
-                  <p className="em-exp-desc">{expContent ? (expContent.slice(0, 80) + (expContent.length > 80 ? '...' : '')) : '경험 내용이 없습니다'}</p>
+                  <p className="em-exp-desc">
+                    {expContent
+                      ? (expContent.slice(0, 80) + (expContent.length > 80 ? '...' : ''))
+                      : expTitle?.includes('통합')
+                        ? `입력한 모든 경험 ${history.length}개를 통합하여 분석합니다`
+                        : expTitle
+                          ? '해당 경험의 NCS 역량이 분석되었습니다'
+                          : '경험 내용이 없습니다'}
+                  </p>
                 </div>
 
                 {/* NCS cards */}
