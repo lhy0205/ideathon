@@ -7,7 +7,7 @@ function getSessionToken() {
 }
 
 async function request(method, path, body = null, auth = true) {
-  const headers = { 'Content-Type': 'application/json' }
+  const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' }
   if (auth) {
     const token = getSessionToken()
     if (token) headers['X-Session-Token'] = token
@@ -59,7 +59,7 @@ export const api = {
     if (file) form.append('file', file)
     const res = await fetch(`${BASE_URL}/missions/${id}/verify`, {
       method: 'POST',
-      headers: token ? { 'X-Session-Token': token } : {},
+      headers: { 'ngrok-skip-browser-warning': 'true', ...(token ? { 'X-Session-Token': token } : {}) },
       body: form,
     })
     if (!res.ok) {
@@ -106,7 +106,7 @@ export const api = {
     const token = getSessionToken()
     const res = await fetch(`${BASE_URL}/cert-proofs/`, {
       method: 'POST',
-      headers: token ? { 'X-Session-Token': token } : {},
+      headers: { 'ngrok-skip-browser-warning': 'true', ...(token ? { 'X-Session-Token': token } : {}) },
       body: formData,
     })
     if (!res.ok) {
