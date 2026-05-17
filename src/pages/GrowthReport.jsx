@@ -14,7 +14,7 @@ const PDF_OPTION_DEFS = [
 ]
 
 // ── PDF 모달 ──────────────────────────────────────────────────────────────────
-function PdfModal({ onClose, certProofs, ncsItems, starDrafts, experiences, aiCerts, missionsActiveDays }) {
+function PdfModal({ onClose, certProofs, ncsItems, starDrafts, experiences, aiCerts, missionsActiveDays, userName }) {
   const hasAiCerts = aiCerts?.length > 0
   const [settings, setSettings] = useState({
     show_ncs: true, show_cert: true, show_experience: true, show_mission: true,
@@ -46,7 +46,7 @@ function PdfModal({ onClose, certProofs, ncsItems, starDrafts, experiences, aiCe
         score: n.score || 75,
       }))
       await api.downloadReport({
-        user_name: '사용자',
+        user_name: userName || '사용자',
         summary: '',
         ncs_items: ncsForPdf,
         star_drafts: starDrafts || [],
@@ -364,6 +364,7 @@ export default function GrowthReport() {
   const [aiCerts, setAiCerts] = useState([])
   const [experiences, setExperiences] = useState([])
   const [missionsActiveDays, setMissionsActiveDays] = useState(0)
+  const [userName, setUserName] = useState('')
   const [history, setHistory] = useState([])
   const [radarExpSource, setRadarExpSource] = useState('all')
   const [radarNcsItems, setRadarNcsItems] = useState(null)
@@ -383,6 +384,7 @@ export default function GrowthReport() {
   }
 
   useEffect(() => {
+    api.getMe().then(data => setUserName(data.name || '')).catch(() => {})
     const saved = localStorage.getItem('ncs_result')
     if (saved) {
       const parsed = JSON.parse(saved)
@@ -420,7 +422,7 @@ export default function GrowthReport() {
   return (
     <div className="gr-root">
       {certModalOpen && <CertModal onClose={() => { setCertModalOpen(false); api.getCertProofs().then(setCertProofs).catch(() => {}) }} />}
-      {pdfModalOpen && <PdfModal onClose={() => setPdfModalOpen(false)} certProofs={certProofs} ncsItems={ncsItems} starDrafts={starDrafts} experiences={experiences} aiCerts={aiCerts} missionsActiveDays={missionsActiveDays} />}
+      {pdfModalOpen && <PdfModal onClose={() => setPdfModalOpen(false)} certProofs={certProofs} ncsItems={ncsItems} starDrafts={starDrafts} experiences={experiences} aiCerts={aiCerts} missionsActiveDays={missionsActiveDays} userName={userName} />}
 
       <div className="gr-page-title">
         <h2>성장 리포트</h2>
@@ -474,7 +476,7 @@ export default function GrowthReport() {
           <p className="gr-card-title">STAR 자기소개서</p>
           <p className="gr-bottom-desc">NCS 경험을 기업별 직무기술서에 맞춰 자동 변환한 자기소개서 초안 모음</p>
           <p className="gr-bottom-accent">{starDrafts.length}개 초안</p>
-          <button className="gr-view-btn" onClick={() => navigate('/dashboard?tab=experience&step=3')}>보기 →</button>
+          <button className="gr-view-btn" onClick={() => navigate('/mapping')}>보기 →</button>
         </div>
 
         <div className="gr-card gr-bottom-card">

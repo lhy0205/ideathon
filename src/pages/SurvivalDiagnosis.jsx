@@ -183,7 +183,12 @@ export default function SurvivalDiagnosis() {
               </button>
             ))}
           </nav>
-          <button className="sv-logout" onClick={() => navigate('/login')}>
+          <button className="sv-logout" onClick={async () => {
+            const { api, clearSession } = await import('../api')
+            try { await api.endSession() } catch {}
+            clearSession()
+            navigate('/')
+          }}>
             로그아웃
           </button>
         </aside>
