@@ -257,7 +257,7 @@ export default function ExperienceInput() {
         <div className="exp-loading-wrap">
           <div className="exp-spinner" />
           <p className="exp-loading-title">AI가 경험을 분석하고 있어요</p>
-          <p className="exp-loading-sub">NCS 역량 1,000개 중 가장 적합한 항목을 찾고 있습니다...</p>
+          <p className="exp-loading-sub">NCS 역량 14,000개 중 가장 적합한 항목을 찾고 있습니다...</p>
           <div className="exp-loading-dots">
             <span /><span /><span />
           </div>
