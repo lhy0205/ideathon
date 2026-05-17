@@ -86,6 +86,13 @@ _W = {
 _MAX_GAP = 15.0  # 정규화 기준 최대 공백기간(개월)
 
 
+def _get_attr(obj, key: str, default=''):
+    """dict 또는 object에서 값 가져오기 (dict면 [], object면 .)"""
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
+
+
 def compute_similarity(user_profile: dict, persona) -> float:
     """
     user_profile 키: gap_period, department, certifications, job_interest
@@ -93,23 +100,23 @@ def compute_similarity(user_profile: dict, persona) -> float:
     """
     # 1. 공백기간 유사도
     u_gap = parse_gap_months(user_profile.get('gap_period', ''))
-    p_gap = parse_gap_months(persona.gap_period or '')
+    p_gap = parse_gap_months(_get_attr(persona, 'gap_period'))
     gap_sim = max(0.0, 1.0 - abs(u_gap - p_gap) / _MAX_GAP)
 
     # 2. 학과 계열 유사도
     u_dept = dept_to_category(user_profile.get('department', ''))
-    p_dept = dept_to_category(persona.department or '')
+    p_dept = dept_to_category(_get_attr(persona, 'department'))
     dept_sim = 1.0 if u_dept == p_dept else 0.0
 
     # 3. 자격증 자카드 유사도
     u_certs = parse_certs(user_profile.get('certifications', ''))
-    p_certs = parse_certs(persona.certifications or '')
+    p_certs = parse_certs(_get_attr(persona, 'certifications'))
     cert_sim = _jaccard(u_certs, p_certs)
 
     # 4. 희망직무 유사도
     field_sim = _field_sim(
         user_profile.get('job_interest', ''),
-        persona.employment_field or ''
+        _get_attr(persona, 'employment_field')
     )
 
     score = (
@@ -126,7 +133,7 @@ def knn_match(user_profile: dict, personas: list, k: int = 3) -> list:
     """
     KNN 매칭 실행.
     - user_profile: 현재 사용자 프로필 dict
-    - personas: SeniorPersona 모델 객체 리스트
+    - personas: SeniorPersona 모델 객체 또는 dict 리스트
     - k: 반환할 상위 K명
     반환: similarity_score가 갱신된 persona 객체 리스트 (상위 K개)
     """
@@ -142,7 +149,10 @@ def knn_match(user_profile: dict, personas: list, k: int = 3) -> list:
 
     result = []
     for sim, persona in scored[:k]:
-        persona.similarity_score = sim
+        if isinstance(persona, dict):
+            persona['similarity_score'] = sim
+        else:
+            persona.similarity_score = sim
         result.append(persona)
 
     return result

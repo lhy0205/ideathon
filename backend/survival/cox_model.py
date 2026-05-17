@@ -35,7 +35,12 @@ def _parse_gap_months(gap_str: str) -> int:
     m = re.search(r'(\d+)\s*개월', gap_str)
     if m:
         months += int(m.group(1))
-    return months if months > 0 else 5
+    m = re.search(r'(\d+)\s*일', gap_str)
+    if m:
+        days = int(m.group(1))
+        months += max(0, days // 30)  # 30일 = 1개월로 계산
+
+    return months if months > 0 else 0
 
 _RELEVANT_DEPTS = {
     '경영', '경제', '회계', '마케팅', '무역',
@@ -58,26 +63,34 @@ def _count_certs(cert_str: str) -> int:
 
 # ── Cox PH 위험비 계산 ───────────────────────────────────────────────────────
 
-_BASE_HR = 1.8       # 기준 위험비 (조건 없는 평균 취준생)
-_USER_START = 95.0   # 나와 유사한 그룹의 시작 취업가능성 (%)
-
-
-def _compute_hr(user_profile: dict) -> float:
-    """사용자 프로필 기반 Cox PH 위험비 계산."""
+def _compute_employment_possibility(user_profile: dict) -> float:
+    """사용자 프로필 기반 취업 가능성(%) 계산."""
     gap_months = _parse_gap_months(user_profile.get('gap_period', '5개월'))
     cert_count = _count_certs(user_profile.get('certifications', ''))
     relevant   = _is_relevant_dept(user_profile.get('department', ''))
     has_job    = bool((user_profile.get('job_interest') or '').strip())
 
-    hr = _BASE_HR
-    hr -= 0.12 * min(cert_count, 3)   # 자격증 보유 → 위험 감소 (최대 3개)
-    if relevant:
-        hr -= 0.10                     # 관련 학과 → 위험 감소
-    if has_job:
-        hr -= 0.08                     # 희망직무 명확 → 위험 감소
-    hr += 0.08 * max(0, gap_months - 5)  # 5개월 초과 공백 → 위험 증가
+    # 기본값: 50% (정보 없을 때)
+    possibility = 50.0
 
-    return round(max(0.5, min(3.5, hr)), 4)
+    # 1. 공백기 영향 (0개월: +45, 12개월: -35, 24개월: -60)
+    # 공백이 길수록 계속 감소
+    gap_bonus = 45 - (gap_months / 12.0) * 80
+    possibility += gap_bonus
+
+    # 2. 자격증 영향 (1개: +5, 2개: +10, 3개 이상: +15)
+    cert_bonus = min(15, cert_count * 5)
+    possibility += cert_bonus
+
+    # 3. 학과 영향 (관련 계열: +10)
+    if relevant:
+        possibility += 10
+
+    # 4. 희망직무 명확 (있으면: +10)
+    if has_job:
+        possibility += 10
+
+    return round(max(5, min(95, possibility)), 1)
 
 
 def _user_survival(t: float, hr: float) -> float:
@@ -106,20 +119,17 @@ def compute_survival_curves(user_profile: dict) -> dict:
         advice       : 행동 가이드
     """
     gap_months = _parse_gap_months(user_profile.get('gap_period', '5개월'))
-    hr = _compute_hr(user_profile)
 
     points = []
     for t in CURVE_MONTHS:
         avg_prob  = round(_avg_survival(t), 1)
-        user_prob = round(max(0.5, min(99.9, _user_survival(t, hr))), 1)
+        user_prob = round(_avg_survival(t), 1)  # 모두 평균값 사용
         points.append({'month': t, 'avg': avg_prob, 'user': user_prob})
 
-    current_month = max(0, min(12, gap_months))
-    current_prob  = round(max(0.5, _user_survival(current_month, hr)), 1)
-    avg_current   = round(_avg_survival(current_month), 1)
+    current_month = max(0, gap_months)
 
-    # HR=1.8 → 상위50%, HR=1.5 → 상위38%, HR=1.2 → 상위26%
-    percentile = max(1, min(99, round(50 - (_BASE_HR - hr) * 40)))
+    # 취업 가능성(%) 계산
+    percentile = _compute_employment_possibility(user_profile)
 
     if current_month <= 4:
         status = "골든타임입니다"
@@ -134,10 +144,9 @@ def compute_survival_curves(user_profile: dict) -> dict:
     return {
         'points':        points,
         'current_month': current_month,
-        'current_prob':  current_prob,
-        'avg_current':   avg_current,
+        'current_prob':  percentile,
         'percentile':    percentile,
-        'hr':            hr,
+        'gap_period':    user_profile.get('gap_period', '5개월'),
         'status':        status,
         'advice':        advice,
     }
