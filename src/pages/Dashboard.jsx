@@ -41,6 +41,27 @@ const MOODS = [
   { icon: '😟', label: '의욕 없음' },
 ]
 
+const MOOD_MISSIONS = [
+  {
+    title: '오늘 배운 것 정리하기',
+    desc: '오늘 공부한 내용을 자신의 말로 정리해보세요. 기억에 오래 남습니다.',
+    placeholder: '예) ADsP 데이터 분석 기획 파트를 공부했어요. 분석 목표 설정의 중요성을 깨달았고...',
+    minLen: 20,
+  },
+  {
+    title: '자격증 문제 5개 풀기',
+    desc: '짧게 5문제만 도전해보세요. 작은 성취가 쌓입니다.',
+    placeholder: '예) SQLD 기출 5문제 풀었어요. GROUP BY 문제에서 2개 틀렸지만 개념을 다시 잡았어요...',
+    minLen: 20,
+  },
+  {
+    title: '오늘 하루 한 줄 일기 쓰기',
+    desc: '의욕이 없는 날도 괜찮아요. 오늘 있었던 일을 딱 한 줄만 써봐요.',
+    placeholder: '예) 오늘은 조금 힘들었지만 채용공고를 1개 읽었어요. 내일은 더 잘 할 수 있을 것 같아요...',
+    minLen: 20,
+  },
+]
+
 const EXTRA_MISSIONS = [
   { title: '자격증 문제 5개', time: '10분', mood: '기분 상관없음', count: 43 },
   { title: '채용공고 1개 정독', time: '3분', mood: '기분무관', count: 69 },
@@ -142,16 +163,22 @@ function MissionSection() {
     reader.readAsDataURL(file)
   }
 
+  const currentMission = MOOD_MISSIONS[mood]
+
   const handleMissionComplete = async () => {
-    if (!missionText.trim()) {
+    const text = missionText.trim()
+    if (!text) {
       setMissionError('미션 내용을 작성해주세요.')
       return
     }
+    if (text.length < currentMission.minLen) {
+      setMissionError(`최소 ${currentMission.minLen}자 이상 작성해주세요. (현재 ${text.length}자)`)
+      return
+    }
     setMissionError('')
-    const text = missionText.trim()
 
     // 즉시 UI 반영
-    const newLog = { title: text, status: '완료', done: true }
+    const newLog = { title: currentMission.title, status: '완료', done: true }
     setLogs(prev => [newLog, ...prev])
     setStreak(s => s + 1)
     setTotalDone(t => t + 1)
@@ -165,7 +192,7 @@ function MissionSection() {
     try {
       const { api } = await import('../api')
       const created = await api.createMission({
-        title: '오늘 배운 것 한 줄 쓰기',
+        title: currentMission.title,
         content: text,
         mission_type: 'daily_learning',
       })
@@ -245,17 +272,20 @@ function MissionSection() {
               <p className="ms-card-title">AI 추천 미션</p>
               <span className="ms-participant">· 127명 지금 참여중</span>
             </div>
-            <p className="ms-mission-title">오늘 배운 것 한 줄 쓰기</p>
-            <p className="ms-mission-desc">
-              자신의 말로 생각을 정리하는 힘, 오늘 첫 발걸음을 내디뎌 보세요.
-            </p>
+            <p className="ms-mission-title">{currentMission.title}</p>
+            <p className="ms-mission-desc">{currentMission.desc}</p>
             <textarea
               className="ms-textarea"
-              placeholder="예) ADsP 시험 범위의 중요한 데이터 분석 기법을 공부했어. 전체적 사고의 틀이 생기는 느낌..."
+              placeholder={currentMission.placeholder}
               value={missionText}
               onChange={(e) => { setMissionText(e.target.value); setMissionError('') }}
               rows={4}
             />
+            {missionText.trim().length > 0 && missionText.trim().length < currentMission.minLen && (
+              <p style={{ fontSize: '12px', color: '#aaa', marginTop: '4px' }}>
+                {missionText.trim().length} / {currentMission.minLen}자 (최소 {currentMission.minLen}자)
+              </p>
+            )}
             {missionError && <p className="ms-error">{missionError}</p>}
 
             {photoPreview && (
