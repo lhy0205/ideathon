@@ -6,7 +6,6 @@ import './SurvivalDiagnosis.css'
 const NAV_ITEMS = [
   { key: 'home',       label: '홈 대시보드',   path: '/dashboard' },
   { key: 'mypage',     label: '마이페이지',     path: '/mypage' },
-  { key: 'password',   label: '비밀번호 변경',  path: '/dashboard?tab=password' },
   { key: 'experience', label: '경험 입력',      path: '/dashboard?tab=experience' },
   { key: 'mapping',    label: '경험 매핑 결과', path: '/mapping' },
   { key: 'roadmap',    label: '자격증 로드맵',  path: '/dashboard?tab=roadmap' },
@@ -131,6 +130,7 @@ export default function SurvivalDiagnosis() {
   const [curveData, setCurveData] = useState(null)
   const [curveLoading, setCurveLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [verifyResult, setVerifyResult] = useState(null)
 
   useEffect(() => {
     import('../api').then(({ api }) => api.getMe().then(setUser).catch(() => {}))
@@ -140,6 +140,7 @@ export default function SurvivalDiagnosis() {
     const { api } = await import('../api')
     try {
       setError(null)
+      setVerifyResult(null)
       setCurveLoading(true)
       setPersonaLoading(true)
 
@@ -148,6 +149,23 @@ export default function SurvivalDiagnosis() {
         department: form.department,
         certifications: form.certifications,
         job_interest: form.job_interest,
+      }
+
+      // AI 입력값 검증 - 필수 필드(공백기·희망 직무) 미달 시 차단
+      try {
+        const verify = await api.verifyProfile(profile)
+        const criticalFailed = ['gap_period', 'job_interest'].some(
+          k => verify.fields?.[k]?.ok === false
+        )
+        if (criticalFailed) {
+          setVerifyResult(verify)
+          setCurveLoading(false)
+          setPersonaLoading(false)
+          return
+        }
+        if (verify.overall) setVerifyResult(verify)
+      } catch {
+        // 검증 API 오류는 분석을 막지 않음
       }
 
       // Cox 곡선 - 실패해도 계속 진행
@@ -252,27 +270,40 @@ export default function SurvivalDiagnosis() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>공백기</label>
-                  <input name="gap_period" placeholder="예) 1일, 5개월, 1년" value={form.gap_period} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  <input name="gap_period" placeholder="예) 1일, 5개월, 1년" value={form.gap_period} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: `1px solid ${verifyResult?.fields?.gap_period?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>전공 / 학과</label>
-                  <input name="department" placeholder="예) 경영학과, 컴퓨터공학과" value={form.department} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  <input name="department" placeholder="예) 경영학과, 컴퓨터공학과" value={form.department} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: `1px solid ${verifyResult?.fields?.department?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>보유 자격증</label>
-                  <input name="certifications" placeholder="예) 정보처리기사, SQLD, ADsP" value={form.certifications} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  <input name="certifications" placeholder="예) 정보처리기사, SQLD, ADsP" value={form.certifications} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: `1px solid ${verifyResult?.fields?.certifications?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
 
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>희망 직무</label>
-                  <input name="job_interest" placeholder="예) 데이터 분석, 백엔드 개발, 마케팅" value={form.job_interest} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  <input name="job_interest" placeholder="예) 데이터 분석, 백엔드 개발, 마케팅" value={form.job_interest} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: `1px solid ${verifyResult?.fields?.job_interest?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
               </div>
 
+              {verifyResult && (
+                <div style={{ marginTop: '16px', padding: '12px 16px', background: '#fff5f0', border: '1px solid #f5c6b8', borderRadius: '8px' }}>
+                  {['gap_period', 'job_interest', 'department', 'certifications'].map(k => {
+                    const f = verifyResult.fields?.[k]
+                    if (!f || f.ok) return null
+                    const label = { gap_period: '공백기', job_interest: '희망 직무', department: '전공', certifications: '자격증' }[k]
+                    return (
+                      <p key={k} style={{ fontSize: '13px', color: '#c4603d', margin: '2px 0' }}>⚠️ {label}: {f.comment}</p>
+                    )
+                  })}
+                </div>
+              )}
+
               <button onClick={handleAnalyze} disabled={curveLoading || personaLoading} style={{ width: '100%', marginTop: '18px', padding: '11px', background: '#c4603d', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: curveLoading || personaLoading ? 'not-allowed' : 'pointer', opacity: curveLoading || personaLoading ? 0.7 : 1, fontFamily: 'inherit' }}>
-                {curveLoading || personaLoading ? '분석 중...' : '분석하기 →'}
+                {curveLoading || personaLoading ? 'AI 검증 중...' : '분석하기 →'}
               </button>
             </div>
 

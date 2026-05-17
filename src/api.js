@@ -88,6 +88,7 @@ export const api = {
   analyzeBatch: () => request('POST', '/ai/analyze-batch', null),
   getAnalysisHistory: () => request('GET', '/ai/history'),
   getAnalysisDetail: (idx) => request('GET', `/ai/history/${idx}`),
+  updateStarDrafts: (idx, star_drafts) => request('PATCH', `/ai/history/${idx}/star-drafts`, { star_drafts }),
   getAnalysisResults: () => request('GET', '/ai/results'),
   getAnalysisResult: (id) => request('GET', `/ai/results/${id}`),
   getStarLetters: () => request('GET', '/ai/star-letters'),

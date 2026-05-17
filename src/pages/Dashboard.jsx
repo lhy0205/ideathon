@@ -9,7 +9,6 @@ import './Dashboard.css'
 const NAV_ITEMS = [
   { key: 'home',       label: '홈 대시보드',   path: '/dashboard' },
   { key: 'mypage',     label: '마이페이지',     path: '/mypage' },
-  { key: 'password',   label: '비밀번호 변경',  path: '/dashboard?tab=password' },
   { key: 'experience', label: '경험 입력',      path: '/dashboard?tab=experience' },
   { key: 'mapping',    label: '경험 매핑 결과', path: '/mapping' },
   { key: 'roadmap',    label: '자격증 로드맵',  path: '/dashboard?tab=roadmap' },
@@ -538,49 +537,6 @@ function CommunitySection() {
   )
 }
 
-function PasswordSection() {
-  const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (email) setSent(true)
-  }
-
-  return (
-    <div className="db-content">
-      <div className="pw-card">
-        <div className="pw-card-header">
-          <div className="pw-brand">Pause to Pass</div>
-          <div className="pw-brand-sub">공백기를 합격의 자산으로</div>
-        </div>
-        <div className="pw-tabs">
-          <span className="pw-tab active">비밀번호 변경</span>
-        </div>
-        <form className="pw-form" onSubmit={handleSubmit}>
-          <div className="pw-field">
-            <label className="pw-label">가입 이메일</label>
-            <input
-              type="email"
-              className="pw-input"
-              placeholder="example@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          {sent && (
-            <div className="pw-success">✓ 재설정 메일이 발송되었습니다.</div>
-          )}
-          <button type="submit" className="pw-btn">재설정 메일 보내기 ✉</button>
-          <div className="pw-footer">
-            <span className="pw-link" onClick={() => navigate('/')}>← 로그인으로 돌아가기</span>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
 
 export default function Dashboard() {
   const [searchParams] = useSearchParams()
@@ -661,10 +617,8 @@ export default function Dashboard() {
           <TopBar
             title={
               activeNav === 'experience' ? '경험 입력'
-              : activeNav === 'password' ? '비밀번호 변경'
               : activeNav === 'roadmap' ? '자격증 로드맵'
               : activeNav === 'mission' ? '오늘의 미션'
-              : activeNav === 'community' ? '커뮤니티'
               : activeNav === 'report' ? '성장 리포트'
               : '홈 대시보드'
             }
@@ -672,12 +626,11 @@ export default function Dashboard() {
             onProfileClick={() => navigate('/mypage')}
           />
 
-          {activeNav === 'password' && <PasswordSection />}
           {activeNav === 'experience' && <div className="db-content"><ExperienceInput /></div>}
           {activeNav === 'roadmap' && <div className="db-content"><CertRoadmap /></div>}
           <div style={{ display: activeNav === 'mission' ? 'block' : 'none' }}><MissionSection /></div>
           {activeNav === 'report' && <div className="db-content"><GrowthReport /></div>}
-          {activeNav !== 'password' && activeNav !== 'experience' && activeNav !== 'roadmap' && activeNav !== 'mission' && activeNav !== 'report' && <div className="db-content">
+          {activeNav !== 'experience' && activeNav !== 'roadmap' && activeNav !== 'mission' && activeNav !== 'report' && <div className="db-content">
             <h2 className="db-welcome">안녕하세요, {user?.name || ''} 님</h2>
 
             {/* Stats */}

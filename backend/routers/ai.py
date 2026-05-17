@@ -76,20 +76,26 @@ def build_prompt(req: AnalysisRequest, rag_context: str = "") -> str:
 - 내용: {req.content}
 - 역량 메모: {req.memo}
 
+[절대 규칙 - 반드시 준수]
+1. 위 [경험 정보]에 명시된 내용만 사용하세요.
+2. 입력에 없는 수치(예: "3시간", "20%", "5개"), 기술명(예: "Bootstrap", "Git"), 역할명, 팀 규모, 방법론 등을 절대 지어내지 마세요.
+3. 정보가 부족한 항목은 지어내는 대신 "[추가 입력 필요: (어떤 정보가 필요한지)]" 형태로 표시하세요.
+4. 자기소개서 초안은 사용자가 직접 채울 수 있는 뼈대 역할을 해야 합니다.
+
 다음 JSON 형식으로만 답하세요 (다른 말 없이):
 {{
   "ncs_items": [
     {{"ncs_code": "NCS 코드", "unit_name": "역량명", "level": 숙련도(1-5), "score": 점수(0-100)}},
     ...최대 5개
   ],
-  "intro": "이 경험을 한 사람을 소개하는 2~3문장. 어떤 경험을 얼마나 했는지 구체적으로.",
+  "intro": "입력된 경험 정보만 바탕으로 2~3문장. 없는 내용 추가 금지.",
   "star_drafts": [
-    "[상황 S] 3~4문장. 언제, 어디서, 어떤 상황이었는지 구체적 배경을 서술. 팀 규모나 환경 등 맥락 포함.",
-    "[과제 T] 2~3문장. 그 상황에서 본인이 맡은 역할과 해결해야 했던 핵심 과제를 구체적으로 서술.",
-    "[행동 A] 4~5문장. 과제를 해결하기 위해 취한 구체적인 행동들을 상세히 서술. 어떤 방법을 선택했고 왜 그 방법을 택했는지 포함. 가능하면 수치나 빈도 포함.",
-    "[결과 R] 2~3문장. 행동의 결과와 그 경험에서 얻은 역량 또는 교훈을 서술. 수치화된 성과가 있다면 포함."
+    "[상황 S] 입력된 내용 기반으로만 작성. 언제, 어디서, 어떤 상황인지 입력에 있는 정보만 서술. 모르는 세부사항은 [추가 입력 필요: 상황 설명] 표시.",
+    "[과제 T] 입력된 내용 기반으로만 작성. 맡은 역할과 핵심 과제를 입력에 있는 정보만 서술. 모르면 [추가 입력 필요: 구체적 과제] 표시.",
+    "[행동 A] 입력된 내용 기반으로만 작성. 취한 행동을 입력에 있는 정보만 서술. 없는 기술·방법·수치 절대 추가 금지. 모르면 [추가 입력 필요: 구체적 행동] 표시.",
+    "[결과 R] 입력된 내용 기반으로만 작성. 결과와 교훈을 입력에 있는 정보만 서술. 없는 수치 절대 추가 금지. 모르면 [추가 입력 필요: 성과 및 배운 점] 표시."
   ],
-  "aspiration": "이 경험을 바탕으로 앞으로 어떻게 성장하고 싶은지 2~3문장. 직무 연관성 포함.",
+  "aspiration": "입력된 경험을 바탕으로 성장 방향 2~3문장. 없는 내용 추가 금지.",
   "summary": "역량 한줄 요약"
 }}"""
 
@@ -393,6 +399,28 @@ class AnalysisResultItem(BaseModel):
     summary: Optional[str]
     ncs_count: int
     created_at: str
+
+
+class UpdateStarDraftsRequest(BaseModel):
+    star_drafts: List[str]
+
+@router.patch("/history/{idx}/star-drafts")
+def update_star_drafts(
+    idx: int,
+    req: UpdateStarDraftsRequest,
+    current_user: m.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    exp = (db.query(m.UserExperience)
+           .filter(m.UserExperience.idx == idx, m.UserExperience.user_id == current_user.id)
+           .first())
+    if not exp or not exp.ncs_mapping:
+        raise HTTPException(status_code=404, detail="분석 결과가 없습니다")
+    mapping = json.loads(exp.ncs_mapping)
+    mapping["star_drafts"] = req.star_drafts
+    exp.ncs_mapping = json.dumps(mapping, ensure_ascii=False)
+    db.commit()
+    return {"ok": True}
 
 
 @router.get("/results", response_model=List[AnalysisResultItem])
