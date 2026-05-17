@@ -109,38 +109,44 @@ export default function SurvivalDiagnosis() {
     const fetchAll = async () => {
       const { api } = await import('../api')
 
-      const profile = await api.getUserProfile()
+      try {
+        const profile = await api.getUserProfile()
 
-      setCurveLoading(true)
-      setPersonaLoading(true)
+        setCurveLoading(true)
+        setPersonaLoading(true)
 
-      const [curveData, seniorPersonas] = await Promise.all([
-        api.getSurvivalCurve(profile),
-        api.matchPersonas(profile, 3),
-      ])
+        const [curveData, seniorPersonas] = await Promise.all([
+          api.getSurvivalCurve(profile),
+          api.matchPersonas(profile, 3),
+        ])
 
-      setCurveData(curveData)
+        setCurveData(curveData)
 
-      const survivalResults = await Promise.all(
-        seniorPersonas.map(persona =>
-          api.getSurvivalCurve({
-            gap_period: persona.gap_period,
-            department: persona.department,
-            certifications: persona.certifications,
-            job_interest: persona.employment_field,
-          }).catch(() => null)
+        const survivalResults = await Promise.all(
+          seniorPersonas.map(persona =>
+            api.getSurvivalCurve({
+              gap_period: persona.gap_period,
+              department: persona.department,
+              certifications: persona.certifications,
+              job_interest: persona.employment_field,
+            }).catch(() => null)
+          )
         )
-      )
-      const personaList = survivalResults
-        .map((data, idx) => ({
-          ...seniorPersonas[idx],
-          similarity_score: data?.percentile || seniorPersonas[idx].similarity_score,
-        }))
-        .filter(p => p)
-      if (personaList.length > 0) setPersonas(personaList)
+        const personaList = survivalResults
+          .map((data, idx) => ({
+            ...seniorPersonas[idx],
+            similarity_score: data?.percentile || seniorPersonas[idx].similarity_score,
+          }))
+          .filter(p => p)
+        if (personaList.length > 0) setPersonas(personaList)
 
-      setCurveLoading(false)
-      setPersonaLoading(false)
+        setCurveLoading(false)
+        setPersonaLoading(false)
+      } catch (error) {
+        console.error('Error loading survival data:', error)
+        setCurveLoading(false)
+        setPersonaLoading(false)
+      }
     }
 
     fetchAll()
