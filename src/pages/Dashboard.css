@@ -533,7 +533,8 @@
 
 /* 인증 로그 */
 .ms-logs { display: flex; flex-direction: column; gap: 10px; }
-.ms-log-item { display: flex; align-items: center; gap: 10px; }
+.ms-log-item { display: flex; flex-direction: column; gap: 6px; }
+.ms-log-row { display: flex; align-items: center; gap: 10px; }
 .ms-log-icon {
   width: 28px;
   height: 28px;
@@ -546,7 +547,10 @@
   color: #888;
   flex-shrink: 0;
 }
-.ms-log-title { flex: 1; font-size: 13px; font-weight: 600; color: #3b1a0e; margin: 0; }
+.ms-log-main { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ms-log-title { font-size: 13px; font-weight: 600; color: #3b1a0e; margin: 0; }
+.ms-log-date { font-size: 11px; color: #aaa; margin: 0; }
+.ms-log-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .ms-log-badge {
   font-size: 11px;
   font-weight: 700;
@@ -733,13 +737,6 @@
   transition: opacity 0.15s;
 }
 .ms-extra-done-btn:hover { opacity: 0.85; }
-
-/* 로그 아이템 재구조 */
-.ms-log-item { display: flex; flex-direction: column; gap: 8px; }
-.ms-log-row { display: flex; align-items: center; gap: 10px; }
-.ms-log-main { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.ms-log-date { font-size: 11px; color: #aaa; margin: 0; }
-.ms-log-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
 .ms-log-view-btn {
   font-size: 11px;
