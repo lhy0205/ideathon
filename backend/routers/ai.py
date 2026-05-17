@@ -237,16 +237,34 @@ async def analyze_batch(
         raise HTTPException(status_code=500, detail=f"통합 분석 오류: {str(e)}")
 
 
+_TYPE_CERT_HINT = {
+    "아르바이트":    "어학(TOEIC, OPIc), 경영/사무(컴퓨터활용능력, ERP정보관리사) 계열 자격증을 우선 추천하세요.",
+    "인턴":          "인턴 직무와 연관된 IT/데이터(SQLD, ADsP, 빅데이터분석기사) 또는 전공 관련 자격증을 우선 추천하세요.",
+    "동아리/학생회": "경영·기획·마케팅 관련 자격증(사회조사분석사, 컴퓨터활용능력, ERP) 또는 어학 자격증을 우선 추천하세요.",
+    "프리랜서":      "직무 전문성을 높이는 IT/데이터(SQLD, AWS, ADsP) 또는 직종별 전문 자격증을 우선 추천하세요.",
+    "봉사활동":      "사회조사분석사, 어학(TOEIC, OPIc) 계열 자격증을 우선 추천하세요.",
+    "개인 프로젝트": "데이터/IT(SQLD, ADsP, 빅데이터분석기사, AWS Cloud Practitioner) 계열 자격증을 우선 추천하세요.",
+    "독학/공부":     "학습 분야와 직결되는 전문 자격증을 우선 추천하세요.",
+    "기타":          "NCS 역량과 가장 연관성 높은 자격증을 추천하세요.",
+}
+
+
 @router.post("/recommend-certs", response_model=CertRecommendResponse)
 async def recommend_certs(req: CertRecommendRequest):
     ncs_summary = "\n".join([
         f"- {item.get('unit_name', '')} (적합도: {item.get('score', 0)}%)"
         for item in req.ncs_items
     ])
+
+    type_hint = _TYPE_CERT_HINT.get(req.exp_type or "", "NCS 역량과 가장 연관성 높은 자격증을 추천하세요.")
+
     prompt = f"""당신은 취업 준비생을 돕는 자격증 추천 전문가입니다.
 
 아래 NCS 역량 분석 결과를 보고 취업에 유리한 국내 자격증을 추천해주세요.
 경험 유형: {req.exp_type}, 경험 제목: {req.exp_title}
+
+[추천 방향]
+{type_hint}
 
 [NCS 역량]
 {ncs_summary}
