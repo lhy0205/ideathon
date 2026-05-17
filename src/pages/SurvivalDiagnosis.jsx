@@ -147,9 +147,6 @@ export default function SurvivalDiagnosis() {
     } else if (!/\d+\s*(일|개월|년)/.test(form.gap_period)) {
       errors.gap_period = '숫자+단위 형식으로 입력해주세요 (예: 1일, 5개월, 1년)'
     }
-    if (!form.job_interest.trim()) {
-      errors.job_interest = '희망 직무를 입력해주세요 (예: 데이터 분석, 백엔드 개발)'
-    }
     setFieldErrors(errors)
     if (Object.keys(errors).length > 0) return
 
@@ -166,12 +163,10 @@ export default function SurvivalDiagnosis() {
         job_interest: form.job_interest,
       }
 
-      // 2단계: AI 의미 검증 - 실패해도 분석 진행 (형식은 통과했으므로)
+      // 2단계: AI 의미 검증 - 자격증이 실재하지 않으면 차단
       try {
         const verify = await api.verifyProfile(profile)
-        const criticalFailed = ['gap_period', 'job_interest'].some(
-          k => verify.fields?.[k]?.ok === false
-        )
+        const criticalFailed = verify.fields?.certifications?.ok === false
         if (criticalFailed) {
           setVerifyResult(verify)
           setCurveLoading(false)
@@ -302,11 +297,9 @@ export default function SurvivalDiagnosis() {
                 </div>
 
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>희망 직무 <span style={{ color: '#e57373' }}>*</span></label>
-                  <input name="job_interest" placeholder="예) 데이터 분석, 백엔드 개발, 마케팅" value={form.job_interest}
-                    onChange={e => { handleChange(e); setFieldErrors(p => ({ ...p, job_interest: '' })) }}
-                    style={{ width: '100%', padding: '10px 12px', border: `1px solid ${fieldErrors.job_interest || verifyResult?.fields?.job_interest?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
-                  {fieldErrors.job_interest && <p style={{ fontSize: '12px', color: '#e57373', marginTop: '4px' }}>{fieldErrors.job_interest}</p>}
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>희망 직무 <span style={{ fontSize: '11px', color: '#aaa', fontWeight: '400' }}>(선택)</span></label>
+                  <input name="job_interest" placeholder="예) 데이터 분석, 백엔드 개발, 마케팅" value={form.job_interest} onChange={handleChange}
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
               </div>
 
