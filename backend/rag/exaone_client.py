@@ -14,11 +14,16 @@ async def analyze(prompt: str) -> str:
         "max_tokens": 2048,
         "temperature": 0.7,
     }
-    async with httpx.AsyncClient(timeout=600.0) as client:
-        res = await client.post(
-            url,
-            json=payload,
-            headers={"ngrok-skip-browser-warning": "true"}
-        )
-        res.raise_for_status()
-        return res.json()["choices"][0]["message"]["content"]
+    try:
+        async with httpx.AsyncClient(timeout=25.0) as client:
+            res = await client.post(
+                url,
+                json=payload,
+                headers={"ngrok-skip-browser-warning": "true"}
+            )
+            res.raise_for_status()
+            return res.json()["choices"][0]["message"]["content"]
+    except httpx.TimeoutException:
+        raise Exception("AI 서버 응답 시간 초과 (25초). ngrok URL이 만료되었거나 AI 서버가 꺼져 있습니다.")
+    except httpx.ConnectError:
+        raise Exception("AI 서버에 연결할 수 없습니다. VLLM_HOST를 확인하세요.")
