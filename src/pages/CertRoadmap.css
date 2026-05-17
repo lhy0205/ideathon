@@ -116,6 +116,7 @@
 .cr-cert-info { flex: 1; }
 .cr-cert-full   { font-size: 12px; color: #444; margin-bottom: 2px; }
 .cr-cert-detail { font-size: 11px; color: #AAA; }
+.cr-schedule-notice { font-size: 11px; color: #AAA; margin: 8px 0 0; }
 .cr-cert-status {
   font-size: 12px;
   font-weight: 700;

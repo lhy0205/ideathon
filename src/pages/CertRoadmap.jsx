@@ -321,6 +321,7 @@ export default function CertRoadmap() {
           <div className="cr-card">
             <h3 className="cr-card-title">월별 스케줄 ({currentPath.name})</h3>
             <GanttChart bars={currentBars} certs={currentPath.certs} />
+            <p className="cr-schedule-notice">※ 위 일정은 예상 공부 기간 기준입니다. 실제 시험 일정은 각 기관 공식 홈페이지를 확인하세요.</p>
           </div>
 
           <div className="cr-card">
