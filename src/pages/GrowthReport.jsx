@@ -325,7 +325,7 @@ function RadarChart({ ncsItems }) {
   const gridLevels = [0.25, 0.5, 0.75, 1.0]
 
   return (
-    <svg width="100%" height="auto" viewBox="0 0 340 340" style={{ display: 'block' }}>
+    <svg width="100%" viewBox="0 0 340 340" style={{ display: 'block', height: 'auto' }}>
       {gridLevels.map((level) => {
         const pts = Array.from({ length: n }, (_, i) => toXY(level, i))
         const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z'
@@ -397,7 +397,35 @@ export default function GrowthReport() {
   }
 
   useEffect(() => {
-    api.getMe().then(data => setUserName(data.name || '')).catch(() => {})
+    const init = async () => {
+      try {
+        const [me, certs] = await Promise.all([api.getMe(), api.getCertProofs()])
+        setUserName(me.name || '')
+        setCertProofs(certs)
+
+        if (me.certifications) {
+          const profileCerts = me.certifications.split(',').map(c => c.trim()).filter(Boolean)
+          const freshCerts = await api.getCertProofs()
+          const existingNames = new Set(freshCerts.map(c => c.cert_name.toLowerCase()))
+          const added = []
+          for (const certName of profileCerts) {
+            if (!existingNames.has(certName.toLowerCase())) {
+              existingNames.add(certName.toLowerCase())
+              const fd = new FormData()
+              fd.append('cert_name', certName)
+              fd.append('status', '준비 중')
+              try {
+                const created = await api.createCertProof(fd)
+                added.push(created)
+              } catch {}
+            }
+          }
+          if (added.length > 0) setCertProofs(prev => [...prev, ...added])
+        }
+      } catch {}
+    }
+    init()
+
     const saved = localStorage.getItem('ncs_result')
     if (saved) {
       const parsed = JSON.parse(saved)
@@ -415,7 +443,6 @@ export default function GrowthReport() {
     if (savedAiCerts) {
       try { setAiCerts(JSON.parse(savedAiCerts)) } catch {}
     }
-    api.getCertProofs().then(setCertProofs).catch(() => {})
     api.getAnalysisHistory().then(data => setHistory(data || [])).catch(() => {})
     api.getNcsSummary().then(data => {
       if (data?.ncs_items?.length) setNcsItems(data.ncs_items.map(i => ({ ...i, score: i.avg_score ?? i.score ?? 0 })))
