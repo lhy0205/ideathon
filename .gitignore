@@ -9,9 +9,10 @@ dist/
 dist-ssr/
 
 # local env files
-.env
-backend/.env
+!.env
+!backend/.env
 backend/uploads/
+backend/local.db
 .env.local
 .env.*.local
 *.local

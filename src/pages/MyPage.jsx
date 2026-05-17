@@ -42,7 +42,8 @@ export default function MyPage() {
   const [user, setUser] = useState(null)
   const [form, setForm] = useState({
     name: '',
-    email: '',
+    department: '',
+    certifications: '',
     job_interest: '',
     gap_start_date: '',
   })
@@ -53,7 +54,8 @@ export default function MyPage() {
         setUser(data)
         setForm({
           name: data.name || '',
-          email: data.email || '',
+          department: data.department || '',
+          certifications: data.certifications || '',
           job_interest: data.job_interest || '',
           gap_start_date: data.gap_start_date || '',
         })
@@ -93,8 +95,13 @@ export default function MyPage() {
             </button>
           ))}
         </nav>
-        <button className="mp-logout" onClick={() => navigate('/login')}>
-          로그아웃
+        <button className="mp-logout" onClick={async () => {
+          const { api, clearSession } = await import('../api')
+          try { await api.endSession() } catch {}
+          clearSession()
+          navigate('/')
+        }}>
+          종료
         </button>
       </aside>
 
@@ -194,7 +201,11 @@ export default function MyPage() {
                   <button
                     key={i}
                     className={`mp-setting-item ${s.isLogout ? 'logout' : ''}`}
-                    onClick={s.isLogout ? () => navigate('/login') : undefined}
+                    onClick={s.isLogout ? async () => {
+                      const { api, clearSession } = await import('../api')
+                      try { await api.endSession() } catch {}
+                      clearSession(); navigate('/')
+                    } : undefined}
                   >
                     <span className="mp-setting-icon">{s.icon}</span>
                     <div className="mp-setting-text">
@@ -233,12 +244,22 @@ export default function MyPage() {
                 onChange={handleFormChange}
               />
 
-              <label className="mp-modal-label">이메일</label>
+              <label className="mp-modal-label">전공 / 학과</label>
               <input
                 className="mp-modal-input"
-                name="email"
-                value={form.email}
-                disabled
+                name="department"
+                value={form.department}
+                onChange={handleFormChange}
+                placeholder="예) 경영학과"
+              />
+
+              <label className="mp-modal-label">보유 자격증</label>
+              <input
+                className="mp-modal-input"
+                name="certifications"
+                value={form.certifications}
+                onChange={handleFormChange}
+                placeholder="예) 정보처리기사, SQLD"
               />
 
               <label className="mp-modal-label">관심 직무</label>
@@ -264,7 +285,7 @@ export default function MyPage() {
               <button className="mp-modal-cancel" onClick={() => setShowModal(false)}>취소</button>
               <button className="mp-modal-save" onClick={async () => {
                 const { api } = await import('../api')
-                const updated = await api.updateMe({ name: form.name, job_interest: form.job_interest, gap_start_date: form.gap_start_date })
+                const updated = await api.updateMe({ name: form.name, department: form.department, certifications: form.certifications, job_interest: form.job_interest, gap_start_date: form.gap_start_date })
                 setUser(updated)
                 setShowModal(false)
               }}>✓ 저장</button>

@@ -29,12 +29,12 @@ class PasswordResetConfirm(BaseModel):
 # ── User ──
 class UserResponse(BaseModel):
     id: int
-    email: str
-    name: str
-    job_interest: Optional[str]
-    gap_start_date: Optional[str]
-    profile_image: Optional[str]
-    phone: Optional[str]
+    name: Optional[str] = None
+    job_interest: Optional[str] = None
+    gap_start_date: Optional[str] = None
+    department: Optional[str] = None
+    certifications: Optional[str] = None
+    profile_image: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -44,7 +44,8 @@ class UserUpdate(BaseModel):
     name: Optional[str] = None
     job_interest: Optional[str] = None
     gap_start_date: Optional[str] = None
-    phone: Optional[str] = None
+    department: Optional[str] = None
+    certifications: Optional[str] = None
 
 # ── Experience ──
 class ExperienceCreate(BaseModel):

@@ -1,8 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const BACKEND = 'https://impurity-richly-bonding.ngrok-free.dev'
-const AI_BACKEND = 'https://28c9-203-255-221-68.ngrok-free.app/ai'
+const BACKEND = process.env.VITE_API_URL || 'http://localhost:8000'
 
 export default defineConfig({
   plugins: [react()],

@@ -1,48 +1,30 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, Float, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Text, Boolean, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
-import enum
-
-
-class OAuthProvider(str, enum.Enum):
-    local = "local"
-    kakao = "kakao"
-    naver = "naver"
-    google = "google"
 
 
 class User(Base):
     __tablename__ = "users"
     id              = Column(Integer, primary_key=True, index=True)
-    email           = Column(String(255), unique=True, index=True, nullable=False)
-    password_hash   = Column(String(255), nullable=True)
-    name            = Column(String(100), nullable=False)
+    session_token   = Column(String(255), unique=True, nullable=True)
+    name            = Column(String(100), nullable=True)
     job_interest    = Column(String(100), nullable=True)
     gap_start_date  = Column(String(20), nullable=True)
+    department      = Column(String(100), nullable=True)
+    certifications  = Column(Text, nullable=True)
     profile_image   = Column(String(500), nullable=True)
-    phone           = Column(String(20), nullable=True)
-    oauth_provider  = Column(Enum(OAuthProvider), default=OAuthProvider.local)
-    oauth_id        = Column(String(255), nullable=True)
     is_active       = Column(Boolean, default=True)
     created_at      = Column(DateTime, server_default=func.now())
     updated_at      = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    experiences     = relationship("Experience", back_populates="user")
-    missions        = relationship("Mission", back_populates="user")
-    posts           = relationship("CommunityPost", back_populates="user")
-    notifications   = relationship("Notification", back_populates="user")
-    ai_experiences  = relationship("UserExperience", back_populates="user")
-
-
-class PasswordResetToken(Base):
-    __tablename__ = "password_reset_tokens"
-    id         = Column(Integer, primary_key=True)
-    user_id    = Column(Integer, ForeignKey("users.id"), nullable=False)
-    token      = Column(String(255), unique=True, nullable=False)
-    expires_at = Column(DateTime, nullable=False)
-    used       = Column(Boolean, default=False)
-    created_at = Column(DateTime, server_default=func.now())
+    experiences      = relationship("Experience", back_populates="user")
+    missions         = relationship("Mission", back_populates="user")
+    posts            = relationship("CommunityPost", back_populates="user")
+    notifications    = relationship("Notification", back_populates="user")
+    ai_experiences   = relationship("UserExperience", back_populates="user")
+    analysis_results = relationship("AnalysisResult", back_populates="user")
+    star_letters     = relationship("StarLetter", back_populates="user")
 
 
 class Experience(Base):
@@ -55,6 +37,7 @@ class Experience(Base):
     ncs_skills  = Column(Text, nullable=True)
     start_date  = Column(String(20), nullable=True)
     end_date    = Column(String(20), nullable=True)
+    is_draft    = Column(Boolean, default=True)
     created_at  = Column(DateTime, server_default=func.now())
     updated_at  = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
@@ -143,6 +126,33 @@ class UserExperience(Base):
     created_at   = Column(DateTime, server_default=func.now())
 
     user = relationship("User", back_populates="ai_experiences")
+
+
+class AnalysisResult(Base):
+    __tablename__ = "analysis_results"
+    id             = Column(Integer, primary_key=True, index=True)
+    user_id        = Column(Integer, ForeignKey("users.id"), nullable=False)
+    experience_ids = Column(Text, nullable=True)   # JSON 배열 "[1,2,3]"
+    ncs_items      = Column(Text, nullable=True)   # JSON
+    star_drafts    = Column(Text, nullable=True)   # JSON
+    summary        = Column(Text, nullable=True)
+    created_at     = Column(DateTime, server_default=func.now())
+
+    user         = relationship("User", back_populates="analysis_results")
+    star_letters = relationship("StarLetter", back_populates="analysis")
+
+
+class StarLetter(Base):
+    __tablename__ = "star_letters"
+    id          = Column(Integer, primary_key=True, index=True)
+    user_id     = Column(Integer, ForeignKey("users.id"), nullable=False)
+    analysis_id = Column(Integer, ForeignKey("analysis_results.id"), nullable=True)
+    question    = Column(String(100), nullable=True)   # "[상황 S]" 등
+    content     = Column(Text, nullable=True)
+    created_at  = Column(DateTime, server_default=func.now())
+
+    user     = relationship("User", back_populates="star_letters")
+    analysis = relationship("AnalysisResult", back_populates="star_letters")
 
 
 class NCSInfo(Base):

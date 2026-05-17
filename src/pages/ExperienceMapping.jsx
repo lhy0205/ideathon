@@ -92,34 +92,91 @@ export default function ExperienceMapping() {
   const [copied, setCopied] = useState(false)
   const [ncsResult, setNcsResult] = useState(null)
   const [expInfo, setExpInfo] = useState(null)
+  const [history, setHistory] = useState([])
+  const [selectedIdx, setSelectedIdx] = useState(null)
+  const [batchLoading, setBatchLoading] = useState(false)
+  const [allNcsSummary, setAllNcsSummary] = useState(null)
 
   useEffect(() => {
+    // localStorage 마지막 결과 로드
     const saved = localStorage.getItem('ncs_result')
     const exp = localStorage.getItem('ncs_experience')
     if (saved) setNcsResult(JSON.parse(saved))
     if (exp) setExpInfo(JSON.parse(exp))
+
+    // API에서 전체 히스토리 + NCS 통합 요약 로드
+    import('../api').then(({ api }) => {
+      api.getAnalysisHistory().then(data => {
+        setHistory(data)
+        if (data.length > 0 && !saved) {
+          api.getAnalysisDetail(data[0].idx).then(detail => {
+            setNcsResult(detail)
+            setSelectedIdx(data[0].idx)
+          }).catch(() => {})
+        }
+      }).catch(() => {})
+
+      api.getNcsSummary().then(data => {
+        if (data?.ncs_items?.length > 0) setAllNcsSummary(data.ncs_items)
+      }).catch(() => {})
+    })
   }, [])
+
+  const handleSelectHistory = async (item) => {
+    try {
+      const { api } = await import('../api')
+      const detail = await api.getAnalysisDetail(item.idx)
+      setNcsResult(detail)
+      setSelectedIdx(item.idx)
+      setExpInfo({ title: item.title, type: item.exp_type, content: '' })
+    } catch {}
+  }
 
   const handleNav = (item) => {
     setActiveNav(item.key)
     if (item.path) navigate(item.path)
   }
 
-  const ncsCards = ncsResult ? ncsResult.ncs_items : NCS_CARDS
-  const STAR_KEY_LABELS = ['상황 S', '과제 T', '행동 A', '결과 R']
+  const handleBatchAnalyze = async () => {
+    setBatchLoading(true)
+    try {
+      const { api } = await import('../api')
+      const result = await api.analyzeBatch()
+      setNcsResult(result)
+      setSelectedIdx(null)
+      setExpInfo({ title: '전체 경험 통합 분석', content: '' })
+    } catch (e) {
+      alert('통합 분석 실패: ' + e.message)
+    } finally {
+      setBatchLoading(false)
+    }
+  }
+
   const STAR_PREFIXES = ['[상황 S]', '[과제 T]', '[행동 A]', '[결과 R]']
+  const STAR_KEY_LABELS = ['상황 S', '과제 T', '행동 A', '결과 R']
+
+  const parseDraft = (draft, i) => {
+    if (typeof draft !== 'string') return { label: `항목 ${i+1}`, text: String(draft) }
+    const prefix = STAR_PREFIXES.find(p => draft.startsWith(p))
+    return {
+      label: prefix ? STAR_KEY_LABELS[STAR_PREFIXES.indexOf(prefix)] : (STAR_KEY_LABELS[i] || `항목 ${i+1}`),
+      text: prefix ? draft.slice(prefix.length).trim() : draft,
+    }
+  }
+
+  const ncsCards = ncsResult ? ncsResult.ncs_items : NCS_CARDS
   const starItems = ncsResult
-    ? ncsResult.star_drafts.map((draft, i) => {
-        const prefix = STAR_PREFIXES.find(p => draft.startsWith(p))
-        return { label: STAR_KEY_LABELS[i] || `항목 ${i+1}`, text: prefix ? draft.slice(prefix.length).trim() : draft }
-      })
+    ? ncsResult.star_drafts.map((draft, i) => parseDraft(draft, i))
     : STAR_TEXT
   const summary = ncsResult?.summary || ''
   const expTitle = expInfo?.title || '편의점 아르바이트 2년'
   const expContent = expInfo?.content || '야간 혼자 편의점 운영, 재고 체크, 발주, 고객 트러블 대응, 현금 정산'
 
-  const radarLabels = ncsCards.slice(0, 5).map(c => c.unit_name || c.title)
-  const radarValues = ncsCards.slice(0, 5).map(c => (c.score ?? c.pct ?? 70) / 100)
+  const radarSource = allNcsSummary?.length > 0
+    ? allNcsSummary.slice(0, 5).map(c => ({ unit_name: c.unit_name, score: c.avg_score }))
+    : ncsCards.slice(0, 5)
+  const radarLabels = radarSource.map(c => c.unit_name || c.title)
+  const radarValues = radarSource.map(c => (c.avg_score ?? c.score ?? c.pct ?? 70) / 100)
 
   const handleCopy = () => {
     const text = starItems.map(s => `[${s.label}] ${s.text}`).join('\n')
@@ -151,9 +208,11 @@ export default function ExperienceMapping() {
               </button>
             ))}
           </nav>
-          <button className="em-logout" onClick={() => navigate('/login')}>
-            로그아웃
-          </button>
+          <button className="em-logout" onClick={async () => {
+            const { api, clearSession } = await import('../api')
+            try { await api.endSession() } catch {}
+            clearSession(); navigate('/')
+          }}>종료</button>
         </aside>
 
         {/* Main */}
@@ -180,9 +239,33 @@ export default function ExperienceMapping() {
             <div className="em-columns">
               {/* Left */}
               <div className="em-left">
-                {/* Input experience */}
+                {/* 경험 히스토리 목록 */}
+                {history.length > 0 && (
+                  <div className="em-exp-card" style={{ marginBottom: '16px' }}>
+                    <p className="em-exp-label">분석한 경험 목록</p>
+                    {history.map(item => (
+                      <div
+                        key={item.idx}
+                        onClick={() => handleSelectHistory(item)}
+                        style={{
+                          padding: '8px 10px',
+                          marginTop: '6px',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          background: selectedIdx === item.idx ? '#f5ece8' : '#faf8f5',
+                          border: selectedIdx === item.idx ? '1.5px solid #c4603d' : '1.5px solid #ece8e1',
+                        }}
+                      >
+                        <p style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>{item.title}</p>
+                        <p style={{ fontSize: '12px', color: '#999', margin: '2px 0 0' }}>NCS {item.ncs_count}개 · {item.created_at}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 선택된 경험 요약 */}
                 <div className="em-exp-card">
-                  <p className="em-exp-label">입력 경험</p>
+                  <p className="em-exp-label">선택된 경험</p>
                   <p className="em-exp-title">{expTitle}</p>
                   <p className="em-exp-desc">{expContent.slice(0, 80)}{expContent.length > 80 ? '...' : ''}</p>
                 </div>
@@ -219,8 +302,22 @@ export default function ExperienceMapping() {
                 <div className="em-card">
                   <div className="em-card-header">
                     <p className="em-card-title">📋 자기소개서 초안</p>
-                    <p className="em-card-sub">STAR 구조 기반 · 클릭하여 편집 가능</p>
+                    <p className="em-card-sub">STAR 구조 기반</p>
                   </div>
+                  {history.length > 1 && (
+                    <button
+                      onClick={handleBatchAnalyze}
+                      disabled={batchLoading}
+                      style={{
+                        width: '100%', marginBottom: '12px', padding: '9px',
+                        background: batchLoading ? '#ccc' : '#1a1a1a', color: '#fff',
+                        border: 'none', borderRadius: '8px', fontSize: '13px',
+                        fontWeight: '600', cursor: batchLoading ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {batchLoading ? '분석 중...' : `✨ 전체 ${history.length}개 경험 통합 분석`}
+                    </button>
+                  )}
                   {summary && <p style={{ fontSize: '13px', color: '#C75B3A', marginBottom: '10px', fontWeight: '600' }}>{summary}</p>}
                   <div className="em-star-list">
                     {starItems.map((s, i) => (

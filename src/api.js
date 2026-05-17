@@ -1,12 +1,17 @@
-const BASE_URL = 'http://localhost:8000'
+// 외부 접속 시 루트 .env 파일에서 수정
+// VITE_API_URL=https://백엔드ngrok주소.ngrok.io
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-function getToken() {
-  return localStorage.getItem('access_token')
+function getSessionToken() {
+  return localStorage.getItem('session_token')
 }
 
 async function request(method, path, body = null, auth = true) {
   const headers = { 'Content-Type': 'application/json' }
-  if (auth) headers['Authorization'] = `Bearer ${getToken()}`
+  if (auth) {
+    const token = getSessionToken()
+    if (token) headers['X-Session-Token'] = token
+  }
 
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
@@ -26,15 +31,9 @@ async function request(method, path, body = null, auth = true) {
 }
 
 export const api = {
-  // Auth
-  login: (email, password) =>
-    request('POST', '/auth/login', { email, password }, false),
-  register: (data) =>
-    request('POST', '/auth/register', data, false),
-  requestPasswordReset: (email) =>
-    request('POST', '/auth/password-reset/request', { email }, false),
-  confirmPasswordReset: (token, new_password) =>
-    request('POST', '/auth/password-reset/confirm', { token, new_password }, false),
+  // Session
+  startSession: () => request('POST', '/auth/session/start', null, false),
+  endSession: () => request('POST', '/auth/session/end'),
 
   // User
   getMe: () => request('GET', '/users/me'),
@@ -54,13 +53,13 @@ export const api = {
   deleteMission: (id) => request('DELETE', `/missions/${id}`),
   recommendMissions: () => request('GET', '/missions/recommend'),
   verifyMission: async (id, text, file) => {
-    const token = localStorage.getItem('access_token')
+    const token = getSessionToken()
     const form = new FormData()
     if (text) form.append('text', text)
     if (file) form.append('file', file)
     const res = await fetch(`${BASE_URL}/missions/${id}/verify`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: token ? { 'X-Session-Token': token } : {},
       body: form,
     })
     if (!res.ok) {
@@ -85,20 +84,17 @@ export const api = {
   markAllRead: () => request('PUT', '/notifications/read-all'),
 
   // AI 분석
-  analyzeExperience: (data) => request('POST', '/ai/analyze', data, false),
-  getAnalysisHistory: () => request('GET', '/ai/history', null, false),
-  getAnalysisDetail: (idx) => request('GET', `/ai/history/${idx}`, null, false),
+  analyzeExperience: (data) => request('POST', '/ai/analyze', data),
+  analyzeBatch: () => request('POST', '/ai/analyze-batch', null),
+  getAnalysisHistory: () => request('GET', '/ai/history'),
+  getAnalysisDetail: (idx) => request('GET', `/ai/history/${idx}`),
+  getAnalysisResults: () => request('GET', '/ai/results'),
+  getAnalysisResult: (id) => request('GET', `/ai/results/${id}`),
+  getStarLetters: () => request('GET', '/ai/star-letters'),
+  updateStarLetter: (id, content) => request('PUT', `/ai/star-letters/${id}`, { content }),
+  getNcsSummary: () => request('GET', '/ai/ncs-summary'),
   recommendCerts: (ncs_items, exp_type = '', exp_title = '') =>
     request('POST', '/ai/recommend-certs', { ncs_items, exp_type, exp_title }, false),
-
-  // Senior personas
-  getSeniorPersonas: (limit = 3) => request('GET', `/senior-personas/?limit=${limit}`, null, false),
-  matchPersonas: (profile, k = 3) =>
-    request('POST', `/senior-personas/match?k=${k}`, profile, false),
-
-  // Survival curve
-  getSurvivalCurve: (profile) =>
-    request('POST', '/survival/curve', profile, false),
 
   // Certifications
   getCertSchedule: (category = '') =>
@@ -107,10 +103,10 @@ export const api = {
   // Cert Proofs
   getCertProofs: () => request('GET', '/cert-proofs/'),
   createCertProof: async (formData) => {
-    const token = localStorage.getItem('access_token')
+    const token = getSessionToken()
     const res = await fetch(`${BASE_URL}/cert-proofs/`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: token ? { 'X-Session-Token': token } : {},
       body: formData,
     })
     if (!res.ok) {
@@ -124,6 +120,15 @@ export const api = {
   // Report Settings
   getReportSettings: () => request('GET', '/report-settings/'),
   updateReportSettings: (data) => request('PUT', '/report-settings/', data),
+
+  // Senior personas
+  getSeniorPersonas: (limit = 3) => request('GET', `/senior-personas/?limit=${limit}`, null, false),
+  matchPersonas: (profile, k = 3) =>
+    request('POST', `/senior-personas/match?k=${k}`, profile, false),
+
+  // Survival diagnosis (Cox model - backend will be implemented later)
+  getSurvivalData: (userProfile) =>
+    request('POST', '/survival/analyze', userProfile, false),
 
   // PDF
   downloadReport: async (data) => {
@@ -145,16 +150,14 @@ export const api = {
   },
 }
 
-export function saveTokens(access_token, refresh_token) {
-  localStorage.setItem('access_token', access_token)
-  localStorage.setItem('refresh_token', refresh_token)
+export function saveSessionToken(token) {
+  localStorage.setItem('session_token', token)
 }
 
-export function logout() {
-  localStorage.removeItem('access_token')
-  localStorage.removeItem('refresh_token')
+export function clearSession() {
+  localStorage.removeItem('session_token')
 }
 
-export function isLoggedIn() {
-  return !!localStorage.getItem('access_token')
+export function hasSession() {
+  return !!localStorage.getItem('session_token')
 }
