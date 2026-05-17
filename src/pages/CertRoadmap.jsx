@@ -82,9 +82,16 @@ const CERT_INFO = [
   },
 ]
 
-const MONTHS = ['1월', '2월', '3월', '4월', '5월', '6월']
-const TOTAL_COLS = 6
 const PRIORITY_LABEL = ['', '★ 1순위', '2순위', '3순위', '4순위', '5순위']
+
+function calcTotalCols(bars) {
+  if (!bars || bars.length === 0) return 6
+  return Math.ceil(Math.max(...bars.map(b => b.col + b.span)))
+}
+
+function buildMonths(total) {
+  return Array.from({ length: total }, (_, i) => `${i + 1}월`)
+}
 
 function buildAiSchedule(certNames) {
   const bars = []
@@ -118,11 +125,14 @@ function buildDynamicPaths(certs) {
 }
 
 function GanttChart({ bars, certs }) {
+  const totalCols = calcTotalCols(bars)
+  const months = buildMonths(totalCols)
+
   return (
     <div className="gantt">
       <div className="gantt-header">
         <div className="gantt-label-col" />
-        {MONTHS.map(m => (
+        {months.map(m => (
           <div key={m} className="gantt-month">{m}</div>
         ))}
       </div>
@@ -138,8 +148,8 @@ function GanttChart({ bars, certs }) {
                   key={i}
                   className={`gantt-bar ${b.type}`}
                   style={{
-                    left: `${(b.col / TOTAL_COLS) * 100}%`,
-                    width: `${(b.span / TOTAL_COLS) * 100}%`,
+                    left: `${(b.col / totalCols) * 100}%`,
+                    width: `${(b.span / totalCols) * 100}%`,
                   }}
                 />
               ))}
