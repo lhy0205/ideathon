@@ -148,6 +148,28 @@ export default function ExperienceInput() {
                   <input className="exp-input" type="month" name="endDate" value={form.endDate} onChange={handleChange} />
                 </div>
               </div>
+              {(form.startDate || form.endDate) && (
+                <p style={{ fontSize: '12px', color: '#a08060', marginBottom: '8px' }}>
+                  💡 아래 경험 내용에 기재한 기간이 위 날짜와 다르면 AI가 혼동할 수 있어요. 가능하면 일치시켜 주세요.
+                </p>
+              )}
+              {(() => {
+                if (!form.startDate || !form.endDate) return null
+                const [sy, sm] = form.startDate.split('-').map(Number)
+                const [ey, em] = form.endDate.split('-').map(Number)
+                const months = (ey - sy) * 12 + (em - sm)
+                if (months < 12) return null
+                return (
+                  <div style={{
+                    background: '#fff8e1', border: '1px solid #ffe082',
+                    borderRadius: '8px', padding: '10px 14px',
+                    fontSize: '13px', color: '#7a5c00', marginBottom: '10px',
+                  }}>
+                    ⏳ 기간이 <strong>약 {Math.round(months)}개월</strong>로 길어요!
+                    시기별로 나눠서 입력하면 더 정확한 분석이 가능해요.
+                  </div>
+                )
+              })()}
               <div className="exp-field">
                 <label className="exp-label">경험 내용 (자유롭게 작성)</label>
                 <textarea
