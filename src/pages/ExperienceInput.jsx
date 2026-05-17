@@ -312,6 +312,13 @@ export default function ExperienceInput() {
             <button className="exp-back-btn" onClick={() => setStep(2)}>← NCS 결과로 돌아가기</button>
           </div>
 
+          {result.intro && (
+            <div className="exp-star-card" style={{ marginBottom: '12px' }}>
+              <p className="exp-star-label">자기소개</p>
+              <p className="exp-star-text">{result.intro}</p>
+            </div>
+          )}
+
           <div className="exp-star-list">
             {(editing ? editedDrafts : result.star_drafts).map((draft, i) => {
               const labelKey = Object.keys(STAR_LABELS).find(k => draft.startsWith(k))
@@ -345,21 +352,34 @@ export default function ExperienceInput() {
               {editing ? '✅ 편집 완료' : '✏️ 전체 편집하기'}
             </button>
             <button className="exp-copy-btn" style={{ flex: 1 }} onClick={() => {
+              const parts = []
+              if (result.intro) parts.push('【자기소개】\n' + result.intro)
               const drafts = editing ? editedDrafts : result.star_drafts
-              navigator.clipboard.writeText(drafts.join('\n'))
+              if (drafts.length) parts.push('【주요 경험】\n' + drafts.join('\n\n'))
+              if (result.aspiration) parts.push('【향후 포부】\n' + result.aspiration)
+              navigator.clipboard.writeText(parts.join('\n\n'))
                 .then(() => alert('복사되었습니다!'))
             }}>
               📋 복사하기
             </button>
           </div>
+
+          {result.aspiration && (
+            <div className="exp-star-card" style={{ marginTop: '12px' }}>
+              <p className="exp-star-label">향후 포부</p>
+              <p className="exp-star-text">{result.aspiration}</p>
+            </div>
+          )}
           <button className="exp-submit-btn" onClick={async () => {
             try {
               const { api } = await import('../api')
               await api.downloadReport({
                 user_name: '사용자',
                 summary: result.summary,
+                intro: result.intro || '',
+                aspiration: result.aspiration || '',
                 ncs_items: result.ncs_items,
-                star_drafts: result.star_drafts,
+                star_drafts: editing ? editedDrafts : result.star_drafts,
                 certs: [],
               })
             } catch (e) {
