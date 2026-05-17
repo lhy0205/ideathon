@@ -65,7 +65,7 @@ def get_senior_personas(
     )
 
 
-@router.post("/match", response_model=List[schemas.SeniorPersonaResponse])
+@router.post("/match")
 def match_senior_personas(
     profile: UserProfileForKNN,
     k: int = 3,
@@ -76,6 +76,8 @@ def match_senior_personas(
     사용자 프로필(공백기간·학과·자격증·희망직무)을 입력받아
     가장 유사한 합격자 K명을 반환한다.
     """
+    from datetime import datetime
+
     personas = (
         db.query(models.SeniorPersona)
         .filter(models.SeniorPersona.is_accepted == True)
@@ -86,4 +88,15 @@ def match_senior_personas(
         personas = DUMMY_SENIOR_PERSONAS
 
     matched = knn_match(profile.model_dump(), personas, k=k)
-    return matched
+
+    # dict인 경우 SeniorPersonaResponse 필드 추가
+    result = []
+    for item in matched:
+        if isinstance(item, dict):
+            item['id'] = item.get('user_id', '')
+            item['is_accepted'] = True
+            item['match_note'] = None
+            item['created_at'] = datetime.now()
+        result.append(item)
+
+    return result

@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { key: 'report',     label: '성장 리포트',    path: '/dashboard?tab=report' },
 ]
 
-function SurvivalCurve({ curveData }) {
+function SurvivalCurve({ curveData, form }) {
   if (!curveData) return null
   const { points, current_month, current_prob } = curveData
 
@@ -36,9 +36,17 @@ function SurvivalCurve({ curveData }) {
     toPath(solidPts) +
     ` L${px(12)},${py(0)} L${px(0)},${py(0)} Z`
 
-  const markerX = px(current_month)
+  // 마커는 그래프 범위(0~12개월) 내에서만 표시, 12개월 초과는 12개월 위치에 표시
+  const displayMonth = Math.min(12, current_month)
+  const markerX = px(displayMonth)
   const markerY = py(current_prob)
   const gridLines = [Math.round(current_prob / 30) * 30 || 60, 30].filter((v, i, a) => a.indexOf(v) === i)
+
+  // Tooltip 위치: 마커가 오른쪽 끝에 가까우면 왼쪽에 표시
+  const tooltipWidth = 110
+  const tooltipLeft = markerX > 400 ? markerX - tooltipWidth - 10 : markerX + 10
+  const gapPeriod = curveData?.gap_period || '0개월'
+  const tooltipLabel = `나 (${gapPeriod})`
 
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
@@ -67,11 +75,11 @@ function SurvivalCurve({ curveData }) {
       <circle cx={markerX} cy={markerY} r="6" fill="#c4603d" stroke="#fff" strokeWidth="2" />
 
       {/* Tooltip */}
-      <rect x={markerX + 10} y={markerY - 18} width="90" height="26"
+      <rect x={tooltipLeft} y={markerY - 18} width={tooltipWidth} height="26"
         rx="6" fill="#3b1a0e" />
-      <text x={markerX + 55} y={markerY - 1} textAnchor="middle"
+      <text x={tooltipLeft + tooltipWidth / 2} y={markerY - 1} textAnchor="middle"
         fontSize="12" fontWeight="700" fill="#fff" fontFamily="inherit">
-        나 ({current_month}개월)
+        {tooltipLabel}
       </text>
 
       {/* Y-axis labels */}
@@ -101,10 +109,43 @@ function SurvivalCurve({ curveData }) {
 export default function SurvivalDiagnosis() {
   const navigate = useNavigate()
   const [activeNav, setActiveNav] = useState('survival')
+
+  // localStorage에서 저장된 프로필 불러오기
+  const savedProfile = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('user_profile')) || {}
+    } catch {
+      return {}
+    }
+  })()
+
+  const [form, setForm] = useState({
+    gap_period: savedProfile.gap_period || '',
+    department: savedProfile.department || '',
+    certifications: savedProfile.certifications || '',
+    job_interest: savedProfile.job_interest || '',
+  })
   const [user, setUser] = useState(null)
   const [personas, setPersonas] = useState([])
-  const [personaLoading, setPersonaLoading] = useState(true)
+  const [personaLoading, setPersonaLoading] = useState(false)
   const [curveData, setCurveData] = useState(null)
+  const [curveLoading, setCurveLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handleAnalyze = async () => {
+    const { api } = await import('../api')
+
+    try {
+      setError(null)
+      setCurveLoading(true)
+      setPersonaLoading(true)
+
+      const profile = {
+        gap_period: form.gap_period,
+        department: form.department,
+        certifications: form.certifications,
+        job_interest: form.job_interest,
+      }
   const [curveLoading, setCurveLoading] = useState(true)
 
   useEffect(() => {
@@ -112,18 +153,19 @@ export default function SurvivalDiagnosis() {
       const { api } = await import('../api')
       api.getMe().then(setUser).catch(() => {})
 
+      // Cox 곡선 - 실패해도 계속 진행
       try {
-        const profile = await api.getUserProfile()
+        const curve = await api.getSurvivalCurve(profile)
+        setCurveData(curve)
+        setCurveLoading(false)
+      } catch (e) {
+        console.error('Curve error:', e)
+        setCurveLoading(false)
+      }
 
-        setCurveLoading(true)
-        setPersonaLoading(true)
-
-        const [curveData, seniorPersonas] = await Promise.all([
-          api.getSurvivalCurve(profile),
-          api.matchPersonas(profile, 3),
-        ])
-
-        setCurveData(curveData)
+      // KNN 매칭 - 실패해도 계속 진행
+      try {
+        const seniorPersonas = await api.matchPersonas(profile, 3)
 
         const survivalResults = await Promise.all(
           seniorPersonas.map(persona =>
@@ -142,18 +184,22 @@ export default function SurvivalDiagnosis() {
           }))
           .filter(p => p)
         if (personaList.length > 0) setPersonas(personaList)
-
-        setCurveLoading(false)
         setPersonaLoading(false)
-      } catch (error) {
-        console.error('Error loading survival data:', error)
-        setCurveLoading(false)
+      } catch (e) {
+        console.error('Persona error:', e)
         setPersonaLoading(false)
       }
+    } catch (error) {
+      console.error('Error loading survival data:', error)
+      setError(error.message || '데이터를 불러오지 못했습니다')
+      setCurveLoading(false)
+      setPersonaLoading(false)
     }
+  }
 
-    fetchAll()
-  }, [])
+  const handleChange = (e) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+  }
 
   const handleNav = (item) => {
     setActiveNav(item.key)
@@ -200,6 +246,38 @@ export default function SurvivalDiagnosis() {
           <div className="sv-content">
             <h2 className="sv-title">생존 진단</h2>
             <p className="sv-subtitle">나의 공백기 위치를 객관적으로 확인하고 행동 가이드를 받으세요</p>
+            {error && <p style={{ color: '#c4603d', padding: '12px', background: '#fff5f0', borderRadius: '8px', marginBottom: '16px' }}>❌ {error}</p>}
+
+            <div style={{ background: '#fff', padding: '28px', borderRadius: '12px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '6px', color: '#1a1a1a' }}>정보 입력</h3>
+              <p style={{ fontSize: '13px', color: '#999', marginBottom: '20px' }}>나의 정보를 입력하면 더 정확한 분석이 가능해요</p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>공백기</label>
+                  <input name="gap_period" placeholder="예) 1일, 5개월, 1년" value={form.gap_period} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>전공 / 학과</label>
+                  <input name="department" placeholder="예) 경영학과, 컴퓨터공학과" value={form.department} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>보유 자격증</label>
+                  <input name="certifications" placeholder="예) 정보처리기사, SQLD, ADsP" value={form.certifications} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                </div>
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>희망 직무</label>
+                  <input name="job_interest" placeholder="예) 데이터 분석, 백엔드 개발, 마케팅" value={form.job_interest} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+
+              <button onClick={handleAnalyze} disabled={curveLoading || personaLoading} style={{ width: '100%', marginTop: '18px', padding: '11px', background: '#c4603d', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: curveLoading || personaLoading ? 'not-allowed' : 'pointer', opacity: curveLoading || personaLoading ? 0.7 : 1, fontFamily: 'inherit' }}>
+                {curveLoading || personaLoading ? '분석 중...' : '분석하기 →'}
+              </button>
+            </div>
 
             <div className="sv-columns">
               {/* Left */}
@@ -210,7 +288,7 @@ export default function SurvivalDiagnosis() {
                   <div className="sv-chart-wrap">
                     {curveLoading
                       ? <p style={{ color: '#888', fontSize: '13px', textAlign: 'center', padding: '60px 0' }}>곡선 계산 중...</p>
-                      : <SurvivalCurve curveData={curveData} />
+                      : <SurvivalCurve curveData={curveData} form={form} />
                     }
                   </div>
                   {curveData && (() => {
@@ -218,7 +296,7 @@ export default function SurvivalDiagnosis() {
                     return (
                       <div className="sv-alert">
                         <p className="sv-alert-title">
-                          현재 {d.current_month}개월 공백기 → 상위 {d.percentile}% 수준
+                          현재 {d.gap_period} 공백기 → 취업 가능성 {d.percentile}%
                         </p>
                         <p className="sv-alert-desc">{d.advice}</p>
                       </div>
