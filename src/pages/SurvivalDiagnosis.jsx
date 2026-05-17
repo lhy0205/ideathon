@@ -131,6 +131,7 @@ export default function SurvivalDiagnosis() {
   const [curveLoading, setCurveLoading] = useState(false)
   const [error, setError] = useState(null)
   const [verifyResult, setVerifyResult] = useState(null)
+  const [fieldErrors, setFieldErrors] = useState({})
 
   useEffect(() => {
     import('../api').then(({ api }) => api.getMe().then(setUser).catch(() => {}))
@@ -138,6 +139,20 @@ export default function SurvivalDiagnosis() {
 
   const handleAnalyze = async () => {
     const { api } = await import('../api')
+
+    // 1단계: 클라이언트 형식 검사 (AI 없이)
+    const errors = {}
+    if (!form.gap_period.trim()) {
+      errors.gap_period = '공백기를 입력해주세요 (예: 3개월, 1년)'
+    } else if (!/\d+\s*(일|개월|년)/.test(form.gap_period)) {
+      errors.gap_period = '숫자+단위 형식으로 입력해주세요 (예: 1일, 5개월, 1년)'
+    }
+    if (!form.job_interest.trim()) {
+      errors.job_interest = '희망 직무를 입력해주세요 (예: 데이터 분석, 백엔드 개발)'
+    }
+    setFieldErrors(errors)
+    if (Object.keys(errors).length > 0) return
+
     try {
       setError(null)
       setVerifyResult(null)
@@ -151,7 +166,7 @@ export default function SurvivalDiagnosis() {
         job_interest: form.job_interest,
       }
 
-      // AI 입력값 검증 - 필수 필드(공백기·희망 직무) 미달 시 차단
+      // 2단계: AI 의미 검증 - 실패해도 분석 진행 (형식은 통과했으므로)
       try {
         const verify = await api.verifyProfile(profile)
         const criticalFailed = ['gap_period', 'job_interest'].some(
@@ -165,7 +180,7 @@ export default function SurvivalDiagnosis() {
         }
         if (verify.overall) setVerifyResult(verify)
       } catch {
-        // 검증 API 오류는 분석을 막지 않음
+        // AI 검증 실패 시 분석 계속 진행
       }
 
       // Cox 곡선 - 실패해도 계속 진행
@@ -269,23 +284,29 @@ export default function SurvivalDiagnosis() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>공백기</label>
-                  <input name="gap_period" placeholder="예) 1일, 5개월, 1년" value={form.gap_period} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: `1px solid ${verifyResult?.fields?.gap_period?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>공백기 <span style={{ color: '#e57373' }}>*</span></label>
+                  <input name="gap_period" placeholder="예) 1일, 5개월, 1년" value={form.gap_period}
+                    onChange={e => { handleChange(e); setFieldErrors(p => ({ ...p, gap_period: '' })) }}
+                    style={{ width: '100%', padding: '10px 12px', border: `1px solid ${fieldErrors.gap_period || verifyResult?.fields?.gap_period?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  {fieldErrors.gap_period && <p style={{ fontSize: '12px', color: '#e57373', marginTop: '4px' }}>{fieldErrors.gap_period}</p>}
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>전공 / 학과</label>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>전공 / 학과 <span style={{ fontSize: '11px', color: '#aaa', fontWeight: '400' }}>(선택)</span></label>
                   <input name="department" placeholder="예) 경영학과, 컴퓨터공학과" value={form.department} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: `1px solid ${verifyResult?.fields?.department?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>보유 자격증</label>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>보유 자격증 <span style={{ fontSize: '11px', color: '#aaa', fontWeight: '400' }}>(선택)</span></label>
                   <input name="certifications" placeholder="예) 정보처리기사, SQLD, ADsP" value={form.certifications} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: `1px solid ${verifyResult?.fields?.certifications?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
 
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>희망 직무</label>
-                  <input name="job_interest" placeholder="예) 데이터 분석, 백엔드 개발, 마케팅" value={form.job_interest} onChange={handleChange} style={{ width: '100%', padding: '10px 12px', border: `1px solid ${verifyResult?.fields?.job_interest?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>희망 직무 <span style={{ color: '#e57373' }}>*</span></label>
+                  <input name="job_interest" placeholder="예) 데이터 분석, 백엔드 개발, 마케팅" value={form.job_interest}
+                    onChange={e => { handleChange(e); setFieldErrors(p => ({ ...p, job_interest: '' })) }}
+                    style={{ width: '100%', padding: '10px 12px', border: `1px solid ${fieldErrors.job_interest || verifyResult?.fields?.job_interest?.ok === false ? '#e57373' : '#e0e0e0'}`, borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  {fieldErrors.job_interest && <p style={{ fontSize: '12px', color: '#e57373', marginTop: '4px' }}>{fieldErrors.job_interest}</p>}
                 </div>
               </div>
 
