@@ -55,11 +55,19 @@ def _get_rag_context(query: str) -> str:
 
 def build_prompt(req: AnalysisRequest, rag_context: str = "") -> str:
     rag_section = f"\n[관련 NCS 역량 참고]\n{rag_context}" if rag_context else ""
+    start = req.start_date or ""
+    end = req.end_date or ""
+    if start and end:
+        period_line = f"\n- 기간: {start} ~ {end}"
+    elif start:
+        period_line = f"\n- 기간: {start} ~ 현재"
+    else:
+        period_line = ""
     return f"""당신은 국가직무능력표준(NCS) 전문가입니다.
 {rag_section}
 [경험 정보]
 - 유형: {req.exp_type}
-- 제목: {req.title}
+- 제목: {req.title}{period_line}
 - 내용: {req.content}
 - 역량 메모: {req.memo}
 

@@ -148,6 +148,11 @@ export default function ExperienceInput() {
                   <input className="exp-input" type="month" name="endDate" value={form.endDate} onChange={handleChange} />
                 </div>
               </div>
+              {(form.startDate || form.endDate) && (
+                <p style={{ fontSize: '12px', color: '#a08060', marginBottom: '8px' }}>
+                  💡 아래 경험 내용에 기재한 기간이 위 날짜와 다르면 AI가 혼동할 수 있어요. 가능하면 일치시켜 주세요.
+                </p>
+              )}
               <div className="exp-field">
                 <label className="exp-label">경험 내용 (자유롭게 작성)</label>
                 <textarea
