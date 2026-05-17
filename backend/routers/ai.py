@@ -245,6 +245,11 @@ async def analyze_batch(
 [경험 목록]
 {exp_lines}
 
+[절대 규칙 - 반드시 준수]
+1. 위 [경험 목록]에 명시된 내용만 사용하세요.
+2. 입력에 없는 수치, 기술명, 역할명, 팀 규모, 방법론 등을 절대 지어내지 마세요.
+3. 정보가 부족한 항목은 "[추가 입력 필요: (어떤 정보가 필요한지)]" 형태로 표시하세요.
+
 다음 JSON 형식으로만 답하세요 (다른 말 없이):
 {{
   "ncs_items": [
@@ -252,10 +257,10 @@ async def analyze_batch(
     ...최대 5개
   ],
   "star_drafts": [
-    "[상황 S] ...",
-    "[과제 T] ...",
-    "[행동 A] ...",
-    "[결과 R] ..."
+    "[상황 S] 입력된 경험 목록 기반으로만 작성. 없는 내용 추가 금지.",
+    "[과제 T] 입력된 경험 목록 기반으로만 작성. 없는 내용 추가 금지.",
+    "[행동 A] 입력된 경험 목록 기반으로만 작성. 없는 수치·기술명 절대 추가 금지.",
+    "[결과 R] 입력된 경험 목록 기반으로만 작성. 없는 수치 절대 추가 금지."
   ],
   "summary": "전체 경험을 아우르는 역량 한줄 요약"
 }}"""
@@ -419,6 +424,23 @@ def update_star_drafts(
     mapping = json.loads(exp.ncs_mapping)
     mapping["star_drafts"] = req.star_drafts
     exp.ncs_mapping = json.dumps(mapping, ensure_ascii=False)
+    db.commit()
+    return {"ok": True}
+
+
+@router.patch("/results/{result_id}/star-drafts")
+def update_batch_star_drafts(
+    result_id: int,
+    req: UpdateStarDraftsRequest,
+    current_user: m.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    r = (db.query(m.AnalysisResult)
+         .filter(m.AnalysisResult.id == result_id, m.AnalysisResult.user_id == current_user.id)
+         .first())
+    if not r:
+        raise HTTPException(status_code=404, detail="분석 결과가 없습니다")
+    r.star_drafts = json.dumps(req.star_drafts, ensure_ascii=False)
     db.commit()
     return {"ok": True}
 

@@ -109,6 +109,7 @@ export default function ExperienceMapping() {
   const [expInfo, setExpInfo] = useState(null)
   const [history, setHistory] = useState([])
   const [selectedIdx, setSelectedIdx] = useState(null)
+  const [batchResultId, setBatchResultId] = useState(null)
   const [batchLoading, setBatchLoading] = useState(false)
   const [allNcsSummary, setAllNcsSummary] = useState(null)
   const [editMode, setEditMode] = useState(false)
@@ -165,6 +166,7 @@ export default function ExperienceMapping() {
       const result = await api.analyzeBatch()
       setNcsResult(result)
       setSelectedIdx(null)
+      setBatchResultId(result.id || null)
       setExpInfo({ title: '전체 경험 통합 분석', content: '' })
     } catch (e) {
       alert('통합 분석 실패: ' + e.message)
@@ -243,12 +245,14 @@ export default function ExperienceMapping() {
       const updated = { ...ncsResult, star_drafts: updatedDrafts }
       setNcsResult(updated)
       localStorage.setItem('ncs_result', JSON.stringify(updated))
-      if (selectedIdx) {
-        try {
-          const { api } = await import('../api')
+      try {
+        const { api } = await import('../api')
+        if (selectedIdx) {
           await api.updateStarDrafts(selectedIdx, updatedDrafts)
-        } catch {}
-      }
+        } else if (batchResultId) {
+          await api.updateBatchStarDrafts(batchResultId, updatedDrafts)
+        }
+      } catch {}
     }
     setEditMode(false)
   }
