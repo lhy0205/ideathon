@@ -8,8 +8,13 @@ export default function Home() {
     try {
       const { api, saveSessionToken, hasSession } = await import('../api')
       if (hasSession()) {
-        navigate('/dashboard')
-        return
+        try {
+          await api.getMe()
+          navigate('/dashboard')
+          return
+        } catch {
+          // 토큰 만료/무효 → 새 세션 생성
+        }
       }
       const data = await api.startSession()
       saveSessionToken(data.session_token)

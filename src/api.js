@@ -20,6 +20,9 @@ async function request(method, path, body = null, auth = true) {
   })
 
   if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem('session_token')
+    }
     const err = await res.json().catch(() => ({ detail: '오류가 발생했습니다' }))
     const detail = err.detail
     if (Array.isArray(detail)) {
