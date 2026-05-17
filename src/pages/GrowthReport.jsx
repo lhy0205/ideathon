@@ -1,51 +1,59 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { api } from '../api'
 import './GrowthReport.css'
 
-const CERTS = [
-  {
-    name: 'ADsP (데이터분석 준전문가)',
-    status: '합격',
-    examDate: '2024.11.23',
-    passDate: '2024.12.06',
-    org: '한국데이터산업진흥원',
-    studyHours: 84,
-    targetHours: 84,
-    pct: 100,
-  },
-  {
-    name: 'SQLD (SQL 개발자)',
-    status: '합격',
-    examDate: '2024.12.14',
-    passDate: '2025.01.03',
-    org: '한국데이터산업진흥원',
-    studyHours: 100,
-    targetHours: 100,
-    pct: 100,
-  },
-  {
-    name: '정보처리기사',
-    status: '준비 중',
-    targetExamDate: '2025.02.15',
-    studyHours: 42,
-    targetHours: 120,
-    pct: 35,
-  },
+// ── PDF 옵션 ──────────────────────────────────────────────────────────────────
+const PDF_OPTION_DEFS = [
+  { id: 'show_ncs',        label: 'NCS 역량 카드',        desc: 'NCS 역량 분석 결과' },
+  { id: 'show_cert',       label: '자격증 취득 이력',      desc: '합격증 및 학습 시간' },
+  { id: 'show_experience', label: 'STAR 자기소개서 초안',  desc: '직무별 맞춤 자기소개서' },
+  { id: 'show_mission',    label: '미션 활동 로그',        desc: '연속 실천 기록' },
 ]
 
-const PDF_OPTIONS = [
-  { id: 'ncs',     label: 'NCS 역량 카드 (12개)',        desc: '판매관리, 고객상담, 데이터분석 등', defaultChecked: true },
-  { id: 'star',    label: 'STAR 자기소개서 초안 (7개)',   desc: '직무별 맞춤 자기소개서',           defaultChecked: true },
-  { id: 'cert',    label: '자격증 취득 이력',             desc: 'ADsP, SQLD 합격증 및 학습 시간',  defaultChecked: true },
-  { id: 'mission', label: '미션 활동 로그 (342개)',       desc: '127일 연속 실천 기록',             defaultChecked: false },
-  { id: 'heatmap', label: '성장 히트맵 & 레이더 차트',   desc: '247일 활동 시각화',                defaultChecked: false },
-]
+// ── PDF 모달 ──────────────────────────────────────────────────────────────────
+function PdfModal({ onClose, certProofs, ncsItems, starDrafts }) {
+  const [settings, setSettings] = useState({
+    show_ncs: true, show_cert: true, show_experience: true, show_mission: true,
+  })
+  const [loading, setLoading] = useState(true)
 
-function PdfModal({ onClose }) {
-  const [checked, setChecked] = useState(
-    Object.fromEntries(PDF_OPTIONS.map(o => [o.id, o.defaultChecked]))
-  )
-  const toggle = (id) => setChecked(prev => ({ ...prev, [id]: !prev[id] }))
+  useEffect(() => {
+    api.getReportSettings().then(s => setSettings(s)).catch(() => {}).finally(() => setLoading(false))
+  }, [])
+
+  const toggle = async (id) => {
+    const next = { ...settings, [id]: !settings[id] }
+    setSettings(next)
+    api.updateReportSettings({ [id]: next[id] }).catch(() => {})
+  }
+
+  const handleDownload = async () => {
+    try {
+      const certsData = certProofs.map(c => ({
+        name: c.cert_name,
+        status: c.status === '합격' ? '취득 완료' : '준비중',
+        exam_date: c.exam_date || c.target_exam_date || '',
+        pass_date: c.passed_date || '',
+      }))
+      const ncsForPdf = (ncsItems || []).map(n => ({
+        ncs_code: n.ncs_code || '',
+        unit_name: n.unit_name || '',
+        level: Math.round((n.score || 75) / 20),
+        score: n.score || 75,
+      }))
+      await api.downloadReport({
+        user_name: '사용자',
+        summary: '',
+        ncs_items: ncsForPdf,
+        star_drafts: starDrafts || [],
+        certs: certsData,
+        ...settings,
+      })
+    } catch (e) {
+      alert('PDF 생성에 실패했습니다: ' + e.message)
+    }
+  }
 
   return (
     <div className="gr-modal-overlay" onClick={onClose}>
@@ -61,51 +69,66 @@ function PdfModal({ onClose }) {
           </svg>
         </div>
         <p className="gr-pdf-subtitle">포트폴리오에 포함할 내용을 선택하세요</p>
-        <div className="gr-pdf-options">
-          {PDF_OPTIONS.map(opt => (
-            <label key={opt.id} className={`gr-pdf-option ${checked[opt.id] ? 'selected' : ''}`}>
-              <input
-                type="checkbox"
-                checked={checked[opt.id]}
-                onChange={() => toggle(opt.id)}
-                className="gr-pdf-checkbox"
-              />
-              <div className="gr-pdf-option-text">
-                <span className="gr-pdf-option-label">{opt.label}</span>
-                <span className="gr-pdf-option-desc">{opt.desc}</span>
-              </div>
-            </label>
-          ))}
-        </div>
+        {loading ? <p style={{textAlign:'center',color:'#999'}}>설정 불러오는 중...</p> : (
+          <div className="gr-pdf-options">
+            {PDF_OPTION_DEFS.map(opt => (
+              <label key={opt.id} className={`gr-pdf-option ${settings[opt.id] ? 'selected' : ''}`}>
+                <input type="checkbox" checked={!!settings[opt.id]} onChange={() => toggle(opt.id)} className="gr-pdf-checkbox" />
+                <div className="gr-pdf-option-text">
+                  <span className="gr-pdf-option-label">{opt.label}</span>
+                  <span className="gr-pdf-option-desc">{opt.desc}</span>
+                </div>
+              </label>
+            ))}
+          </div>
+        )}
         <div className="gr-pdf-actions">
           <button className="gr-pdf-cancel" onClick={onClose}>취소</button>
-          <button className="gr-pdf-download" onClick={async () => {
-            try {
-              const { api } = await import('../api')
-              const certsData = CERTS.map(c => ({
-                name: c.name,
-                status: c.status === '합격' ? '취득 완료' : '준비중',
-                exam_date: c.examDate || c.targetExamDate || '',
-                pass_date: c.passDate || '',
-              }))
-              await api.downloadReport({
-                user_name: '사용자',
-                summary: '',
-                ncs_items: [],
-                star_drafts: [],
-                certs: certsData,
-              })
-            } catch (e) {
-              alert('PDF 생성에 실패했습니다: ' + e.message)
-            }
-          }}>PDF 생성 및 다운로드</button>
+          <button className="gr-pdf-download" onClick={handleDownload}>PDF 생성 및 다운로드</button>
         </div>
       </div>
     </div>
   )
 }
 
+// ── 자격증 증빙 모달 ───────────────────────────────────────────────────────────
 function CertModal({ onClose }) {
+  const [proofs, setProofs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [adding, setAdding] = useState(false)
+  const [form, setForm] = useState({ cert_name: '', status: '준비 중', exam_date: '', passed_date: '', study_hours: '', target_hours: '', target_exam_date: '' })
+  const [file, setFile] = useState(null)
+
+  useEffect(() => {
+    api.getCertProofs().then(setProofs).catch(() => {}).finally(() => setLoading(false))
+  }, [])
+
+  const handleAdd = async () => {
+    if (!form.cert_name.trim()) return alert('자격증 이름을 입력해주세요')
+    const fd = new FormData()
+    Object.entries(form).forEach(([k, v]) => { if (v) fd.append(k, v) })
+    if (file) fd.append('proof_image', file)
+    try {
+      const created = await api.createCertProof(fd)
+      setProofs(prev => [created, ...prev])
+      setAdding(false)
+      setForm({ cert_name: '', status: '준비 중', exam_date: '', passed_date: '', study_hours: '', target_hours: '', target_exam_date: '' })
+      setFile(null)
+    } catch (e) { alert('추가 실패: ' + e.message) }
+  }
+
+  const handleDelete = async (id) => {
+    if (!confirm('삭제하시겠습니까?')) return
+    await api.deleteCertProof(id).catch(() => {})
+    setProofs(prev => prev.filter(p => p.id !== id))
+  }
+
+  const pct = (proof) => {
+    if (proof.status === '합격') return 100
+    if (!proof.study_hours || !proof.target_hours) return 0
+    return Math.min(100, Math.round((proof.study_hours / proof.target_hours) * 100))
+  }
+
   return (
     <div className="gr-modal-overlay" onClick={onClose}>
       <div className="gr-modal" onClick={e => e.stopPropagation()}>
@@ -114,111 +137,116 @@ function CertModal({ onClose }) {
           <button className="gr-modal-close" onClick={onClose}>✕</button>
         </div>
         <div className="gr-modal-body">
-          {CERTS.map((cert, i) => (
-            <div key={i} className={`gr-cert-item ${cert.status === '준비 중' ? 'preparing' : ''}`}>
+          {loading && <p style={{textAlign:'center',color:'#999'}}>불러오는 중...</p>}
+          {!loading && proofs.map((proof) => (
+            <div key={proof.id} className={`gr-cert-item ${proof.status === '준비 중' ? 'preparing' : ''}`}>
               <div className="gr-cert-top">
-                <span className="gr-cert-name">{cert.name}</span>
-                <span className={`gr-cert-badge ${cert.status === '합격' ? 'pass' : 'ready'}`}>
-                  {cert.status}
-                </span>
+                <span className="gr-cert-name">{proof.cert_name}</span>
+                <span className={`gr-cert-badge ${proof.status === '합격' ? 'pass' : 'ready'}`}>{proof.status}</span>
+                <button className="gr-cert-del-btn" onClick={() => handleDelete(proof.id)}>삭제</button>
               </div>
               <div className="gr-cert-info">
-                {cert.status === '합격'
-                  ? `시험일: ${cert.examDate} · 합격일: ${cert.passDate}`
-                  : `목표 시험일: ${cert.targetExamDate} · 학습 시간: ${cert.studyHours}시간/ 목표 ${cert.targetHours}시간`
-                }
+                {proof.status === '합격'
+                  ? `시험일: ${proof.exam_date || '-'} · 합격일: ${proof.passed_date || '-'}`
+                  : `목표 시험일: ${proof.target_exam_date || '-'} · 학습: ${proof.study_hours || 0}h / ${proof.target_hours || 0}h`}
               </div>
-              {cert.status === '합격' && (
-                <div className="gr-cert-info">주관: {cert.org} · 학습 시간: {cert.studyHours}시간</div>
+              {proof.proof_image && (
+                <a href={proof.proof_image} target="_blank" rel="noreferrer" className="gr-cert-img-link">합격증 보기</a>
               )}
               <div className="gr-cert-progress-row">
                 <span className="gr-cert-progress-label">학습 진도</span>
                 <div className="gr-cert-bar-wrap">
-                  <div
-                    className={`gr-cert-bar ${cert.status === '합격' ? 'done' : 'ing'}`}
-                    style={{ width: `${cert.pct}%` }}
-                  />
+                  <div className={`gr-cert-bar ${proof.status === '합격' ? 'done' : 'ing'}`} style={{ width: `${pct(proof)}%` }} />
                 </div>
-                <span className="gr-cert-progress-end">
-                  {cert.status === '합격' ? '완료' : `${cert.pct}%`}
-                </span>
+                <span className="gr-cert-progress-end">{proof.status === '합격' ? '완료' : `${pct(proof)}%`}</span>
               </div>
             </div>
           ))}
-          <button className="gr-cert-add-btn">자격증 추가</button>
+
+          {adding ? (
+            <div className="gr-cert-add-form">
+              <input placeholder="자격증 이름 *" value={form.cert_name} onChange={e => setForm(p => ({...p, cert_name: e.target.value}))} className="gr-cert-input" />
+              <select value={form.status} onChange={e => setForm(p => ({...p, status: e.target.value}))} className="gr-cert-input">
+                <option>준비 중</option>
+                <option>합격</option>
+              </select>
+              {form.status === '합격' ? (
+                <>
+                  <input type="date" placeholder="시험일" value={form.exam_date} onChange={e => setForm(p => ({...p, exam_date: e.target.value}))} className="gr-cert-input" />
+                  <input type="date" placeholder="합격일" value={form.passed_date} onChange={e => setForm(p => ({...p, passed_date: e.target.value}))} className="gr-cert-input" />
+                </>
+              ) : (
+                <input type="date" placeholder="목표 시험일" value={form.target_exam_date} onChange={e => setForm(p => ({...p, target_exam_date: e.target.value}))} className="gr-cert-input" />
+              )}
+              <input type="number" placeholder="학습 시간" value={form.study_hours} onChange={e => setForm(p => ({...p, study_hours: e.target.value}))} className="gr-cert-input" />
+              <input type="number" placeholder="목표 시간" value={form.target_hours} onChange={e => setForm(p => ({...p, target_hours: e.target.value}))} className="gr-cert-input" />
+              <input type="file" accept="image/*,.pdf" onChange={e => setFile(e.target.files[0])} className="gr-cert-input" />
+              <div className="gr-cert-add-actions">
+                <button className="gr-cert-cancel-btn" onClick={() => setAdding(false)}>취소</button>
+                <button className="gr-cert-save-btn" onClick={handleAdd}>저장</button>
+              </div>
+            </div>
+          ) : (
+            <button className="gr-cert-add-btn" onClick={() => setAdding(true)}>+ 자격증 추가</button>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-// 성장 타임라인 히트맵 데이터 (7행 × 26열)
-const HEATMAP_ROWS = 7
+// ── 히트맵 ────────────────────────────────────────────────────────────────────
+const HEAT_COLORS = ['#f5ece6', '#f5c4b0', '#e8956c', '#d4693d', '#b94e28']
 const HEATMAP_COLS = 26
-function generateHeatmap() {
-  return Array.from({ length: HEATMAP_ROWS }, (_, r) =>
-    Array.from({ length: HEATMAP_COLS }, (_, c) => {
-      const idx = r * HEATMAP_COLS + c
-      if (idx > 220) return 0
-      const base = Math.sin(idx * 0.15 + r) * 0.5 + 0.5
-      return Math.floor(base * 4 + (Math.random() > 0.6 ? 1 : 0))
-    })
+
+function Heatmap({ data }) {
+  if (!data || data.length === 0) {
+    const empty = Array.from({ length: 7 }, () => Array(HEATMAP_COLS).fill(0))
+    data = empty
+  }
+  return (
+    <div className="gr-heatmap">
+      {data.flat().map((val, i) => (
+        <div key={i} className="gr-heatmap-cell" style={{ background: HEAT_COLORS[Math.min(val, 4)] }} />
+      ))}
+    </div>
   )
 }
-const HEATMAP = generateHeatmap()
 
-const HEAT_COLORS = ['#f5ece6', '#f5c4b0', '#e8956c', '#d4693d', '#b94e28']
-
-// NCS 역량 레이더 데이터
-const RADAR_LABELS = ['데이터분석', '의사소통', '문제해결', '기획력', '학습민첩성']
-const RADAR_VALUES = [0.82, 0.65, 0.74, 0.78, 0.88]
-
-function RadarChart() {
+// ── NCS 레이더 차트 ───────────────────────────────────────────────────────────
+function RadarChart({ ncsItems }) {
+  const items = (ncsItems || []).slice(0, 5)
+  const labels = items.length > 0 ? items.map(n => {
+    const name = n.unit_name || ''
+    return name.length > 5 ? name.slice(0, 5) + '…' : name
+  }) : ['데이터분석', '의사소통', '문제해결', '기획력', '학습민첩성']
+  const values = items.length > 0 ? items.map(n => (n.score || 75) / 100) : [0.82, 0.65, 0.74, 0.78, 0.88]
+  const n = labels.length
   const cx = 160, cy = 165, r = 100
-  const n = RADAR_LABELS.length
   const angle = (i) => (Math.PI * 2 * i) / n - Math.PI / 2
-
-  const gridLevels = [0.25, 0.5, 0.75, 1.0]
-
-  const toXY = (val, i) => ({
-    x: cx + r * val * Math.cos(angle(i)),
-    y: cy + r * val * Math.sin(angle(i)),
-  })
-
-  const dataPoints = RADAR_VALUES.map((v, i) => toXY(v, i))
+  const toXY = (val, i) => ({ x: cx + r * val * Math.cos(angle(i)), y: cy + r * val * Math.sin(angle(i)) })
+  const dataPoints = values.map((v, i) => toXY(v, i))
   const dataPath = dataPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z'
+  const gridLevels = [0.25, 0.5, 0.75, 1.0]
 
   return (
     <svg width="100%" height="auto" viewBox="0 0 320 310" style={{ display: 'block' }}>
-      {/* 그리드 */}
       {gridLevels.map((level) => {
         const pts = Array.from({ length: n }, (_, i) => toXY(level, i))
         const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z'
         return <path key={level} d={path} fill="none" stroke="#e8ddd8" strokeWidth="1" />
       })}
-
-      {/* 축선 */}
       {Array.from({ length: n }, (_, i) => {
         const pt = toXY(1, i)
         return <line key={i} x1={cx} y1={cy} x2={pt.x} y2={pt.y} stroke="#e8ddd8" strokeWidth="1" />
       })}
-
-      {/* 데이터 영역 */}
       <path d={dataPath} fill="#e8956c" fillOpacity="0.3" stroke="#c4603d" strokeWidth="2" />
-
-      {/* 데이터 포인트 */}
-      {dataPoints.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r="4" fill="#c4603d" />
-      ))}
-
-      {/* 라벨 */}
+      {dataPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="4" fill="#c4603d" />)}
       {Array.from({ length: n }, (_, i) => {
         const pt = toXY(1.32, i)
-        const yOffset = i === 0 ? 14 : 0
         return (
-          <text key={i} x={pt.x} y={pt.y + yOffset} textAnchor="middle" dominantBaseline="middle"
-            fontSize="13" fill="#555" fontWeight="600">
-            {RADAR_LABELS[i]}
+          <text key={i} x={pt.x} y={pt.y + (i === 0 ? 14 : 0)} textAnchor="middle" dominantBaseline="middle" fontSize="13" fill="#555" fontWeight="600">
+            {labels[i]}
           </text>
         )
       })}
@@ -226,80 +254,88 @@ function RadarChart() {
   )
 }
 
-export default function GrowthReport({ onNavigate }) {
+// ── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
+export default function GrowthReport() {
   const navigate = useNavigate()
   const [certModalOpen, setCertModalOpen] = useState(false)
   const [pdfModalOpen, setPdfModalOpen] = useState(false)
+  const [certProofs, setCertProofs] = useState([])
+  const [ncsItems, setNcsItems] = useState(null)
+  const [starDrafts, setStarDrafts] = useState([])
+  const [heatmap, setHeatmap] = useState(null)
+
+  useEffect(() => {
+    // localStorage에서 NCS 분석 결과 로드
+    const saved = localStorage.getItem('ncs_result')
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      setNcsItems(parsed.ncs_items || null)
+      setStarDrafts(parsed.star_drafts || [])
+    }
+    // 자격증 이력 로드
+    api.getCertProofs().then(setCertProofs).catch(() => {})
+    // 미션 히트맵 로드
+    api.getMissionHeatmap().then(data => {
+      if (data?.heatmap) setHeatmap(data.heatmap)
+    }).catch(() => {})
+  }, [])
+
+  const passedCount = certProofs.filter(c => c.status === '합격').length
+  const totalStudyHours = certProofs.reduce((sum, c) => sum + (c.study_hours || 0), 0)
 
   return (
     <div className="gr-root">
-      {certModalOpen && <CertModal onClose={() => setCertModalOpen(false)} />}
-      {pdfModalOpen && <PdfModal onClose={() => setPdfModalOpen(false)} />}
-      {/* 페이지 타이틀 */}
+      {certModalOpen && <CertModal onClose={() => { setCertModalOpen(false); api.getCertProofs().then(setCertProofs).catch(() => {}) }} />}
+      {pdfModalOpen && <PdfModal onClose={() => setPdfModalOpen(false)} certProofs={certProofs} ncsItems={ncsItems} starDrafts={starDrafts} />}
+
       <div className="gr-page-title">
         <h2>성장 리포트</h2>
-        <p>공백기 247일의 기록이 포트폴리오로 완성됩니다</p>
+        <p>공백기의 기록이 포트폴리오로 완성됩니다</p>
       </div>
 
-      {/* 배너 */}
       <div className="gr-banner">
-        <div className="gr-banner-label">STEPPING STONE · 2024 → 2025</div>
-        <div className="gr-banner-title">잠시 멈춤이 만든 247일의 자산</div>
-        <div className="gr-banner-stats">실천 247일 · NCS 역량 12개 · 자격증 3개 취득</div>
+        <div className="gr-banner-label">STEPPING STONE · Pause to Pass</div>
+        <div className="gr-banner-title">잠시 멈춤이 만든 성장의 자산</div>
+        <div className="gr-banner-stats">
+          NCS 역량 {ncsItems?.length || 0}개 · 자격증 {passedCount}개 취득 · STAR 초안 {starDrafts.length}개
+        </div>
       </div>
 
-      {/* 타임라인 + 레이더 */}
       <div className="gr-row">
-        {/* 성장 타임라인 */}
         <div className="gr-card gr-card-wide">
           <p className="gr-card-title">성장 타임라인</p>
           <div className="gr-heatmap-wrap">
             <span className="gr-heatmap-label">활동 히트맵</span>
-            <div className="gr-heatmap">
-              {HEATMAP.flat().map((val, i) => (
-                <div
-                  key={i}
-                  className="gr-heatmap-cell"
-                  style={{ background: HEAT_COLORS[Math.min(val, 4)] }}
-                />
-              ))}
-            </div>
+            <Heatmap data={heatmap} />
             <div className="gr-heatmap-legend">
               <span>적음</span>
-              {HEAT_COLORS.map((c, i) => (
-                <div key={i} className="gr-legend-cell" style={{ background: c }} />
-              ))}
+              {HEAT_COLORS.map((c, i) => <div key={i} className="gr-legend-cell" style={{ background: c }} />)}
               <span>많음</span>
             </div>
           </div>
         </div>
 
-        {/* NCS 역량 레이더 */}
         <div className="gr-card gr-radar-card">
           <p className="gr-card-title">NCS 역량 레이더</p>
-          <RadarChart />
+          <RadarChart ncsItems={ncsItems} />
         </div>
       </div>
 
-      {/* 하단 3카드 */}
       <div className="gr-row gr-bottom-row">
-        {/* STAR 자기소개서 */}
         <div className="gr-card gr-bottom-card">
           <p className="gr-card-title">STAR 자기소개서</p>
-          <p className="gr-bottom-desc">7개 NCS 경험을 기업별 직무기술서에 맞춰 자동 변환한 자기소개서 초안 모음</p>
-          <p className="gr-bottom-accent">7개 초안 · 마지막 업데이트 2일 전</p>
+          <p className="gr-bottom-desc">NCS 경험을 기업별 직무기술서에 맞춰 자동 변환한 자기소개서 초안 모음</p>
+          <p className="gr-bottom-accent">{starDrafts.length}개 초안</p>
           <button className="gr-view-btn" onClick={() => navigate('/dashboard?tab=experience&step=3')}>보기 →</button>
         </div>
 
-        {/* 자격증 증빙 */}
         <div className="gr-card gr-bottom-card">
           <p className="gr-card-title">자격증 증빙</p>
-          <p className="gr-bottom-desc">ADsP · SQLD 합격증과 응시 데이터, 학습 시간 누적 통계</p>
-          <p className="gr-bottom-accent">2개 합격 · 누적 184시간</p>
+          <p className="gr-bottom-desc">합격증과 응시 데이터, 학습 시간 누적 통계</p>
+          <p className="gr-bottom-accent">{passedCount}개 합격 · 누적 {totalStudyHours}시간</p>
           <button className="gr-view-btn" onClick={() => setCertModalOpen(true)}>보기 →</button>
         </div>
 
-        {/* 포트폴리오 내보내기 */}
         <div className="gr-card gr-bottom-card">
           <p className="gr-card-title">포트폴리오 내보내기</p>
           <p className="gr-bottom-desc">포트폴리오 PDF 생성</p>

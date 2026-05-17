@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const BACKEND = 'https://impurity-richly-bonding.ngrok-free.dev'
+const BACKEND = process.env.VITE_API_URL || 'http://localhost:8000'
 
 export default defineConfig({
   plugins: [react()],
   server: {
+    open: true,
     proxy: {
       '/auth': { target: BACKEND, changeOrigin: true },
       '/users': { target: BACKEND, changeOrigin: true },
@@ -17,6 +18,9 @@ export default defineConfig({
       '/ai': { target: BACKEND, changeOrigin: true },
       '/uploads': { target: BACKEND, changeOrigin: true },
       '/senior-personas': { target: BACKEND, changeOrigin: true },
+      '/certifications': { target: BACKEND, changeOrigin: true },
+      '/cert-proofs': { target: BACKEND, changeOrigin: true },
+      '/report-settings': { target: BACKEND, changeOrigin: true },
       '/survival': { target: BACKEND, changeOrigin: true },
     },
   },

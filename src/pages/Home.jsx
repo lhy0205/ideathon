@@ -4,6 +4,21 @@ import './Home.css'
 export default function Home() {
   const navigate = useNavigate()
 
+  const handleStart = async () => {
+    try {
+      const { api, saveSessionToken, hasSession } = await import('../api')
+      if (hasSession()) {
+        navigate('/dashboard')
+        return
+      }
+      const data = await api.startSession()
+      saveSessionToken(data.session_token)
+      navigate('/profile')
+    } catch (e) {
+      alert('서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.')
+    }
+  }
+
   return (
     <div className="home">
       {/* Nav */}
@@ -14,7 +29,7 @@ export default function Home() {
             <span className="nav-divider">|</span>
             <span className="nav-subtitle">나의 오늘이 내일의 발판이 되지 못하는 불안</span>
           </div>
-          <button className="btn-login" onClick={() => navigate('/login')}>로그인</button>
+          <button className="btn-login" onClick={handleStart}>시작하기</button>
         </div>
       </nav>
 
@@ -29,7 +44,7 @@ export default function Home() {
               되는 순간
             </h1>
             <div className="hero-btns">
-              <button className="btn-primary" onClick={() => navigate('/login')}>무료로 포트폴리오 보기</button>
+              <button className="btn-primary" onClick={handleStart}>무료로 포트폴리오 보기</button>
               <button className="btn-secondary">서비스 둘러보기</button>
             </div>
             <div className="hero-stats">
@@ -277,7 +292,7 @@ export default function Home() {
       <section className="cta-section">
         <div className="section-inner cta-inner">
           <h2>공백기가 합격이 되는 곳,<br />지금 시작을 만드세요.</h2>
-          <button className="btn-cta" onClick={() => navigate('/login')}>공백기가 합격이 되는 곳에서 시작하기</button>
+          <button className="btn-cta" onClick={handleStart}>공백기가 합격이 되는 곳에서 시작하기</button>
         </div>
       </section>
 

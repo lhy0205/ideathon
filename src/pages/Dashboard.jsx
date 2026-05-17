@@ -8,7 +8,7 @@ import './Dashboard.css'
 const NAV_ITEMS = [
   { key: 'home',       label: '홈 대시보드',   path: '/dashboard' },
   { key: 'mypage',     label: '마이페이지',     path: '/mypage' },
-  { key: 'password',   label: '비밀번호 변경',  path: '/dashboard?tab=password' },
+  { key: 'profile',    label: '프로필 설정',    path: '/profile' },
   { key: 'experience', label: '경험 입력',      path: '/dashboard?tab=experience' },
   { key: 'mapping',    label: '경험 매핑 결과', path: '/mapping' },
   { key: 'roadmap',    label: '자격증 로드맵',  path: '/dashboard?tab=roadmap' },
@@ -108,7 +108,6 @@ function MissionSection() {
   const [completed, setCompleted] = useState(false)
   const [missionError, setMissionError] = useState('')
   const fileInputRef = useState(null)
-
   // 미션 목록 불러오기
   useEffect(() => {
     const load = async () => {
@@ -529,9 +528,14 @@ export default function Dashboard() {
           </nav>
           <button
             className="db-logout"
-            onClick={() => navigate('/login')}
+            onClick={async () => {
+              const { api, clearSession } = await import('../api')
+              try { await api.endSession() } catch {}
+              clearSession()
+              navigate('/')
+            }}
           >
-            로그아웃
+            종료
           </button>
         </aside>
 
@@ -554,7 +558,7 @@ export default function Dashboard() {
           {activeNav === 'password' && <PasswordSection />}
           {activeNav === 'experience' && <div className="db-content"><ExperienceInput /></div>}
           {activeNav === 'roadmap' && <div className="db-content"><CertRoadmap /></div>}
-          {activeNav === 'mission' && <MissionSection />}
+          <div style={{ display: activeNav === 'mission' ? 'block' : 'none' }}><MissionSection /></div>
           {activeNav === 'community' && <CommunitySection />}
           {activeNav === 'report' && <div className="db-content"><GrowthReport /></div>}
           {activeNav !== 'password' && activeNav !== 'experience' && activeNav !== 'roadmap' && activeNav !== 'mission' && activeNav !== 'community' && activeNav !== 'report' && <div className="db-content">

@@ -236,3 +236,29 @@
   margin: 10px 0 0;
   font-weight: 600;
 }
+
+/* D-day & 접수중 배지 */
+.cr-badge-applying {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 11px;
+  font-weight: 700;
+}
+.cr-dday {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: #FDF3EE;
+  color: #C04E28;
+  font-size: 11px;
+  font-weight: 700;
+}
+.cr-dday.urgent {
+  background: #C04E28;
+  color: #fff;
+}
