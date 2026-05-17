@@ -253,9 +253,10 @@ export default function CertRoadmap() {
     setAiError('')
     try {
       const { api } = await import('../api')
+      const topN = Math.min(12, Math.ceil(ncsItems.length / 10) * 3)
       const topItems = [...ncsItems]
         .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-        .slice(0, 3)
+        .slice(0, topN)
       const data = await api.recommendCerts(topItems, expInfo?.type || '', expInfo?.title || '', certCount)
       const certs = data.certs || []
       setAiCerts(certs)
@@ -283,7 +284,7 @@ export default function CertRoadmap() {
         <div className="cr-ai-header">
           <div>
             <span className="cr-ai-title">AI 추천 자격증</span>
-            {ncsItems && <span className="cr-ai-sub"> · NCS 상위 역량 {Math.min(3, ncsItems.length)}개 기반</span>}
+            {ncsItems && <span className="cr-ai-sub"> · NCS 상위 역량 {Math.min(12, Math.ceil(ncsItems.length / 10) * 3)}개 기반</span>}
           </div>
           {history.length > 0 ? (
             <div className="cr-ai-controls">
@@ -322,6 +323,15 @@ export default function CertRoadmap() {
             <span className="cr-ai-empty-hint">경험 매핑을 먼저 진행해주세요</span>
           )}
         </div>
+        {ncsItems && (
+          <p className={`cr-count-hint ${certCount >= 6 ? 'warn' : ''}`}>
+            {certCount <= 3
+              ? '핵심 역량에 집중된 추천입니다.'
+              : certCount <= 5
+              ? '적정 수의 추천으로 필요성과 다양성이 균형잡혀 있습니다.'
+              : '⚠️ 개수가 많을수록 역량과의 연관성이 낮은 자격증이 포함될 수 있습니다.'}
+          </p>
+        )}
 
         {aiLoading && (
           <div className="cr-ai-loading">

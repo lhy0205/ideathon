@@ -198,6 +198,15 @@
 }
 .cr-exp-select:focus { border-color: #C04E28; }
 .cr-exp-select:disabled { opacity: 0.5; cursor: default; }
+.cr-count-hint {
+  font-size: 12px;
+  color: #aaa;
+  margin: 2px 0 0;
+}
+.cr-count-hint.warn {
+  color: #C04E28;
+  font-weight: 600;
+}
 .cr-ai-btn {
   background: #C04E28;
   color: #fff;
