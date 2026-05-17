@@ -22,7 +22,7 @@ function PdfModal({ onClose, certProofs, ncsItems, starDrafts, experiences, aiCe
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.getReportSettings().then(s => setSettings(s)).catch(() => {}).finally(() => setLoading(false))
+    setLoading(false)
   }, [])
 
   const toggle = async (id) => {
