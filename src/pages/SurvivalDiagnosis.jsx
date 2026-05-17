@@ -305,6 +305,8 @@ export default function SurvivalDiagnosis() {
               <button onClick={handleAnalyze} disabled={curveLoading || personaLoading} style={{ width: '100%', marginTop: '18px', padding: '11px', background: '#c4603d', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: curveLoading || personaLoading ? 'not-allowed' : 'pointer', opacity: curveLoading || personaLoading ? 0.7 : 1, fontFamily: 'inherit' }}>
                 {curveLoading || personaLoading ? 'AI 검증 중...' : '분석하기 →'}
               </button>
+
+              <p style={{ fontSize: '12px', color: '#e57373', marginTop: '12px', padding: '0 4px' }}>⚠️ 의미 없는 글자(예: ㅁㄴㅇ, 아무말)를 입력하면 분석 결과가 엉터리로 나옵니다.</p>
             </div>
 
             <div className="sv-columns">
