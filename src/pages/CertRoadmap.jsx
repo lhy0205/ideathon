@@ -242,7 +242,7 @@ export default function CertRoadmap() {
         <div className="cr-ai-header">
           <div>
             <span className="cr-ai-title">AI 추천 자격증</span>
-            {ncsItems && <span className="cr-ai-sub"> · NCS 역량 {ncsItems.length}개 기반</span>}
+            {ncsItems && <span className="cr-ai-sub"> · NCS 상위 역량 {Math.min(3, ncsItems.length)}개 기반</span>}
           </div>
           {ncsItems ? (
             <button className="cr-ai-btn" onClick={handleRecommend} disabled={aiLoading}>
