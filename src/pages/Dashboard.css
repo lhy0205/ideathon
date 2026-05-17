@@ -533,7 +533,8 @@
 
 /* 인증 로그 */
 .ms-logs { display: flex; flex-direction: column; gap: 10px; }
-.ms-log-item { display: flex; align-items: center; gap: 10px; }
+.ms-log-item { display: flex; flex-direction: column; gap: 6px; }
+.ms-log-row { display: flex; align-items: center; gap: 10px; }
 .ms-log-icon {
   width: 28px;
   height: 28px;
@@ -546,7 +547,10 @@
   color: #888;
   flex-shrink: 0;
 }
-.ms-log-title { flex: 1; font-size: 13px; font-weight: 600; color: #3b1a0e; margin: 0; }
+.ms-log-main { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ms-log-title { font-size: 13px; font-weight: 600; color: #3b1a0e; margin: 0; }
+.ms-log-date { font-size: 11px; color: #aaa; margin: 0; }
+.ms-log-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .ms-log-badge {
   font-size: 11px;
   font-weight: 700;
@@ -719,8 +723,25 @@
 }
 .ms-log-done-btn:hover { background: #c4603d; color: #fff; }
 
-.ms-extra-done-btn {
+.ms-extra-textarea {
+  width: 100%;
   margin-top: 8px;
+  padding: 8px;
+  font-size: 12px;
+  color: #555;
+  background: #fff;
+  border: 1px solid #e0d5cf;
+  border-radius: 6px;
+  outline: none;
+  font-family: inherit;
+  resize: none;
+  box-sizing: border-box;
+  line-height: 1.5;
+}
+.ms-extra-textarea:focus { border-color: #c4603d; }
+
+.ms-extra-done-btn {
+  margin-top: 6px;
   width: 100%;
   padding: 6px 0;
   background: #c4603d;
@@ -733,6 +754,43 @@
   transition: opacity 0.15s;
 }
 .ms-extra-done-btn:hover { opacity: 0.85; }
+
+.ms-log-view-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+  border: 1px solid #c4603d;
+  border-radius: 6px;
+  background: none;
+  color: #c4603d;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.ms-log-view-btn:hover { background: #c4603d; color: #fff; }
+
+.ms-log-content {
+  background: #fdf9f7;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.7;
+  border-left: 3px solid #c4603d;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* 오늘 미션 완료 상태 */
+.ms-today-done {
+  background: #e8f5e9;
+  color: #2d7a4f;
+  border-radius: 8px;
+  padding: 18px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid #c8e6c9;
+}
 
 /* 히트맵 */
 .ms-heatmap-header {

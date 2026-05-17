@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import ExperienceInput from './ExperienceInput'
 import CertRoadmap from './CertRoadmap'
 import GrowthReport from './GrowthReport'
+import TopBar from '../components/TopBar'
 import './Dashboard.css'
 
 const NAV_ITEMS = [
@@ -19,9 +20,9 @@ const NAV_ITEMS = [
 ]
 
 const TODOS = [
-  { icon: '⚡', title: '오늘의 5분 미션', desc: '제큰 첫 글을 쓰기 · 127명 참여 중' },
-  { icon: '📝', title: '새 경험 기록하기', desc: '이번 주 활동을 NCS로 반환' },
-  { icon: '🧬', title: '생존 진단 확인', desc: '이번 달 취업 가능성 변화' },
+  { icon: '⚡', title: '오늘의 5분 미션', desc: '매일 실천 · 지금 참여 중', path: '/dashboard?tab=mission' },
+  { icon: '📝', title: '새 경험 기록하기', desc: '이번 주 활동을 NCS로 변환', path: '/dashboard?tab=experience' },
+  { icon: '🧬', title: '생존 진단 확인', desc: '이번 달 취업 가능성 변화', path: '/survival' },
 ]
 
 const ACTIVITIES = [
@@ -41,16 +42,32 @@ const MOODS = [
   { icon: '😟', label: '의욕 없음' },
 ]
 
-const EXTRA_MISSIONS = [
-  { title: '자격증 문제 5개', time: '10분', mood: '기분 상관없음', count: 43 },
-  { title: '채용공고 1개 정독', time: '3분', mood: '기분무관', count: 69 },
-  { title: '5분 영상보기', time: '5분', mood: '자신감 낮을 때', count: 33 },
-  { title: '목표 직무 리서치', time: '15분', mood: '의욕이 충분할때', count: 37 },
+const MOOD_MISSIONS = [
+  {
+    title: '오늘 배운 것 정리하기',
+    desc: '오늘 공부한 내용을 자신의 말로 정리해보세요. 기억에 오래 남습니다.',
+    placeholder: '예) ADsP 데이터 분석 기획 파트를 공부했어요. 분석 목표 설정의 중요성을 깨달았고...',
+    minLen: 20,
+  },
+  {
+    title: '자격증 문제 5개 풀기',
+    desc: '짧게 5문제만 도전해보세요. 작은 성취가 쌓입니다.',
+    placeholder: '예) SQLD 기출 5문제 풀었어요. GROUP BY 문제에서 2개 틀렸지만 개념을 다시 잡았어요...',
+    minLen: 20,
+  },
+  {
+    title: '오늘 하루 한 줄 일기 쓰기',
+    desc: '의욕이 없는 날도 괜찮아요. 오늘 있었던 일을 딱 한 줄만 써봐요.',
+    placeholder: '예) 오늘은 조금 힘들었지만 채용공고를 1개 읽었어요. 내일은 더 잘 할 수 있을 것 같아요...',
+    minLen: 20,
+  },
 ]
 
-const MISSION_LOGS = [
-  { title: '빠른 첫 번째 글쓰기', status: '완료', done: true },
-  { title: '자격증 문제 5개', status: '진행 중', done: false },
+const EXTRA_MISSIONS = [
+  { title: '자격증 문제 5개', time: '10분', mood: '기분무관', moodLabel: '기분 상관없음', count: 43 },
+  { title: '채용공고 1개 정독', time: '3분', mood: '기분무관', moodLabel: '기분 무관', count: 69 },
+  { title: '5분 영상보기', time: '5분', mood: 'low', moodLabel: '의욕 낮을 때', count: 33 },
+  { title: '목표 직무 리서치', time: '15분', mood: 'good', moodLabel: '의욕 충분할 때', count: 37 },
 ]
 
 const FEED_POSTS = [
@@ -100,15 +117,22 @@ function MissionSection() {
   const [missionText, setMissionText] = useState('')
   const [selectedExtra, setSelectedExtra] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
-  const [logs, setLogs] = useState(MISSION_LOGS)
-  const [streak, setStreak] = useState(127)
-  const [totalDone, setTotalDone] = useState(342)
-  const [monthDone, setMonthDone] = useState(28)
+  const [logs, setLogs] = useState([])
+  const [streak, setStreak] = useState(0)
+  const [totalDone, setTotalDone] = useState(0)
+  const [monthDone, setMonthDone] = useState(0)
   const [showAllLogs, setShowAllLogs] = useState(false)
   const [completed, setCompleted] = useState(false)
   const [missionError, setMissionError] = useState('')
-  const fileInputRef = useState(null)
-  // 미션 목록 불러오기
+  const [expandedLog, setExpandedLog] = useState(null)
+  const [extraTexts, setExtraTexts] = useState({})
+  const [extraErrors, setExtraErrors] = useState({})
+
+  const todayKey = new Date().toISOString().slice(0, 10)
+  const [todayCompleted, setTodayCompleted] = useState(() =>
+    localStorage.getItem('mission_done_date') === todayKey
+  )
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -120,6 +144,10 @@ function MissionSection() {
             title: m.title,
             status: m.completed ? '완료' : '진행 중',
             done: m.completed,
+            content: m.content || '',
+            createdAt: m.created_at
+              ? new Date(m.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+              : '',
           }))
           setLogs(loaded)
           const done = data.filter(m => m.completed).length
@@ -142,16 +170,27 @@ function MissionSection() {
     reader.readAsDataURL(file)
   }
 
+  const currentMission = MOOD_MISSIONS[mood]
+  const moodKeyMap = { 0: 'good', 1: null, 2: 'low' }
+  const currentMoodKey = moodKeyMap[mood]
+  const filteredExtras = EXTRA_MISSIONS.filter(m =>
+    m.mood === '기분무관' || m.mood === currentMoodKey
+  )
+
   const handleMissionComplete = async () => {
-    if (!missionText.trim()) {
+    const text = missionText.trim()
+    if (!text) {
       setMissionError('미션 내용을 작성해주세요.')
       return
     }
+    if (text.length < currentMission.minLen) {
+      setMissionError(`최소 ${currentMission.minLen}자 이상 작성해주세요. (현재 ${text.length}자)`)
+      return
+    }
     setMissionError('')
-    const text = missionText.trim()
 
-    // 즉시 UI 반영
-    const newLog = { title: text, status: '완료', done: true }
+    const now = new Date().toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    const newLog = { title: currentMission.title, status: '완료', done: true, content: text, createdAt: now }
     setLogs(prev => [newLog, ...prev])
     setStreak(s => s + 1)
     setTotalDone(t => t + 1)
@@ -159,13 +198,14 @@ function MissionSection() {
     setMissionText('')
     setPhotoPreview(null)
     setCompleted(true)
+    setTodayCompleted(true)
+    localStorage.setItem('mission_done_date', todayKey)
     setTimeout(() => setCompleted(false), 3000)
 
-    // 백엔드 저장
     try {
       const { api } = await import('../api')
       const created = await api.createMission({
-        title: '오늘 배운 것 한 줄 쓰기',
+        title: currentMission.title,
         content: text,
         mission_type: 'daily_learning',
       })
@@ -175,36 +215,38 @@ function MissionSection() {
     }
   }
 
-  const handleExtraSelect = (i) => {
-    if (selectedExtra === i) { setSelectedExtra(null); return }
-    setSelectedExtra(i)
-    const m = EXTRA_MISSIONS[i]
-    const alreadyIn = logs.some(l => l.title === m.title)
-    if (!alreadyIn) {
-      setLogs(prev => [...prev, { title: m.title, status: '진행 중', done: false }])
-      // 백엔드 저장
-      import('../api').then(({ api }) =>
-        api.createMission({ title: m.title, content: m.title, mission_type: 'extra' })
-      ).catch(() => {})
-    }
+  const handleExtraSelect = (filteredIdx) => {
+    const m = filteredExtras[filteredIdx]
+    const globalIdx = EXTRA_MISSIONS.indexOf(m)
+    if (selectedExtra === globalIdx) { setSelectedExtra(null); return }
+    setSelectedExtra(globalIdx)
   }
 
-  const handleExtraDone = async (title) => {
-    setLogs(prev => prev.map(l =>
-      l.title === title ? { ...l, status: '완료', done: true } : l
-    ))
-    setTotalDone(t => t + 1)
-    setMonthDone(m => m + 1)
+  const handleExtraDone = async (globalIdx, m) => {
+    const text = (extraTexts[globalIdx] || '').trim()
+    if (text.length < 10) {
+      setExtraErrors(prev => ({ ...prev, [globalIdx]: `최소 10자 이상 작성해주세요. (현재 ${text.length}자)` }))
+      return
+    }
+    setExtraErrors(prev => ({ ...prev, [globalIdx]: '' }))
 
-    // 백엔드에서 해당 미션 id 찾아서 완료 처리
+    const now = new Date().toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    const alreadyIn = logs.some(l => l.title === m.title)
+    if (alreadyIn) {
+      setLogs(prev => prev.map(l => l.title === m.title ? { ...l, status: '완료', done: true, content: text, createdAt: now } : l))
+    } else {
+      setLogs(prev => [{ title: m.title, status: '완료', done: true, content: text, createdAt: now }, ...prev])
+    }
+    setTotalDone(t => t + 1)
+    setMonthDone(mm => mm + 1)
+    setSelectedExtra(null)
+    setExtraTexts(prev => ({ ...prev, [globalIdx]: '' }))
+
     try {
       const { api } = await import('../api')
-      const missions = await api.getMissions()
-      const target = missions.find(m => m.title === title && !m.completed)
-      if (target) await api.completeMission(target.id)
-    } catch {
-      // 저장 실패해도 UI는 유지
-    }
+      const created = await api.createMission({ title: m.title, content: text, mission_type: 'extra' })
+      await api.completeMission(created.id)
+    } catch {}
   }
 
   const visibleLogs = showAllLogs ? logs : logs.slice(0, 3)
@@ -245,66 +287,92 @@ function MissionSection() {
               <p className="ms-card-title">AI 추천 미션</p>
               <span className="ms-participant">· 127명 지금 참여중</span>
             </div>
-            <p className="ms-mission-title">오늘 배운 것 한 줄 쓰기</p>
-            <p className="ms-mission-desc">
-              자신의 말로 생각을 정리하는 힘, 오늘 첫 발걸음을 내디뎌 보세요.
-            </p>
-            <textarea
-              className="ms-textarea"
-              placeholder="예) ADsP 시험 범위의 중요한 데이터 분석 기법을 공부했어. 전체적 사고의 틀이 생기는 느낌..."
-              value={missionText}
-              onChange={(e) => { setMissionText(e.target.value); setMissionError('') }}
-              rows={4}
-            />
-            {missionError && <p className="ms-error">{missionError}</p>}
+            <p className="ms-mission-title">{currentMission.title}</p>
+            <p className="ms-mission-desc">{currentMission.desc}</p>
 
-            {photoPreview && (
-              <div className="ms-photo-preview">
-                <img src={photoPreview} alt="인증 사진" />
-                <button className="ms-photo-remove" onClick={() => setPhotoPreview(null)}>✕</button>
+            {todayCompleted ? (
+              <div className="ms-today-done">
+                ✓ 오늘의 미션을 완료했습니다! 내일 또 도전해보세요.
               </div>
-            )}
-
-            <div className="ms-mission-actions">
-              <label className="ms-btn-outline ms-photo-label">
-                📷 인증 사진
-                <input
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={handlePhotoChange}
+            ) : (
+              <>
+                <textarea
+                  className="ms-textarea"
+                  placeholder={currentMission.placeholder}
+                  value={missionText}
+                  onChange={(e) => { setMissionText(e.target.value); setMissionError('') }}
+                  rows={4}
                 />
-              </label>
-              <button className="ms-btn-primary" onClick={handleMissionComplete}>
-                ✓ 미션 완료
-              </button>
-            </div>
+                {missionText.trim().length > 0 && missionText.trim().length < currentMission.minLen && (
+                  <p style={{ fontSize: '12px', color: '#aaa', marginTop: '4px' }}>
+                    {missionText.trim().length} / {currentMission.minLen}자 (최소 {currentMission.minLen}자)
+                  </p>
+                )}
+                {missionError && <p className="ms-error">{missionError}</p>}
+                {photoPreview && (
+                  <div className="ms-photo-preview">
+                    <img src={photoPreview} alt="인증 사진" />
+                    <button className="ms-photo-remove" onClick={() => setPhotoPreview(null)}>✕</button>
+                  </div>
+                )}
+                <div className="ms-mission-actions">
+                  <label className="ms-btn-outline ms-photo-label">
+                    📷 인증 사진
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange} />
+                  </label>
+                  <button className="ms-btn-primary" onClick={handleMissionComplete}>
+                    ✓ 미션 완료
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* 추가 미션 선택 */}
           <div className="ms-card">
             <p className="ms-card-title">추가 미션 선택</p>
-            <p className="ms-card-sub">선택하면 로그에 추가됩니다</p>
+            <p className="ms-card-sub">현재 기분에 맞는 미션을 선택해보세요</p>
             <div className="ms-extra-grid">
-              {EXTRA_MISSIONS.map((m, i) => (
-                <div
-                  key={i}
-                  className={`ms-extra-item ${selectedExtra === i ? 'active' : ''}`}
-                  onClick={() => handleExtraSelect(i)}
-                >
-                  <p className="ms-extra-title">{m.title}</p>
-                  <p className="ms-extra-meta">{m.time} · {m.mood}</p>
-                  <span className="ms-extra-count">+{m.count}명</span>
-                  {selectedExtra === i && (
-                    <button
-                      className="ms-extra-done-btn"
-                      onClick={(e) => { e.stopPropagation(); handleExtraDone(m.title) }}
-                    >
-                      완료
-                    </button>
-                  )}
-                </div>
-              ))}
+              {filteredExtras.map((m, i) => {
+                const globalIdx = EXTRA_MISSIONS.indexOf(m)
+                const isSelected = selectedExtra === globalIdx
+                return (
+                  <div
+                    key={i}
+                    className={`ms-extra-item ${isSelected ? 'active' : ''}`}
+                    onClick={!isSelected ? () => handleExtraSelect(i) : undefined}
+                    style={isSelected ? { cursor: 'default' } : {}}
+                  >
+                    <p className="ms-extra-title">{m.title}</p>
+                    <p className="ms-extra-meta">{m.time} · {m.moodLabel}</p>
+                    {!isSelected && <span className="ms-extra-count">+{m.count}명</span>}
+                    {isSelected && (
+                      <>
+                        <textarea
+                          className="ms-extra-textarea"
+                          placeholder="미션을 어떻게 수행했나요? (최소 10자)"
+                          value={extraTexts[globalIdx] || ''}
+                          onChange={(e) => {
+                            setExtraTexts(prev => ({ ...prev, [globalIdx]: e.target.value }))
+                            setExtraErrors(prev => ({ ...prev, [globalIdx]: '' }))
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          rows={3}
+                        />
+                        {extraErrors[globalIdx] && (
+                          <p className="ms-error" style={{ fontSize: '11px', marginTop: '2px' }}>{extraErrors[globalIdx]}</p>
+                        )}
+                        <button
+                          className="ms-extra-done-btn"
+                          onClick={(e) => { e.stopPropagation(); handleExtraDone(globalIdx, m) }}
+                        >
+                          ✓ 완료
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
@@ -333,20 +401,42 @@ function MissionSection() {
           {/* 최근 인증 로그 */}
           <div className="ms-card">
             <p className="ms-card-title">최근 인증 로그</p>
-            <div className="ms-logs">
-              {visibleLogs.map((log, i) => (
-                <div key={i} className="ms-log-item">
-                  <div className={`ms-log-icon ${log.done ? 'done' : ''}`}>{log.done ? '✓' : '→'}</div>
-                  <p className="ms-log-title">{log.title}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {!log.done && (
-                      <button className="ms-log-done-btn" onClick={() => handleExtraDone(log.title)}>완료</button>
+            {logs.length === 0 ? (
+              <p style={{ fontSize: '13px', color: '#aaa', textAlign: 'center', padding: '12px 0' }}>
+                아직 완료한 미션이 없어요
+              </p>
+            ) : (
+              <div className="ms-logs">
+                {visibleLogs.map((log, i) => (
+                  <div key={i} className="ms-log-item">
+                    <div className="ms-log-row">
+                      <div className={`ms-log-icon ${log.done ? 'done' : ''}`}>{log.done ? '✓' : '→'}</div>
+                      <div className="ms-log-main">
+                        <p className="ms-log-title">{log.title}</p>
+                        {log.createdAt && <p className="ms-log-date">{log.createdAt}</p>}
+                      </div>
+                      <div className="ms-log-actions">
+                        {log.content && (
+                          <button
+                            className="ms-log-view-btn"
+                            onClick={() => setExpandedLog(expandedLog === i ? null : i)}
+                          >
+                            {expandedLog === i ? '접기' : '내용 보기'}
+                          </button>
+                        )}
+                        {!log.done && (
+                          <button className="ms-log-done-btn" onClick={() => handleExtraDone(log.title)}>완료</button>
+                        )}
+                        <span className={`ms-log-badge ${log.done ? 'done' : 'ing'}`}>{log.status}</span>
+                      </div>
+                    </div>
+                    {expandedLog === i && log.content && (
+                      <div className="ms-log-content">{log.content}</div>
                     )}
-                    <span className={`ms-log-badge ${log.done ? 'done' : 'ing'}`}>{log.status}</span>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             {logs.length > 3 && (
               <button className="db-more-btn" onClick={() => setShowAllLogs(v => !v)}>
                 {showAllLogs ? '접기 ▲' : `전체 로그 보기 (${logs.length}개) ▼`}
@@ -449,6 +539,7 @@ function CommunitySection() {
 }
 
 function PasswordSection() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
 
@@ -483,7 +574,7 @@ function PasswordSection() {
           )}
           <button type="submit" className="pw-btn">재설정 메일 보내기 ✉</button>
           <div className="pw-footer">
-            <span className="pw-link" onClick={() => setSent(false)}>← 로그인으로 돌아가기</span>
+            <span className="pw-link" onClick={() => navigate('/')}>← 로그인으로 돌아가기</span>
           </div>
         </form>
       </div>
@@ -496,18 +587,42 @@ export default function Dashboard() {
   const activeNav = searchParams.get('tab') || 'home'
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
+  const [gapMonths, setGapMonths] = useState(null)
+  const [totalNcs, setTotalNcs] = useState(null)
+  const [missionStreak, setMissionStreak] = useState(null)
 
   useEffect(() => {
     import('../api').then(({ api }) => {
-      api.getMe().then(setUser).catch(() => {})
+      api.getMe().then(data => {
+        setUser(data)
+        if (data.gap_start_date) {
+          const start = new Date(data.gap_start_date + '-01')
+          const now = new Date()
+          const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
+          setGapMonths(months)
+        }
+      }).catch(() => {})
+
+      api.getMissions().then(data => {
+        if (data && data.length > 0) {
+          const done = data.filter(m => m.completed).length
+          setMissionStreak(done)
+        }
+      }).catch(() => {})
     })
+
+    try {
+      const history = JSON.parse(localStorage.getItem('exp_history') || '[]')
+      const count = history.reduce((sum, exp) => sum + (exp._result?.ncs_items?.length || 0), 0)
+      if (count > 0) setTotalNcs(count)
+    } catch {}
   }, [])
 
   return (
     <div className="db-root">
       {/* Top header */}
       <header className="db-header">
-        <span className="db-brand">Pause to Pass</span>
+        <span className="db-brand" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>Pause to Pass</span>
         <span className="db-tagline"> - 나의 오늘이 내일의 발판이 되지 못하는 불안</span>
       </header>
 
@@ -542,18 +657,19 @@ export default function Dashboard() {
         {/* Main content */}
         <main className="db-main">
           {/* Breadcrumb bar */}
-          <div className="db-topbar">
-            <span className="db-breadcrumb">
-              {activeNav === 'experience' ? '경험 입력'
-                : activeNav === 'password' ? '비밀번호 변경'
-                : activeNav === 'roadmap' ? '자격증 로드맵'
-                : activeNav === 'mission' ? '오늘의 미션'
-                : activeNav === 'community' ? '커뮤니티'
-                : activeNav === 'report' ? '성장 리포트'
-                : '홈 대시보드'}
-            </span>
-            <span className="db-user">· {user?.name?.slice(0, 2) || ''}</span>
-          </div>
+          <TopBar
+            title={
+              activeNav === 'experience' ? '경험 입력'
+              : activeNav === 'password' ? '비밀번호 변경'
+              : activeNav === 'roadmap' ? '자격증 로드맵'
+              : activeNav === 'mission' ? '오늘의 미션'
+              : activeNav === 'community' ? '커뮤니티'
+              : activeNav === 'report' ? '성장 리포트'
+              : '홈 대시보드'
+            }
+            user={user}
+            onProfileClick={() => navigate('/mypage')}
+          />
 
           {activeNav === 'password' && <PasswordSection />}
           {activeNav === 'experience' && <div className="db-content"><ExperienceInput /></div>}
@@ -567,20 +683,20 @@ export default function Dashboard() {
             {/* Stats */}
             <div className="db-stats">
               <div className="db-stat">
-                <span className="db-stat-num">5개월</span>
+                <span className="db-stat-num">{gapMonths != null ? `${gapMonths}개월` : '-'}</span>
                 <span className="db-stat-label">현재 공백기</span>
               </div>
               <div className="db-stat">
-                <span className="db-stat-num">12개</span>
+                <span className="db-stat-num">{totalNcs != null ? `${totalNcs}개` : '-'}</span>
                 <span className="db-stat-label">확보된 NCS 역량</span>
               </div>
               <div className="db-stat">
-                <span className="db-stat-num">2/3</span>
-                <span className="db-stat-label">목표 자격증 취득</span>
+                <span className="db-stat-num" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard?tab=roadmap')}>자격증 로드맵 →</span>
+                <span className="db-stat-label">목표 자격증 현황</span>
               </div>
               <div className="db-stat">
-                <span className="db-stat-num">127일</span>
-                <span className="db-stat-label">미션 연속 실천</span>
+                <span className="db-stat-num">{missionStreak != null ? `${missionStreak}개` : '-'}</span>
+                <span className="db-stat-label">완료한 미션</span>
               </div>
             </div>
 
@@ -625,12 +741,18 @@ export default function Dashboard() {
                 </div>
                 <div className="db-todo-list">
                   {TODOS.map((t, i) => (
-                    <div key={i} className="db-todo-item">
+                    <div
+                      key={i}
+                      className="db-todo-item"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => navigate(t.path)}
+                    >
                       <span className="db-todo-icon">{t.icon}</span>
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <p className="db-todo-title">{t.title}</p>
                         <p className="db-todo-desc">{t.desc}</p>
                       </div>
+                      <span style={{ fontSize: '14px', color: '#c4603d' }}>›</span>
                     </div>
                   ))}
                 </div>
@@ -656,7 +778,7 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
-                <button className="db-more-btn">피드 더 보기</button>
+                <button className="db-more-btn" onClick={() => navigate('/dashboard?tab=community')}>피드 더 보기</button>
               </div>
 
               {/* 이번 달 실천 현황 */}

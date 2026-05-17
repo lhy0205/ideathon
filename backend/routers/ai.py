@@ -2,11 +2,13 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, List
-import json, re
+import json, re, traceback, logging
 from rag.exaone_client import analyze
 from database import get_db
 from dependencies import get_current_user
 import models as m
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -25,12 +27,15 @@ class AnalysisResponse(BaseModel):
     ncs_items: list[dict]
     star_drafts: list[str]
     summary: str
+    intro: Optional[str] = ""
+    aspiration: Optional[str] = ""
 
 
 class CertRecommendRequest(BaseModel):
     ncs_items: list[dict]
     exp_type: Optional[str] = ""
     exp_title: Optional[str] = ""
+    count: Optional[int] = 5
 
 
 class CertRecommendResponse(BaseModel):
@@ -55,11 +60,19 @@ def _get_rag_context(query: str) -> str:
 
 def build_prompt(req: AnalysisRequest, rag_context: str = "") -> str:
     rag_section = f"\n[관련 NCS 역량 참고]\n{rag_context}" if rag_context else ""
+    start = req.start_date or ""
+    end = req.end_date or ""
+    if start and end:
+        period_line = f"\n- 기간: {start} ~ {end}"
+    elif start:
+        period_line = f"\n- 기간: {start} ~ 현재"
+    else:
+        period_line = ""
     return f"""당신은 국가직무능력표준(NCS) 전문가입니다.
 {rag_section}
 [경험 정보]
 - 유형: {req.exp_type}
-- 제목: {req.title}
+- 제목: {req.title}{period_line}
 - 내용: {req.content}
 - 역량 메모: {req.memo}
 
@@ -69,44 +82,71 @@ def build_prompt(req: AnalysisRequest, rag_context: str = "") -> str:
     {{"ncs_code": "NCS 코드", "unit_name": "역량명", "level": 숙련도(1-5), "score": 점수(0-100)}},
     ...최대 5개
   ],
+  "intro": "이 경험을 한 사람을 소개하는 2~3문장. 어떤 경험을 얼마나 했는지 구체적으로.",
   "star_drafts": [
-    "[상황 S] ...",
-    "[과제 T] ...",
-    "[행동 A] ...",
-    "[결과 R] ..."
+    "[상황 S] 3~4문장. 언제, 어디서, 어떤 상황이었는지 구체적 배경을 서술. 팀 규모나 환경 등 맥락 포함.",
+    "[과제 T] 2~3문장. 그 상황에서 본인이 맡은 역할과 해결해야 했던 핵심 과제를 구체적으로 서술.",
+    "[행동 A] 4~5문장. 과제를 해결하기 위해 취한 구체적인 행동들을 상세히 서술. 어떤 방법을 선택했고 왜 그 방법을 택했는지 포함. 가능하면 수치나 빈도 포함.",
+    "[결과 R] 2~3문장. 행동의 결과와 그 경험에서 얻은 역량 또는 교훈을 서술. 수치화된 성과가 있다면 포함."
   ],
+  "aspiration": "이 경험을 바탕으로 앞으로 어떻게 성장하고 싶은지 2~3문장. 직무 연관성 포함.",
   "summary": "역량 한줄 요약"
 }}"""
 
 
-def parse_response(text: str) -> dict:
+def _try_json(raw: str):
+    """JSON 파싱 시도 - 일반 → 줄바꿈 이스케이프 → 제어문자 제거 순으로 시도"""
+    for attempt in (raw, re.sub(r'\r\n|\r', '\n', raw)):
+        try:
+            return json.loads(attempt)
+        except Exception:
+            pass
+    # 문자열 내부 리터럴 줄바꿈 이스케이프 처리
     try:
-        # JSON 블록 추출 (마크다운 코드블록 포함) - greedy so nested braces work
-        match = re.search(r'```(?:json)?\s*(\{[\s\S]*\})\s*```', text)
-        if not match:
-            match = re.search(r'\{[\s\S]*\}', text)
-        if match:
-            raw = match.group(1) if match.lastindex else match.group()
-            parsed = json.loads(raw)
-            # star_drafts가 문자열로 왔을 경우 파싱
-            if isinstance(parsed.get("star_drafts"), str):
-                try:
-                    parsed["star_drafts"] = json.loads(parsed["star_drafts"])
-                except Exception:
-                    parsed["star_drafts"] = [parsed["star_drafts"]]
-            # ncs_items가 문자열로 왔을 경우 파싱
-            if isinstance(parsed.get("ncs_items"), str):
-                try:
-                    parsed["ncs_items"] = json.loads(parsed["ncs_items"])
-                except Exception:
-                    parsed["ncs_items"] = []
-            return parsed
+        fixed = re.sub(r'(?<=[^\\])\n', '\\n', raw)
+        return json.loads(fixed)
     except Exception:
         pass
+    return None
+
+
+def parse_response(text: str) -> dict:
+    candidates = []
+
+    # 전략 1: 마크다운 코드블록 안의 JSON
+    for m in re.finditer(r'```(?:json)?\s*(\{[\s\S]*?\})\s*```', text):
+        candidates.append(m.group(1).strip())
+
+    # 전략 2: 텍스트 전체에서 { } 블록 추출 (greedy)
+    m = re.search(r'\{[\s\S]*\}', text)
+    if m:
+        candidates.append(m.group())
+
+    for raw in candidates:
+        parsed = _try_json(raw)
+        if not parsed or not isinstance(parsed, dict):
+            continue
+        # ncs_items 문자열 → 리스트
+        if isinstance(parsed.get("ncs_items"), str):
+            try:
+                parsed["ncs_items"] = json.loads(parsed["ncs_items"])
+            except Exception:
+                parsed["ncs_items"] = []
+        # star_drafts 문자열 → 리스트
+        if isinstance(parsed.get("star_drafts"), str):
+            try:
+                parsed["star_drafts"] = json.loads(parsed["star_drafts"])
+            except Exception:
+                parsed["star_drafts"] = [parsed["star_drafts"]]
+        # 필수 키 확인
+        if "ncs_items" in parsed or "star_drafts" in parsed:
+            return parsed
+
+    # 모든 전략 실패 → 최소 fallback (raw text를 star_drafts에 노출하지 않음)
     return {
-        "ncs_items": [{"ncs_code": "NCS-분석완료", "unit_name": "분석 결과", "level": 3, "score": 75}],
-        "star_drafts": ["[상황 S] " + text[:200]] if text else ["분석 결과를 가져오는 중 오류가 발생했습니다."],
-        "summary": "AI 분석이 완료되었습니다.",
+        "ncs_items": [],
+        "star_drafts": ["AI 응답 파싱에 실패했습니다. 다시 시도해주세요."],
+        "summary": "분석 결과를 불러오지 못했습니다.",
     }
 
 
@@ -160,9 +200,17 @@ async def analyze_experience(
         db.commit()
         db.refresh(analysis)
 
-        return AnalysisResponse(id=analysis.id, **result)
+        return AnalysisResponse(
+            id=analysis.id,
+            ncs_items=result.get("ncs_items", []),
+            star_drafts=result.get("star_drafts", []),
+            summary=result.get("summary", ""),
+            intro=result.get("intro", ""),
+            aspiration=result.get("aspiration", ""),
+        )
 
     except Exception as e:
+        logger.error("analyze_experience 오류:\n%s", traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"AI 분석 오류: {str(e)}")
 
 
@@ -237,16 +285,35 @@ async def analyze_batch(
         raise HTTPException(status_code=500, detail=f"통합 분석 오류: {str(e)}")
 
 
+_TYPE_CERT_HINT = {
+    "아르바이트":    "아르바이트 직무(서비스, 외식, 유통, 물류, 사무 등)와 NCS 역량에 맞는 자격증을 추천하세요. 서비스·식음료 관련이면 서비스경영사·유통관리사, 사무 관련이면 컴퓨터활용능력·전산회계, 어학 역량이 높으면 TOEIC·OPIc 등 실제 직무와 연관된 자격증을 우선하세요.",
+    "인턴":          "인턴 직무와 NCS 역량에 연관된 자격증을 우선 추천하세요. IT/개발이면 SQLD·ADsP·AWS, 경영/기획이면 ERP·사회조사분석사, 데이터면 빅데이터분석기사 등 실제 업무와 연결되는 자격증을 선택하세요.",
+    "동아리/학생회": "활동 내용과 NCS 역량에 맞는 자격증을 추천하세요. 기획·마케팅 역량이면 사회조사분석사, IT 관련이면 SQLD·ADsP, 어학 역량이면 TOEIC·OPIc 등 구체적 활동과 연결하세요.",
+    "프리랜서":      "프리랜서 직종과 NCS 역량에 직결되는 전문 자격증을 추천하세요. IT면 SQLD·AWS·ADsP, 디자인/기획이면 관련 전문 자격증, 어학이면 TOEIC·OPIc을 우선하세요.",
+    "봉사활동":      "봉사 분야와 NCS 역량에 맞는 자격증을 추천하세요. 사회복지·상담 관련이면 사회조사분석사, 국제 활동이면 어학(TOEIC·OPIc), 행정 지원이면 컴퓨터활용능력을 고려하세요.",
+    "개인 프로젝트": "프로젝트 내용과 NCS 역량에 연관된 자격증을 추천하세요. 데이터/AI면 ADsP·빅데이터분석기사·SQLD, 클라우드/개발이면 AWS·Azure, 기획이면 사회조사분석사를 우선하세요.",
+    "독학/공부":     "학습 분야와 NCS 역량에 직결되는 자격증을 추천하세요. 학습 내용을 공식적으로 인정받을 수 있는 가장 적합한 자격증을 선택하세요.",
+    "기타":          "NCS 역량 점수가 높은 분야와 가장 연관성 높은 자격증을 추천하세요.",
+}
+
+
 @router.post("/recommend-certs", response_model=CertRecommendResponse)
 async def recommend_certs(req: CertRecommendRequest):
     ncs_summary = "\n".join([
         f"- {item.get('unit_name', '')} (적합도: {item.get('score', 0)}%)"
         for item in req.ncs_items
     ])
+
+    type_hint = _TYPE_CERT_HINT.get(req.exp_type or "", "NCS 역량과 가장 연관성 높은 자격증을 추천하세요.")
+
+    count = max(1, min(7, req.count or 5))
     prompt = f"""당신은 취업 준비생을 돕는 자격증 추천 전문가입니다.
 
 아래 NCS 역량 분석 결과를 보고 취업에 유리한 국내 자격증을 추천해주세요.
 경험 유형: {req.exp_type}, 경험 제목: {req.exp_title}
+
+[추천 방향]
+{type_hint}
 
 [NCS 역량]
 {ncs_summary}
@@ -255,7 +322,7 @@ async def recommend_certs(req: CertRecommendRequest):
 {{
   "certs": [
     {{"name": "자격증명", "org": "발급기관", "reason": "추천 이유 (1문장)", "priority": 1}},
-    ...최대 5개
+    ...정확히 {count}개
   ]
 }}"""
     try:

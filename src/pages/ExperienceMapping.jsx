@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import TopBar from '../components/TopBar'
 import './ExperienceMapping.css'
 
 const NAV_ITEMS = [
@@ -40,23 +41,35 @@ const STAR_TEXT = [
 const RADAR_LABELS = ['판매관리', '고객', '물류', '현금관리', '재고']
 const RADAR_VALUES = [0.88, 0.76, 0.62, 0.58, 0.70]
 
+function splitLabel(text) {
+  if (text.length <= 6) return [text]
+  const words = text.split(' ')
+  if (words.length === 1) {
+    const mid = Math.ceil(text.length / 2)
+    return [text.slice(0, mid), text.slice(mid)]
+  }
+  let best = 1, bestDiff = Infinity
+  for (let i = 1; i < words.length; i++) {
+    const diff = Math.abs(words.slice(0, i).join(' ').length - words.slice(i).join(' ').length)
+    if (diff < bestDiff) { bestDiff = diff; best = i }
+  }
+  return [words.slice(0, best).join(' '), words.slice(best).join(' ')]
+}
+
 function RadarChart({ labels = RADAR_LABELS, values = RADAR_VALUES }) {
-  const cx = 130, cy = 130, r = 90
+  const cx = 150, cy = 150, r = 90
   const n = labels.length
   const angles = labels.map((_, i) => (Math.PI * 2 * i) / n - Math.PI / 2)
-
   const gridLevels = [0.25, 0.5, 0.75, 1]
-
   const toXY = (angle, val) => ({
     x: cx + r * val * Math.cos(angle),
     y: cy + r * val * Math.sin(angle),
   })
-
   const dataPoints = angles.map((a, i) => toXY(a, values[i] ?? 0.5))
   const dataPath = dataPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z'
 
   return (
-    <svg width="260" height="260" viewBox="0 0 260 260">
+    <svg width="100%" height="auto" viewBox="0 0 300 300">
       {gridLevels.map(lvl =>
         angles.map((a, i) => {
           const next = angles[(i + 1) % n]
@@ -74,11 +87,13 @@ function RadarChart({ labels = RADAR_LABELS, values = RADAR_VALUES }) {
         <circle key={i} cx={p.x} cy={p.y} r="4" fill="#c4603d" />
       ))}
       {angles.map((a, i) => {
-        const lp = toXY(a, 1.22)
+        const lp = toXY(a, 1.38)
+        const lines = splitLabel(labels[i])
         return (
-          <text key={i} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle"
-            fontSize="11" fill="#555" fontFamily="inherit">
-            {labels[i]}
+          <text key={i} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle" fontSize="11" fill="#555" fontFamily="inherit">
+            {lines.map((line, li) => (
+              <tspan key={li} x={lp.x} dy={li === 0 ? (lines.length > 1 ? '-0.6em' : '0') : '1.3em'}>{line}</tspan>
+            ))}
           </text>
         )
       })}
@@ -89,6 +104,7 @@ function RadarChart({ labels = RADAR_LABELS, values = RADAR_VALUES }) {
 export default function ExperienceMapping() {
   const navigate = useNavigate()
   const [activeNav, setActiveNav] = useState('mapping')
+  const [user, setUser] = useState(null)
   const [copied, setCopied] = useState(false)
   const [ncsResult, setNcsResult] = useState(null)
   const [expInfo, setExpInfo] = useState(null)
@@ -96,8 +112,14 @@ export default function ExperienceMapping() {
   const [selectedIdx, setSelectedIdx] = useState(null)
   const [batchLoading, setBatchLoading] = useState(false)
   const [allNcsSummary, setAllNcsSummary] = useState(null)
+  const [editMode, setEditMode] = useState(false)
+  const [editedItems, setEditedItems] = useState([])
+  const [ncsExpanded, setNcsExpanded] = useState(false)
+  const [radarExpSource, setRadarExpSource] = useState('all')
+  const [radarNcsItems, setRadarNcsItems] = useState(null)
 
   useEffect(() => {
+    import('../api').then(({ api }) => api.getMe().then(setUser).catch(() => {}))
     // localStorage 마지막 결과 로드
     const saved = localStorage.getItem('ncs_result')
     const exp = localStorage.getItem('ncs_experience')
@@ -169,27 +191,68 @@ export default function ExperienceMapping() {
     ? ncsResult.star_drafts.map((draft, i) => parseDraft(draft, i))
     : STAR_TEXT
   const summary = ncsResult?.summary || ''
-  const expTitle = expInfo?.title || '편의점 아르바이트 2년'
-  const expContent = expInfo?.content || '야간 혼자 편의점 운영, 재고 체크, 발주, 고객 트러블 대응, 현금 정산'
+  const expTitle = expInfo?.title || ''
+  const expContent = expInfo?.content ?? ''
 
-  const radarSource = allNcsSummary?.length > 0
-    ? allNcsSummary.slice(0, 5).map(c => ({ unit_name: c.unit_name, score: c.avg_score }))
-    : ncsCards.slice(0, 5)
-  const radarLabels = radarSource.map(c => c.unit_name || c.title)
-  const radarValues = radarSource.map(c => (c.avg_score ?? c.score ?? c.pct ?? 70) / 100)
+  const handleRadarSourceChange = async (val) => {
+    setRadarExpSource(val)
+    if (val === 'all') {
+      setRadarNcsItems(null)
+    } else {
+      const item = history.find(h => String(h.idx) === String(val))
+      if (!item) return
+      try {
+        const { api } = await import('../api')
+        const detail = await api.getAnalysisDetail(item.idx)
+        setRadarNcsItems(detail.ncs_items || [])
+      } catch {}
+    }
+  }
 
-  const handleCopy = () => {
+  const radarBase = radarNcsItems
+    ? radarNcsItems.slice(0, 5).map(c => ({ unit_name: c.unit_name, score: c.score }))
+    : allNcsSummary?.length > 0
+      ? allNcsSummary.slice(0, 5).map(c => ({ unit_name: c.unit_name, score: c.avg_score }))
+      : ncsCards.slice(0, 5)
+  const radarLabels = radarBase.map(c => c.unit_name || c.title)
+  const radarValues = radarBase.map(c => (c.avg_score ?? c.score ?? c.pct ?? 70) / 100)
+
+  const handleCopy = async () => {
     const text = starItems.map(s => `[${s.label}] ${s.text}`).join('\n')
-    navigator.clipboard.writeText(text)
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      const el = document.createElement('textarea')
+      el.value = text
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+    }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleEditStart = () => {
+    setEditedItems(starItems.map(s => ({ ...s })))
+    setEditMode(true)
+  }
+
+  const handleEditSave = () => {
+    if (ncsResult) {
+      const updatedDrafts = editedItems.map(s => `[${s.label}] ${s.text}`)
+      const updated = { ...ncsResult, star_drafts: updatedDrafts }
+      setNcsResult(updated)
+      localStorage.setItem('ncs_result', JSON.stringify(updated))
+    }
+    setEditMode(false)
   }
 
   return (
     <div className="em-root">
       {/* Top header */}
       <header className="em-header">
-        <span className="em-brand">Pause to Pass</span>
+        <span className="em-brand" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>Pause to Pass</span>
         <span className="em-tagline"> - 나의 오늘이 내일의 발판이 되지 못하는 불안</span>
       </header>
 
@@ -217,10 +280,7 @@ export default function ExperienceMapping() {
 
         {/* Main */}
         <main className="em-main">
-          <div className="em-topbar">
-            <span className="em-breadcrumb">경험 매핑 결과</span>
-            <span className="em-user">· 김지</span>
-          </div>
+          <TopBar title="경험 매핑 결과" user={user} />
 
           <div className="em-content">
             <h2 className="em-title">경험 매핑 결과</h2>
@@ -267,7 +327,7 @@ export default function ExperienceMapping() {
                 <div className="em-exp-card">
                   <p className="em-exp-label">선택된 경험</p>
                   <p className="em-exp-title">{expTitle}</p>
-                  <p className="em-exp-desc">{expContent.slice(0, 80)}{expContent.length > 80 ? '...' : ''}</p>
+                  <p className="em-exp-desc">{expContent ? (expContent.slice(0, 80) + (expContent.length > 80 ? '...' : '')) : '경험 내용이 없습니다'}</p>
                 </div>
 
                 {/* NCS cards */}
@@ -320,28 +380,108 @@ export default function ExperienceMapping() {
                   )}
                   {summary && <p style={{ fontSize: '13px', color: '#C75B3A', marginBottom: '10px', fontWeight: '600' }}>{summary}</p>}
                   <div className="em-star-list">
-                    {starItems.map((s, i) => (
-                      <p key={i} className="em-star-item">
-                        <span className="em-star-label">【{s.label}】</span> {s.text}
-                      </p>
-                    ))}
+                    {editMode
+                      ? editedItems.map((s, i) => (
+                          <div key={i} className="em-star-item" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span className="em-star-label">【{s.label}】</span>
+                            <textarea
+                              value={s.text}
+                              onChange={e => {
+                                const next = [...editedItems]
+                                next[i] = { ...next[i], text: e.target.value }
+                                setEditedItems(next)
+                              }}
+                              rows={3}
+                              style={{
+                                width: '100%', padding: '8px', fontSize: '13px',
+                                border: '1.5px solid #c4603d', borderRadius: '6px',
+                                fontFamily: 'inherit', resize: 'vertical',
+                              }}
+                            />
+                          </div>
+                        ))
+                      : starItems.map((s, i) => (
+                          <p key={i} className="em-star-item">
+                            <span className="em-star-label">【{s.label}】</span> {s.text}
+                          </p>
+                        ))
+                    }
                   </div>
                   <div className="em-btn-row">
-                    <button className="em-btn-primary">✏️ 내용 편집</button>
-                    <button className="em-btn-secondary" onClick={handleCopy}>
-                      {copied ? '✓ 복사됨' : '📋 복사'}
-                    </button>
+                    {editMode ? (
+                      <>
+                        <button className="em-btn-primary" onClick={handleEditSave}>💾 저장</button>
+                        <button className="em-btn-secondary" onClick={() => setEditMode(false)}>취소</button>
+                      </>
+                    ) : (
+                      <>
+                        <button className="em-btn-primary" onClick={handleEditStart}>✏️ 내용 편집</button>
+                        <button className="em-btn-secondary" onClick={handleCopy}>
+                          {copied ? '✓ 복사됨' : '📋 복사'}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 {/* 레이더 */}
                 <div className="em-card">
-                  <p className="em-card-title">⭐ 전체 역량 레이더</p>
+                  <div className="em-ncs-full-header" style={{ marginBottom: '4px' }}>
+                    <p className="em-card-title" style={{ margin: 0 }}>⭐ 전체 역량 레이더</p>
+                    {history.length > 0 && (
+                      <select
+                        className="em-radar-select"
+                        value={radarExpSource}
+                        onChange={e => handleRadarSourceChange(e.target.value)}
+                      >
+                        <option value="all">전체 경험 통합</option>
+                        {history.map(h => (
+                          <option key={h.idx} value={String(h.idx)}>{h.title}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  <p className="em-card-sub" style={{ marginBottom: '8px' }}>상위 5개 역량 시각화</p>
                   <div className="em-radar-wrap">
                     <RadarChart labels={radarLabels} values={radarValues} />
                   </div>
-                  <button className="em-btn-full">⚙️ 자격증 로드맵 설계하기</button>
+                  <button className="em-btn-full" onClick={() => navigate('/dashboard?tab=roadmap')}>⚙️ 자격증 로드맵 설계하기</button>
                 </div>
+
+                {/* 전체 NCS 역량 목록 */}
+                {allNcsSummary?.length > 0 && (
+                  <div className="em-card">
+                    <div className="em-ncs-full-header">
+                      <div>
+                        <p className="em-card-title" style={{ margin: 0 }}>📋 전체 NCS 역량 목록</p>
+                        <p className="em-card-sub">모든 경험에서 추출된 {allNcsSummary.length}개 역량 (평균 점수순)</p>
+                      </div>
+                      <button className="em-ncs-toggle-btn" onClick={() => setNcsExpanded(p => !p)}>
+                        {ncsExpanded ? '접기 ▲' : `전체보기 (${allNcsSummary.length}개) ▼`}
+                      </button>
+                    </div>
+                    <div className="em-ncs-full-list">
+                      {(ncsExpanded ? allNcsSummary : allNcsSummary.slice(0, 3)).map((c, i) => (
+                        <div key={i} className="em-ncs-full-row">
+                          <div className="em-ncs-full-top">
+                            <span className="em-ncs-full-name">{c.unit_name}</span>
+                            <span className="em-ncs-full-meta">경험 {c.count}개 · Lv.{c.level}</span>
+                          </div>
+                          <div className="em-ncs-full-bar-row">
+                            <div className="em-bar-wrap" style={{ flex: 1 }}>
+                              <div className="em-bar" style={{ width: `${c.avg_score}%` }} />
+                            </div>
+                            <span className="em-pct">{c.avg_score}%</span>
+                          </div>
+                          <span className="em-code">{c.ncs_code}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {!ncsExpanded && allNcsSummary.length > 3 && (
+                      <p className="em-ncs-more-hint">+ {allNcsSummary.length - 3}개 더 있음</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

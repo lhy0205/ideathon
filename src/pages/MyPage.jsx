@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import TopBar from '../components/TopBar'
 import './MyPage.css'
 
 const NAV_ITEMS = [
@@ -22,24 +23,14 @@ const BADGES = [
   { icon: '🎯', label: '목표', earned: false },
 ]
 
-const EXPERIENCES = [
-  { title: '편의점 아르바이트 2년', ncs: 'NCS 6개 추출됨' },
-  { title: '대학 동아리 기획팀장', ncs: 'NCS 4개 추출됨' },
-  { title: '카페 바리스타 6개월', ncs: 'NCS 3개 추출됨' },
-]
-
-const SETTINGS = [
-  { icon: '🔒', label: '비밀번호 변경', sub: null },
-  { icon: '🔔', label: '알림 설정', sub: '미션 리마인더, 커뮤니티 알림' },
-  { icon: '🎯', label: '목표 직무 변경', sub: '현재: 데이터 분석' },
-  { icon: '🚪', label: '로그아웃', sub: null, isLogout: true },
-]
-
 export default function MyPage() {
   const navigate = useNavigate()
   const [activeNav, setActiveNav] = useState('mypage')
   const [showModal, setShowModal] = useState(false)
+  const [showNotifModal, setShowNotifModal] = useState(false)
+  const [notifSettings, setNotifSettings] = useState({ mission: true, community: true })
   const [user, setUser] = useState(null)
+  const [experiences, setExperiences] = useState([])
   const [form, setForm] = useState({
     name: '',
     department: '',
@@ -61,6 +52,11 @@ export default function MyPage() {
         })
       }).catch(() => {})
     })
+
+    try {
+      const saved = localStorage.getItem('exp_history')
+      if (saved) setExperiences(JSON.parse(saved))
+    } catch {}
   }, [])
 
   const handleNav = (item) => {
@@ -72,11 +68,51 @@ export default function MyPage() {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
+  const handleViewResult = (exp) => {
+    if (exp._result) {
+      localStorage.setItem('ncs_result', JSON.stringify(exp._result))
+      localStorage.setItem('ncs_experience', JSON.stringify({ title: exp.title, type: exp.type, content: exp.content }))
+    }
+    navigate('/mapping')
+  }
+
+  const settingItems = [
+    {
+      icon: '🔒',
+      label: '비밀번호 변경',
+      sub: null,
+      onClick: () => navigate('/dashboard?tab=password'),
+    },
+    {
+      icon: '🔔',
+      label: '알림 설정',
+      sub: `미션 리마인더 ${notifSettings.mission ? 'ON' : 'OFF'} · 커뮤니티 알림 ${notifSettings.community ? 'ON' : 'OFF'}`,
+      onClick: () => setShowNotifModal(true),
+    },
+    {
+      icon: '🎯',
+      label: '목표 직무 변경',
+      sub: user?.job_interest ? `현재: ${user.job_interest}` : '미설정',
+      onClick: () => setShowModal(true),
+    },
+    {
+      icon: '🚪',
+      label: '로그아웃',
+      sub: null,
+      isLogout: true,
+      onClick: async () => {
+        const { api, clearSession } = await import('../api')
+        try { await api.endSession() } catch {}
+        clearSession(); navigate('/')
+      },
+    },
+  ]
+
   return (
     <div className="mp-root">
       {/* Top header */}
       <header className="mp-header">
-        <span className="mp-brand">Pause to Pass</span>
+        <span className="mp-brand" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>Pause to Pass</span>
         <span className="mp-tagline"> - 나의 오늘이 내일의 발판이 되지 못하는 불안</span>
       </header>
 
@@ -108,13 +144,11 @@ export default function MyPage() {
       {/* Main */}
       <div className="mp-main">
         {/* Topbar */}
-        <div className="mp-topbar">
-          <span className="mp-breadcrumb">마이페이지</span>
-          <div className="mp-topbar-right">
-            <span className="mp-bell">🔔</span>
-            <span className="mp-topuser">{user?.name?.slice(0, 2) || ''}</span>
-          </div>
-        </div>
+        <TopBar
+          title="마이페이지"
+          user={user}
+          onProfileClick={() => setShowModal(true)}
+        />
 
         {/* Content */}
         <div className="mp-content">
@@ -177,18 +211,32 @@ export default function MyPage() {
             <div className="mp-card mp-exp-card">
               <div className="mp-card-header">
                 <p className="mp-card-title">📋 내 경험 목록</p>
-                <p className="mp-card-sub">총 4개 경험 등록됨</p>
+                <p className="mp-card-sub">총 {experiences.length}개 경험 등록됨</p>
               </div>
               <div className="mp-exp-list">
-                {EXPERIENCES.map((e, i) => (
-                  <div key={i} className="mp-exp-item">
-                    <div>
-                      <p className="mp-exp-title">{e.title}</p>
-                      <p className="mp-exp-ncs">{e.ncs}</p>
-                    </div>
-                    <button className="mp-result-btn">결과 보기</button>
-                  </div>
-                ))}
+                {experiences.length === 0 ? (
+                  <p style={{ fontSize: '13px', color: '#aaa', textAlign: 'center', padding: '16px 0' }}>
+                    아직 입력한 경험이 없어요
+                  </p>
+                ) : (
+                  experiences.map((e, i) => {
+                    const ncsCount = e._result?.ncs_items?.length || 0
+                    return (
+                      <div key={i} className="mp-exp-item">
+                        <div>
+                          <p className="mp-exp-title">{e.title || `경험 ${i + 1}`}</p>
+                          <p className="mp-exp-ncs">{ncsCount > 0 ? `NCS ${ncsCount}개 추출됨` : '분석 결과 없음'}</p>
+                        </div>
+                        <button
+                          className="mp-result-btn"
+                          onClick={() => handleViewResult(e)}
+                        >
+                          결과 보기
+                        </button>
+                      </div>
+                    )
+                  })
+                )}
               </div>
               <button className="mp-add-btn" onClick={() => navigate('/dashboard?tab=experience')}>+ 새 경험 추가</button>
             </div>
@@ -197,15 +245,11 @@ export default function MyPage() {
             <div className="mp-card">
               <p className="mp-card-title">⚙️ 계정 설정</p>
               <div className="mp-settings">
-                {SETTINGS.map((s, i) => (
+                {settingItems.map((s, i) => (
                   <button
                     key={i}
                     className={`mp-setting-item ${s.isLogout ? 'logout' : ''}`}
-                    onClick={s.isLogout ? async () => {
-                      const { api, clearSession } = await import('../api')
-                      try { await api.endSession() } catch {}
-                      clearSession(); navigate('/')
-                    } : undefined}
+                    onClick={s.onClick}
                   >
                     <span className="mp-setting-icon">{s.icon}</span>
                     <div className="mp-setting-text">
@@ -221,6 +265,42 @@ export default function MyPage() {
         </div>
       </div>
       </div>
+
+      {/* 알림 설정 모달 */}
+      {showNotifModal && (
+        <div className="mp-modal-overlay" onClick={() => setShowNotifModal(false)}>
+          <div className="mp-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '360px' }}>
+            <div className="mp-modal-header">
+              <span className="mp-modal-title">알림 설정</span>
+              <button className="mp-modal-close" onClick={() => setShowNotifModal(false)}>✕</button>
+            </div>
+            <div className="mp-modal-form" style={{ gap: '0' }}>
+              {[
+                { key: 'mission', label: '미션 리마인더', desc: '매일 오전 9시 오늘의 미션 알림' },
+                { key: 'community', label: '커뮤니티 알림', desc: '내 피드에 좋아요·댓글이 달릴 때' },
+              ].map(({ key, label, desc }) => (
+                <div key={key} className="mp-notif-row">
+                  <div>
+                    <p className="mp-notif-label">{label}</p>
+                    <p className="mp-notif-desc">{desc}</p>
+                  </div>
+                  <button
+                    className={`mp-toggle ${notifSettings[key] ? 'on' : ''}`}
+                    onClick={() => setNotifSettings(prev => ({ ...prev, [key]: !prev[key] }))}
+                  >
+                    <span className="mp-toggle-thumb" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="mp-modal-btns">
+              <button className="mp-modal-save" style={{ flex: 1 }} onClick={() => setShowNotifModal(false)}>
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 프로필 수정 모달 */}
       {showModal && (

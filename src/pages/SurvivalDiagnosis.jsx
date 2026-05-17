@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import TopBar from '../components/TopBar'
 import './SurvivalDiagnosis.css'
 
 const NAV_ITEMS = [
@@ -124,6 +125,7 @@ export default function SurvivalDiagnosis() {
     certifications: savedProfile.certifications || '',
     job_interest: savedProfile.job_interest || '',
   })
+  const [user, setUser] = useState(null)
   const [personas, setPersonas] = useState([])
   const [personaLoading, setPersonaLoading] = useState(false)
   const [curveData, setCurveData] = useState(null)
@@ -144,6 +146,12 @@ export default function SurvivalDiagnosis() {
         certifications: form.certifications,
         job_interest: form.job_interest,
       }
+  const [curveLoading, setCurveLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      const { api } = await import('../api')
+      api.getMe().then(setUser).catch(() => {})
 
       // Cox 곡선 - 실패해도 계속 진행
       try {
@@ -202,7 +210,7 @@ export default function SurvivalDiagnosis() {
     <div className="sv-root">
       {/* Top header */}
       <header className="sv-header">
-        <span className="sv-brand">Pause to Pass</span>
+        <span className="sv-brand" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>Pause to Pass</span>
         <span className="sv-tagline"> - 나의 오늘이 내일의 발판이 되지 못하는 불안</span>
       </header>
 
@@ -221,17 +229,19 @@ export default function SurvivalDiagnosis() {
               </button>
             ))}
           </nav>
-          <button className="sv-logout" onClick={() => navigate('/login')}>
+          <button className="sv-logout" onClick={async () => {
+            const { api, clearSession } = await import('../api')
+            try { await api.endSession() } catch {}
+            clearSession()
+            navigate('/')
+          }}>
             로그아웃
           </button>
         </aside>
 
         {/* Main */}
         <main className="sv-main">
-          <div className="sv-topbar">
-            <span className="sv-breadcrumb">생존 진단</span>
-            <span className="sv-user">· 김지</span>
-          </div>
+          <TopBar title="생존 진단" user={user} />
 
           <div className="sv-content">
             <h2 className="sv-title">생존 진단</h2>

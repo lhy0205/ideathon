@@ -24,6 +24,10 @@ export default function ExperienceInput() {
   const [history, setHistory] = useState([])
 
   const loadHistory = () => {
+    // localStorage 먼저 표시 (즉시)
+    const local = JSON.parse(localStorage.getItem('exp_history') || '[]')
+    if (local.length) setHistory(local)
+    // API로 최신 동기화
     import('../api').then(({ api }) => {
       api.getAnalysisHistory().then(setHistory).catch(() => {})
     })
@@ -63,9 +67,22 @@ export default function ExperienceInput() {
       })
       setResult(data)
       setStep(2)
-      loadHistory()
       localStorage.setItem('ncs_result', JSON.stringify(data))
       localStorage.setItem('ncs_experience', JSON.stringify({ title: form.title, type: selectedType, content: form.content }))
+      // 로컬 히스토리 누적 저장
+      const newEntry = {
+        idx: data.id || Date.now(),
+        title: form.title || selectedType,
+        exp_type: selectedType,
+        ncs_count: data.ncs_items?.length || 0,
+        created_at: new Date().toISOString().slice(0, 10),
+        _result: data,
+      }
+      const prev = JSON.parse(localStorage.getItem('exp_history') || '[]')
+      const merged = [newEntry, ...prev.filter(e => e.idx !== newEntry.idx)].slice(0, 20)
+      localStorage.setItem('exp_history', JSON.stringify(merged))
+      setHistory(merged)
+      loadHistory()
     } catch (e) {
       setError('AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.')
       setStep(0)
@@ -131,6 +148,28 @@ export default function ExperienceInput() {
                   <input className="exp-input" type="month" name="endDate" value={form.endDate} onChange={handleChange} />
                 </div>
               </div>
+              {(form.startDate || form.endDate) && (
+                <p style={{ fontSize: '12px', color: '#a08060', marginBottom: '8px' }}>
+                  💡 아래 경험 내용에 기재한 기간이 위 날짜와 다르면 AI가 혼동할 수 있어요. 가능하면 일치시켜 주세요.
+                </p>
+              )}
+              {(() => {
+                if (!form.startDate || !form.endDate) return null
+                const [sy, sm] = form.startDate.split('-').map(Number)
+                const [ey, em] = form.endDate.split('-').map(Number)
+                const months = (ey - sy) * 12 + (em - sm)
+                if (months < 12) return null
+                return (
+                  <div style={{
+                    background: '#fff8e1', border: '1px solid #ffe082',
+                    borderRadius: '8px', padding: '10px 14px',
+                    fontSize: '13px', color: '#7a5c00', marginBottom: '10px',
+                  }}>
+                    ⏳ 기간이 <strong>약 {Math.round(months)}개월</strong>로 길어요!
+                    시기별로 나눠서 입력하면 더 정확한 분석이 가능해요.
+                  </div>
+                )
+              })()}
               <div className="exp-field">
                 <label className="exp-label">경험 내용 (자유롭게 작성)</label>
                 <textarea
@@ -180,10 +219,19 @@ export default function ExperienceInput() {
                   : history.map((e) => (
                     <div key={e.idx} className="exp-prev-item" style={{ cursor: 'pointer' }}
                       onClick={async () => {
-                        const { api } = await import('../api')
-                        const detail = await api.getAnalysisDetail(e.idx)
-                        setResult(detail)
-                        setStep(2)
+                        setForm(prev => ({ ...prev, title: e.title || '', content: '' }))
+                        setSelectedType(e.exp_type || '아르바이트')
+                        if (e._result) {
+                          setResult(e._result)
+                          setStep(2)
+                          return
+                        }
+                        try {
+                          const { api } = await import('../api')
+                          const detail = await api.getAnalysisDetail(e.idx)
+                          setResult(detail)
+                          setStep(2)
+                        } catch { setError('불러오기에 실패했습니다.') }
                       }}
                     >
                       <p className="exp-prev-title">{e.title}</p>
@@ -265,6 +313,13 @@ export default function ExperienceInput() {
             <button className="exp-back-btn" onClick={() => setStep(2)}>← NCS 결과로 돌아가기</button>
           </div>
 
+          {result.intro && (
+            <div className="exp-star-card" style={{ marginBottom: '12px' }}>
+              <p className="exp-star-label">자기소개</p>
+              <p className="exp-star-text">{result.intro}</p>
+            </div>
+          )}
+
           <div className="exp-star-list">
             {(editing ? editedDrafts : result.star_drafts).map((draft, i) => {
               const labelKey = Object.keys(STAR_LABELS).find(k => draft.startsWith(k))
@@ -298,21 +353,34 @@ export default function ExperienceInput() {
               {editing ? '✅ 편집 완료' : '✏️ 전체 편집하기'}
             </button>
             <button className="exp-copy-btn" style={{ flex: 1 }} onClick={() => {
+              const parts = []
+              if (result.intro) parts.push('【자기소개】\n' + result.intro)
               const drafts = editing ? editedDrafts : result.star_drafts
-              navigator.clipboard.writeText(drafts.join('\n'))
+              if (drafts.length) parts.push('【주요 경험】\n' + drafts.join('\n\n'))
+              if (result.aspiration) parts.push('【향후 포부】\n' + result.aspiration)
+              navigator.clipboard.writeText(parts.join('\n\n'))
                 .then(() => alert('복사되었습니다!'))
             }}>
               📋 복사하기
             </button>
           </div>
+
+          {result.aspiration && (
+            <div className="exp-star-card" style={{ marginTop: '12px' }}>
+              <p className="exp-star-label">향후 포부</p>
+              <p className="exp-star-text">{result.aspiration}</p>
+            </div>
+          )}
           <button className="exp-submit-btn" onClick={async () => {
             try {
               const { api } = await import('../api')
               await api.downloadReport({
                 user_name: '사용자',
                 summary: result.summary,
+                intro: result.intro || '',
+                aspiration: result.aspiration || '',
                 ncs_items: result.ncs_items,
-                star_drafts: result.star_drafts,
+                star_drafts: editing ? editedDrafts : result.star_drafts,
                 certs: [],
               })
             } catch (e) {

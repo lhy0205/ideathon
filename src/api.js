@@ -7,7 +7,7 @@ function getSessionToken() {
 }
 
 async function request(method, path, body = null, auth = true) {
-  const headers = { 'Content-Type': 'application/json' }
+  const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' }
   if (auth) {
     const token = getSessionToken()
     if (token) headers['X-Session-Token'] = token
@@ -59,7 +59,7 @@ export const api = {
     if (file) form.append('file', file)
     const res = await fetch(`${BASE_URL}/missions/${id}/verify`, {
       method: 'POST',
-      headers: token ? { 'X-Session-Token': token } : {},
+      headers: { 'ngrok-skip-browser-warning': 'true', ...(token ? { 'X-Session-Token': token } : {}) },
       body: form,
     })
     if (!res.ok) {
@@ -93,8 +93,8 @@ export const api = {
   getStarLetters: () => request('GET', '/ai/star-letters'),
   updateStarLetter: (id, content) => request('PUT', `/ai/star-letters/${id}`, { content }),
   getNcsSummary: () => request('GET', '/ai/ncs-summary'),
-  recommendCerts: (ncs_items, exp_type = '', exp_title = '') =>
-    request('POST', '/ai/recommend-certs', { ncs_items, exp_type, exp_title }, false),
+  recommendCerts: (ncs_items, exp_type = '', exp_title = '', count = 5) =>
+    request('POST', '/ai/recommend-certs', { ncs_items, exp_type, exp_title, count }, false),
 
   // Certifications
   getCertSchedule: (category = '') =>
@@ -106,7 +106,20 @@ export const api = {
     const token = getSessionToken()
     const res = await fetch(`${BASE_URL}/cert-proofs/`, {
       method: 'POST',
-      headers: token ? { 'X-Session-Token': token } : {},
+      headers: { 'ngrok-skip-browser-warning': 'true', ...(token ? { 'X-Session-Token': token } : {}) },
+      body: formData,
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: '오류가 발생했습니다' }))
+      throw new Error(err.detail || '오류가 발생했습니다')
+    }
+    return res.json()
+  },
+  updateCertProof: async (id, formData) => {
+    const token = getSessionToken()
+    const res = await fetch(`${BASE_URL}/cert-proofs/${id}`, {
+      method: 'PATCH',
+      headers: { 'ngrok-skip-browser-warning': 'true', ...(token ? { 'X-Session-Token': token } : {}) },
       body: formData,
     })
     if (!res.ok) {
@@ -131,6 +144,8 @@ export const api = {
     request('POST', '/survival/curve', userProfile, false),
   getSurvivalData: (userProfile) =>
     request('POST', '/survival/analyze', userProfile, false),
+  getSurvivalCurve: (userProfile) =>
+    request('POST', '/survival/curve', userProfile, false),
 
   // PDF
   downloadReport: async (data) => {
@@ -158,6 +173,10 @@ export function saveSessionToken(token) {
 
 export function clearSession() {
   localStorage.removeItem('session_token')
+  localStorage.removeItem('mission_done_date')
+  localStorage.removeItem('ncs_result')
+  localStorage.removeItem('ncs_experience')
+  localStorage.removeItem('exp_history')
 }
 
 export function hasSession() {

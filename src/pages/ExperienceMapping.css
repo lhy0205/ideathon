@@ -264,3 +264,26 @@
   transition: background 0.2s;
 }
 .em-btn-full:hover { background: #b0522f; }
+
+.em-ncs-full-list { display: flex; flex-direction: column; gap: 10px; }
+.em-ncs-full-row { padding: 10px 0; border-bottom: 1px solid #f0ece7; }
+.em-ncs-full-row:last-child { border-bottom: none; }
+.em-ncs-full-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.em-ncs-full-name { font-size: 13px; font-weight: 700; color: #1a1a1a; }
+.em-ncs-full-meta { font-size: 11px; color: #aaa; }
+.em-ncs-full-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.em-ncs-full-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.em-ncs-toggle-btn {
+  font-size: 12px; font-weight: 600; color: #c4603d;
+  background: none; border: 1.5px solid #e8c4b4; border-radius: 6px;
+  padding: 4px 10px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: background .15s;
+}
+.em-ncs-toggle-btn:hover { background: #fdf0eb; }
+.em-ncs-more-hint { font-size: 12px; color: #bbb; margin: 6px 0 0; text-align: center; }
+.em-radar-select {
+  border: 1.5px solid #e8c4b4; border-radius: 6px; background: #fff;
+  font-size: 12px; color: #444; padding: 4px 8px; cursor: pointer;
+  outline: none; max-width: 140px;
+}
+.em-radar-select:focus { border-color: #c4603d; }

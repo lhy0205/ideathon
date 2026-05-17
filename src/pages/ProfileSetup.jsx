@@ -38,7 +38,7 @@ export default function ProfileSetup() {
     <div className="ps-root">
       <div className="ps-card">
         <div className="ps-header">
-          <span className="ps-brand">Pause to Pass</span>
+          <span className="ps-brand" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>Pause to Pass</span>
           <h2 className="ps-title">프로필 설정</h2>
           <p className="ps-sub">나의 정보를 입력하면 더 정확한 분석이 가능해요</p>
         </div>
